@@ -1,0 +1,63 @@
+{
+  "name": "oumv",
+  "version": "0.1.0",
+  "description": "OUMV: The Universal Agent-UI Protocol (Observe · Understand · Mutate · Verify) reference implementation and conformance engine",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./protocol": {
+      "types": "./dist/protocol.d.ts",
+      "import": "./dist/protocol.js",
+      "require": "./dist/protocol.cjs"
+    },
+    "./schema": {
+      "types": "./dist/schema.d.ts",
+      "import": "./dist/schema.js",
+      "require": "./dist/schema.cjs"
+    },
+    "./conformance": {
+      "types": "./dist/conformance.d.ts",
+      "import": "./dist/conformance.js",
+      "require": "./dist/conformance.cjs"
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tokensafe-dev/oumv.git",
+    "directory": "packages/oumv"
+  },
+  "homepage": "https://github.com/tokensafe-dev/oumv#readme",
+  "bugs": {
+    "url": "https://github.com/tokensafe-dev/oumv/issues"
+  },
+  "keywords": [
+    "oumv",
+    "protocol",
+    "agent-ui",
+    "ai-agent",
+    "tokensafe",
+    "conformance",
+    "schema"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch"
+  },
+  "devDependencies": {
+    "@oumv/conformance": "workspace:*",
+    "@oumv/protocol": "workspace:*",
+    "@oumv/schema": "workspace:*",
+    "tsup": "^8.3.5",
+    "typescript": "^5.7.2"
+  }
+}
