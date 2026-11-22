@@ -3,7 +3,7 @@
 
 - **Date**: 2026-11-22  
 - **Status**: Draft Standard  
-- **Author**: NekoSin4eG & Antigravity  
+- **Author**: Oleg Savelev  
 - **Repository**: [github.com/tokensafe-dev/oumv](https://github.com/tokensafe-dev/oumv)
 
 ---
