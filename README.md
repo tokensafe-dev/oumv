@@ -1,17 +1,19 @@
-# oumv
+# OUMV: The Universal Agent-UI Protocol
+### Observe · Understand · Mutate · Verify
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Protocol Version](https://img.shields.io/badge/OUMV-v1.0--draft-orange)](spec/SPEC.md)
+[![Specification](https://img.shields.io/badge/docs-RFC%20Specification-blue)](spec/SPEC.md)
 
-> **The universal protocol and standard for autonomous AI coding agents to Observe, Understand, Mutate, and Verify live running web interfaces.**
+> **OUMV (Observe, Understand, Mutate, Verify) is the open, transport-agnostic standard that enables autonomous AI coding agents to inspect, reason about, edit, and verify running user interfaces with zero context waste.**
 
 ---
 
 ## What is OUMV?
 
-OUMV (Observe, Understand, Mutate, Verify) is an open, transport-agnostic communication standard for AI agents interacting with running user interfaces.
+Much like **LSP (Language Server Protocol)** standardizes code editing across IDEs, **DAP (Debug Adapter Protocol)** standardizes debugging runtimes, and **MCP (Model Context Protocol)** standardizes tool execution for LLMs:
 
-Much like **LSP (Language Server Protocol)** standardizes code editing across IDEs, and **MCP (Model Context Protocol)** standardizes tool calling for LLMs, **OUMV** standardizes how AI agents:
+**OUMV (The Universal Agent-UI Protocol)** standardizes how AI agents interface with running frontends across any framework (`tokensafe-ui`, React, Vue, Solid, Svelte):
 1. **Observe**: Progressive context disclosure (L0 Pulse, L1 Surface, L2 Contract, L3 Source, L4 Traces) without wasting tokens on raw HTML.
 2. **Understand**: Live dynamic signals graphs, impact analysis, and runtime causality (*"Why is this button disabled?"*).
 3. **Mutate**: Symbol-level source editing with Optimistic Concurrency Control (OCC) and pre-flight syntax guards.
