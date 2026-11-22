@@ -1,9 +1,9 @@
 # OUMV: The Universal Agent-UI Protocol
 ### Observe · Understand · Mutate · Verify
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Protocol Version](https://img.shields.io/badge/OUMV-v1.0--draft-orange)](spec/SPEC.md)
-[![Specification](https://img.shields.io/badge/docs-RFC%20Specification-blue)](spec/SPEC.md)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/tokensafe-dev/oumv/blob/main/LICENSE)
+[![Protocol Version](https://img.shields.io/badge/OUMV-v1.0--draft-orange)](https://github.com/tokensafe-dev/oumv/blob/main/spec/SPEC.md)
+[![Specification](https://img.shields.io/badge/docs-RFC%20Specification-blue)](https://github.com/tokensafe-dev/oumv/blob/main/spec/SPEC.md)
 
 > **OUMV (Observe, Understand, Mutate, Verify) is the open, transport-agnostic standard that enables autonomous AI coding agents to inspect, reason about, edit, and verify running user interfaces with zero context waste.**
 
@@ -43,9 +43,9 @@ Much like **LSP (Language Server Protocol)** standardizes code editing across ID
 
 | Package | Description | Status |
 | :--- | :--- | :--- |
-| [`@oumv/protocol`](packages/protocol) | Zero-dependency TypeScript contracts, message envelopes, and capability types. | Ready |
-| [`@oumv/schema`](packages/schema) | Zod runtime validators and JSON Schema declarations. | Ready |
-| [`@oumv/conformance`](packages/conformance) | Standardized compliance test suite to certify runtime adapters. | Ready |
+| [`@oumv/protocol`](https://github.com/tokensafe-dev/oumv/tree/main/packages/protocol) | Zero-dependency TypeScript contracts, message envelopes, and capability types. | Ready |
+| [`@oumv/schema`](https://github.com/tokensafe-dev/oumv/tree/main/packages/schema) | Zod runtime validators and JSON Schema declarations. | Ready |
+| [`@oumv/conformance`](https://github.com/tokensafe-dev/oumv/tree/main/packages/conformance) | Standardized compliance test suite to certify runtime adapters. | Ready |
 
 ---
 
@@ -59,7 +59,7 @@ Much like **LSP (Language Server Protocol)** standardizes code editing across ID
 
 ## Protocol Specification
 
-Read the complete RFC specification in [spec/SPEC.md](spec/SPEC.md).
+Read the complete RFC specification in [spec/SPEC.md](https://github.com/tokensafe-dev/oumv/blob/main/spec/SPEC.md).
 
 ---
 
