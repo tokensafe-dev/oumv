@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://oumv.org/schemas/oumv-mutate.json",
+  "title": "OUMV Mutate Schema",
+  "description": "Optimistic Concurrency Control source mutations and ephemeral actions",
+  "definitions": {
+    "GetSourceRequest": {
+      "type": "object",
+      "required": ["componentId", "filePath"],
+      "properties": {
+        "componentId": { "type": "string" },
+        "filePath": { "type": "string" }
+      }
+    },
+    "GetSourceResponse": {
+      "type": "object",
+      "required": ["componentId", "filePath", "version", "source"],
+      "properties": {
+        "componentId": { "type": "string" },
+        "filePath": { "type": "string" },
+        "version": { "type": "string" },
+        "source": { "type": "string" },
+        "contract": { "type": "object" }
+      }
+    },
+    "ApplyEditRequest": {
+      "type": "object",
+      "required": ["filePath", "source", "expectedVersion"],
+      "properties": {
+        "filePath": { "type": "string" },
+        "source": { "type": "string" },
+        "expectedVersion": { "type": "string" }
+      }
+    },
+    "ApplyEditResponse": {
+      "type": "object",
+      "required": ["success", "filePath", "version"],
+      "properties": {
+        "success": { "type": "boolean" },
+        "filePath": { "type": "string" },
+        "version": { "type": "string" },
+        "message": { "type": "string" }
+      }
+    }
+  }
+}

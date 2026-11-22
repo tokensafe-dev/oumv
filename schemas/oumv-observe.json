@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://oumv.org/schemas/oumv-observe.json",
+  "title": "OUMV Observe Schema",
+  "description": "Progressive context observation request and response",
+  "definitions": {
+    "ObserveRequest": {
+      "type": "object",
+      "required": ["level"],
+      "properties": {
+        "level": { "type": "string", "enum": ["L0", "L1", "L2", "L3", "L4"] },
+        "format": { "type": "string", "enum": ["yaml", "json", "sexp"], "default": "yaml" },
+        "componentId": { "type": "string" }
+      }
+    },
+    "ObserveResponse": {
+      "type": "object",
+      "required": ["level", "format", "payload"],
+      "properties": {
+        "level": { "type": "string" },
+        "format": { "type": "string" },
+        "payload": { "type": "string" },
+        "tokenEstimate": { "type": "integer" },
+        "timestamp": { "type": "number" }
+      }
+    }
+  }
+}

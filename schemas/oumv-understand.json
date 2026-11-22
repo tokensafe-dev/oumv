@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://oumv.org/schemas/oumv-understand.json",
+  "title": "OUMV Understand Schema",
+  "description": "Dependency graph, impact analysis, and runtime causality schemas",
+  "definitions": {
+    "UnderstandRequest": {
+      "type": "object",
+      "required": ["query"],
+      "properties": {
+        "query": { "type": "string", "enum": ["impact", "dependencies", "causality", "why_state", "signals"] },
+        "target": { "type": "string" }
+      }
+    },
+    "ImpactResponse": {
+      "type": "object",
+      "required": ["target", "directlyAffected", "indirectlyAffected", "safeComponents", "recommendation"],
+      "properties": {
+        "target": { "type": "string" },
+        "directlyAffected": { "type": "array", "items": { "type": "string" } },
+        "indirectlyAffected": { "type": "array", "items": { "type": "string" } },
+        "safeComponents": { "type": "array", "items": { "type": "string" } },
+        "recommendation": { "type": "string" }
+      }
+    },
+    "CausalityResponse": {
+      "type": "object",
+      "required": ["target", "componentId", "stateKey", "value", "subscribers", "explanation"],
+      "properties": {
+        "target": { "type": "string" },
+        "componentId": { "type": "string" },
+        "stateKey": { "type": "string" },
+        "value": {},
+        "subscribers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "kind"],
+            "properties": {
+              "id": { "type": "string" },
+              "name": { "type": "string" },
+              "kind": { "type": "string" }
+            }
+          }
+        },
+        "lastMutation": {
+          "type": "object",
+          "properties": {
+            "actionName": { "type": "string" },
+            "timestamp": { "type": "number" },
+            "oldValue": {},
+            "newValue": {}
+          }
+        },
+        "explanation": { "type": "string" }
+      }
+    }
+  }
+}

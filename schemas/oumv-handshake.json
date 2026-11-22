@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://oumv.org/schemas/oumv-handshake.json",
+  "title": "OUMV Handshake",
+  "description": "Session initialization and capability exchange between agent and runtime",
+  "type": "object",
+  "required": ["protocolVersion", "capabilities"],
+  "properties": {
+    "protocolVersion": { "type": "string" },
+    "runtimeInfo": {
+      "type": "object",
+      "required": ["name", "version"],
+      "properties": {
+        "name": { "type": "string" },
+        "version": { "type": "string" }
+      }
+    },
+    "clientInfo": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "version": { "type": "string" }
+      }
+    },
+    "capabilities": {
+      "type": "object",
+      "properties": {
+        "observe": {
+          "type": "object",
+          "properties": {
+            "levels": { "type": "array", "items": { "type": "string" } },
+            "formats": { "type": "array", "items": { "type": "string" } }
+          }
+        },
+        "understand": {
+          "type": "object",
+          "properties": {
+            "causality": { "type": "boolean" },
+            "signalsGraph": { "type": "boolean" },
+            "impactAnalysis": { "type": "boolean" }
+          }
+        },
+        "mutate": {
+          "type": "object",
+          "properties": {
+            "occ": { "type": "boolean" },
+            "syntaxGuard": { "type": "boolean" },
+            "ephemeralDispatch": { "type": "boolean" }
+          }
+        },
+        "verify": {
+          "type": "object",
+          "properties": {
+            "multiMetric": { "type": "boolean" },
+            "surfaceDiff": { "type": "boolean" }
+          }
+        }
+      }
+    }
+  }
+}

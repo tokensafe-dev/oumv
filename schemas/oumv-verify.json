@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://oumv.org/schemas/oumv-verify.json",
+  "title": "OUMV Verify Schema",
+  "description": "Local action verification with structured diffs and multi-metric timings",
+  "definitions": {
+    "VerifyRequest": {
+      "type": "object",
+      "required": ["componentId", "action"],
+      "properties": {
+        "componentId": { "type": "string" },
+        "action": { "type": "string" },
+        "payload": {}
+      }
+    },
+    "VerifyResponse": {
+      "type": "object",
+      "required": ["status", "componentId", "action", "diff", "timings", "durationMs"],
+      "properties": {
+        "status": { "type": "string", "enum": ["passed", "failed"] },
+        "componentId": { "type": "string" },
+        "action": { "type": "string" },
+        "diff": { "type": "object" },
+        "surfaceDiff": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["op", "target"],
+            "properties": {
+              "op": { "type": "string", "enum": ["attr", "text", "visibility"] },
+              "target": { "type": "string" },
+              "attr": { "type": "string" },
+              "before": {},
+              "after": {}
+            }
+          }
+        },
+        "timings": {
+          "type": "object",
+          "required": ["t_action_ms", "t_schema_ms", "t_propagation_ms", "t_dom_ms", "t_total_ms"],
+          "properties": {
+            "t_action_ms": { "type": "number" },
+            "t_schema_ms": { "type": "number" },
+            "t_propagation_ms": { "type": "number" },
+            "t_dom_ms": { "type": "number" },
+            "t_total_ms": { "type": "number" }
+          }
+        },
+        "durationMs": { "type": "number" },
+        "error": { "type": "string" }
+      }
+    }
+  }
+}
