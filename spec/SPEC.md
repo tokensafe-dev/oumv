@@ -99,7 +99,7 @@ Upon establishing a connection, the agent and runtime exchange capabilities:
 ```json
 {
   "protocolVersion": "1.0.0",
-  "runtimeInfo": { "name": "agent-dom", "version": "0.3.0" },
+  "runtimeInfo": { "name": "tokensafe-ui", "version": "0.1.6" },
   "capabilities": {
     "observe": { "levels": ["L0", "L1", "L2", "L3", "L4"], "formats": ["yaml", "json"] },
     "understand": { "causality": true, "signalsGraph": true },

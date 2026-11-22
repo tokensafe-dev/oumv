@@ -6,7 +6,7 @@ import type { VerifyParams, VerifyResult } from './verify.js';
 
 /**
  * Standard OUMV Runtime Adapter Contract.
- * Every frontend framework runtime (agent-dom, React, Vue, Solid)
+ * Every frontend framework runtime (tokensafe-ui, React, Vue, Solid)
  * implements this interface to become certified OUMV compliant.
  */
 export interface OumvRuntimeAdapter {
