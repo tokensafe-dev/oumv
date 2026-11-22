@@ -1,11 +1,11 @@
-# OUMV: The Universal Agent-UI Protocol
+# OUMV: The Universal Agent-Runtime Protocol (UARP)
 ### Observe · Understand · Mutate · Verify
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/tokensafe-dev/oumv/blob/main/LICENSE)
 [![Protocol Version](https://img.shields.io/badge/OUMV-v1.0--draft-orange)](https://github.com/tokensafe-dev/oumv/blob/main/spec/SPEC.md)
 [![Specification](https://img.shields.io/badge/docs-RFC%20Specification-blue)](https://github.com/tokensafe-dev/oumv/blob/main/spec/SPEC.md)
 
-> **OUMV (Observe, Understand, Mutate, Verify) is the open, transport-agnostic standard that enables autonomous AI coding agents to inspect, reason about, edit, and verify running user interfaces with zero context waste.**
+> **OUMV (Observe, Understand, Mutate, Verify) is the open, transport-agnostic standard that enables autonomous AI coding agents to inspect, reason about, edit, and verify running software systems (user interfaces, backend services, APIs) with zero context waste.**
 
 ---
 
@@ -13,11 +13,11 @@
 
 Much like **LSP (Language Server Protocol)** standardizes code editing across IDEs, **DAP (Debug Adapter Protocol)** standardizes debugging runtimes, and **MCP (Model Context Protocol)** standardizes tool execution for LLMs:
 
-**OUMV (The Universal Agent-UI Protocol)** standardizes how AI agents interface with running frontends across any framework (`tokensafe-ui`, React, Vue, Solid, Svelte):
-1. **Observe**: Progressive context disclosure (L0 Pulse, L1 Surface, L2 Contract, L3 Source, L4 Traces) without wasting tokens on raw HTML.
-2. **Understand**: Live dynamic signals graphs, impact analysis, and runtime causality (*"Why is this button disabled?"*).
-3. **Mutate**: Symbol-level source editing with Optimistic Concurrency Control (OCC) and pre-flight syntax guards.
-4. **Verify**: Low-millisecond synchronous action verification with structured state and accessibility diffs.
+**OUMV (The Universal Agent-Runtime Protocol)** standardizes how AI agents interface with running software systems across any runtime (frontend: `tokensafe-ui`, React, Vue; backend: `tokensafe-backend`, Go, Node.js):
+1. **Observe**: Progressive context disclosure (L0 Pulse, L1 Surface, L2 Contract, L3 Source, L4 Traces) without wasting tokens on raw dumps.
+2. **Understand**: Live dynamic causality and runtime dependency analysis (*"Why is this request failing / why is this button disabled?"*).
+3. **Mutate**: Symbol-level source editing with Optimistic Concurrency Control (OCC) and pre-flight compiler/syntax guards.
+4. **Verify**: Low-millisecond synchronous action verification with structured state, API diffs, and accessibility diffs.
 
 ---
 
@@ -30,11 +30,10 @@ Much like **LSP (Language Server Protocol)** standardizes code editing across ID
                [ OUMV Protocol Specification ]
         (Observe · Understand · Mutate · Verify Interfaces)
                              │
-            ┌────────────────┼────────────────┐
-            ▼                ▼                ▼
-  [ tokensafe-ui Adapter ] [ React Adapter ] [ Vue Adapter ]
-            │                │                │
-   tokensafe-ui Runtime React + Hooks    Vue 3 Reactivity
+            ┌────────────────┴────────────────┐
+            ▼                                 ▼
+   [ OUMV Frontend Adapters ]        [ OUMV Backend Adapters ]
+ (tokensafe-ui, React, Vue)        (tokensafe-backend, Go, Node)
 ```
 
 ---

@@ -1,5 +1,5 @@
 # The OUMV Protocol Specification (v1.0-draft)
-**Standardized Agent-UI Interaction Protocol**
+**The Universal Agent-Runtime Protocol (UARP)**
 
 - **Date**: 2026-11-22  
 - **Status**: Draft Standard  
@@ -10,9 +10,9 @@
 
 ## 1. Abstract
 
-The **OUMV Protocol** (Observe, Understand, Mutate, Verify) defines an open, transport-agnostic standard for autonomous AI coding agents to inspect, reason about, modify, and verify running graphical user interfaces in real time.
+The **OUMV Protocol** (Observe, Understand, Mutate, Verify) defines an open, transport-agnostic standard for autonomous AI coding agents to inspect, reason about, modify, and verify running software systems (user interfaces, backend services, APIs) in real time.
 
-Much like the **Language Server Protocol (LSP)** decouples code intelligence from editor implementations, and the **Model Context Protocol (MCP)** standardizes tool calling for LLMs, **OUMV** decouples agent UI interaction from framework specifics (tokensafe-ui, React, Vue, Solid, Svelte).
+Much like the **Language Server Protocol (LSP)** decouples code intelligence from editor implementations, and the **Model Context Protocol (MCP)** standardizes tool calling for LLMs, **OUMV (The Universal Agent-Runtime Protocol)** decouples agent runtime interaction from technology stacks (tokensafe-ui, React, Vue, tokensafe-backend, Go, Node.js).
 
 ```text
        AI Coding Agent (Claude Code / Codex / Antigravity)
@@ -21,11 +21,10 @@ Much like the **Language Server Protocol (LSP)** decouples code intelligence fro
                [ OUMV Protocol Specification ]
         (Observe · Understand · Mutate · Verify Interfaces)
                              │
-            ┌────────────────┼────────────────┐
-            ▼                ▼                ▼
-  [ tokensafe-ui Adapter ] [ React Adapter ] [ Vue Adapter ]
-            │                │                │
-   tokensafe-ui Runtime React + Hooks    Vue 3 Reactivity
+            ┌────────────────┴────────────────┐
+            ▼                                 ▼
+   [ OUMV Frontend Adapters ]        [ OUMV Backend Adapters ]
+ (tokensafe-ui, React, Vue)        (tokensafe-backend, Go, Node)
 ```
 
 ---
