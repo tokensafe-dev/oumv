@@ -1,5 +1,5 @@
 {
-  "name": "oumv",
+  "name": "@tokensafe-dev/oumv",
   "version": "0.1.0",
   "description": "OUMV: The Universal Agent-UI Protocol (Observe · Understand · Mutate · Verify) reference implementation and conformance engine",
   "type": "module",
