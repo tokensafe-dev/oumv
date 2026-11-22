@@ -1,8 +1,12 @@
 {
-  "name": "@tokensafe-dev/oumv",
+  "name": "tokensafe-oumv",
   "version": "0.1.0",
   "description": "OUMV: The Universal Agent-UI Protocol (Observe · Understand · Mutate · Verify) reference implementation and conformance engine",
   "type": "module",
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
