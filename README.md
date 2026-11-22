@@ -1,4 +1,4 @@
-# agent-oumv
+# oumv
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Protocol Version](https://img.shields.io/badge/OUMV-v1.0--draft-orange)](spec/SPEC.md)
@@ -30,9 +30,9 @@ Much like **LSP (Language Server Protocol)** standardizes code editing across ID
                              │
             ┌────────────────┼────────────────┐
             ▼                ▼                ▼
-   [ agent-dom Adapter ] [ React Adapter ] [ Vue Adapter ]
+  [ tokensafe-ui Adapter ] [ React Adapter ] [ Vue Adapter ]
             │                │                │
-     agent-dom Runtime  React + Hooks    Vue 3 Reactivity
+   tokensafe-ui Runtime React + Hooks    Vue 3 Reactivity
 ```
 
 ---
@@ -49,7 +49,7 @@ Much like **LSP (Language Server Protocol)** standardizes code editing across ID
 
 ## Reference Implementations & Adapters
 
-- [agent-dom](https://github.com/NekoSin4eG/agent-dom) — The first reactive micro-framework natively implementing the OUMV protocol.
+- [tokensafe-ui](https://github.com/tokensafe-dev/tokensafe-ui) — The native reactive micro-framework implementing the OUMV protocol.
 - `@oumv/react` *(Planned)* — React adapter with Fiber hooks introspection.
 - `@oumv/vue` *(Planned)* — Vue 3 adapter with reactivity effect tracking.
 
@@ -63,4 +63,4 @@ Read the complete RFC specification in [spec/SPEC.md](spec/SPEC.md).
 
 ## License
 
-MIT © 2026 NekoSin4eG & Contributors
+MIT © 2026 TokenSafe & Contributors

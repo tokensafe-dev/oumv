@@ -4,7 +4,7 @@
 - **Date**: 2026-11-22  
 - **Status**: Draft Standard  
 - **Author**: NekoSin4eG & Antigravity  
-- **Repository**: [github.com/NekoSin4eG/agent-oumv](https://github.com/NekoSin4eG/agent-oumv)
+- **Repository**: [github.com/tokensafe-dev/oumv](https://github.com/tokensafe-dev/oumv)
 
 ---
 
@@ -12,7 +12,7 @@
 
 The **OUMV Protocol** (Observe, Understand, Mutate, Verify) defines an open, transport-agnostic standard for autonomous AI coding agents to inspect, reason about, modify, and verify running graphical user interfaces in real time.
 
-Much like the **Language Server Protocol (LSP)** decouples code intelligence from editor implementations, and the **Model Context Protocol (MCP)** standardizes tool calling for LLMs, **OUMV** decouples agent UI interaction from framework specifics (agent-dom, React, Vue, Solid, Svelte).
+Much like the **Language Server Protocol (LSP)** decouples code intelligence from editor implementations, and the **Model Context Protocol (MCP)** standardizes tool calling for LLMs, **OUMV** decouples agent UI interaction from framework specifics (tokensafe-ui, React, Vue, Solid, Svelte).
 
 ```text
        AI Coding Agent (Claude Code / Codex / Antigravity)
@@ -23,9 +23,9 @@ Much like the **Language Server Protocol (LSP)** decouples code intelligence fro
                              │
             ┌────────────────┼────────────────┐
             ▼                ▼                ▼
-   [ agent-dom Adapter ] [ React Adapter ] [ Vue Adapter ]
+  [ tokensafe-ui Adapter ] [ React Adapter ] [ Vue Adapter ]
             │                │                │
-     agent-dom Runtime  React + Hooks    Vue 3 Reactivity
+   tokensafe-ui Runtime React + Hooks    Vue 3 Reactivity
 ```
 
 ---
