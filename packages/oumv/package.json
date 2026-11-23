@@ -1,6 +1,6 @@
 {
   "name": "tokensafe-oumv",
-  "version": "0.1.1",
+  "version": "0.1.3",
   "description": "OUMV: The Universal Agent-Runtime Protocol (UARP) (Observe · Understand · Mutate · Verify) reference implementation and conformance engine",
   "type": "module",
   "files": [
