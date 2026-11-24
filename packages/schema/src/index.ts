@@ -107,25 +107,74 @@ export const CausalityResultSchema = z.object({
   explanation: z.string(),
 });
 
+// Evidence & Resource Schemas
+export const EvidenceMetadataSchema = z.object({
+  provenance: z.enum(['static', 'runtime', 'contract', 'inferred', 'external']),
+  sourceAdapter: z.string(),
+  confidence: z.enum(['confirmed', 'probable', 'unknown']),
+  observedAt: z.number().optional(),
+  filePath: z.string().optional(),
+  lineRange: z.tuple([z.number(), z.number()]).optional(),
+  details: z.record(z.any()).optional(),
+});
+
+export const ResourceReferenceSchema = z.object({
+  id: z.string(),
+  type: z.enum([
+    'frontend.component',
+    'frontend.route',
+    'frontend.action',
+    'frontend.state',
+    'frontend.effect',
+    'backend.service',
+    'backend.endpoint',
+    'backend.handler',
+    'backend.middleware',
+    'backend.dto',
+    'backend.model',
+    'backend.operation',
+    'project.dependency',
+    'project.module',
+    'project.contract',
+  ]),
+  name: z.string(),
+  parentRef: z.string().optional(),
+  sourceLocation: z
+    .object({
+      filePath: z.string(),
+      lineStart: z.number().optional(),
+      lineEnd: z.number().optional(),
+    })
+    .optional(),
+  versionToken: z.string().optional(),
+  evidence: EvidenceMetadataSchema,
+  availableOperations: z.array(z.string()),
+  schemaRef: z.string().optional(),
+});
+
 // Mutate Schemas
 export const GetSourceParamsSchema = z.object({
-  componentId: z.string(),
+  target: z.string().optional(),
+  componentId: z.string().optional(),
   filePath: z.string(),
 });
 
 export const GetSourceResultSchema = z.object({
-  componentId: z.string(),
+  target: z.string().optional(),
+  componentId: z.string().optional(),
   filePath: z.string(),
   version: z.string().regex(/^sha256:[a-f0-9]{64}$/),
   source: z.string(),
   contract: z
     .object({
-      componentId: z.string(),
-      stateFields: z.array(z.string()),
-      actionNames: z.array(z.string()),
-      elementAgentIds: z.array(z.string()),
+      target: z.string().optional(),
+      componentId: z.string().optional(),
+      stateFields: z.array(z.string()).optional(),
+      actionNames: z.array(z.string()).optional(),
+      elementAgentIds: z.array(z.string()).optional(),
     })
     .optional(),
+  evidence: EvidenceMetadataSchema.optional(),
 });
 
 export const ApplyEditParamsSchema = z.object({
@@ -143,14 +192,16 @@ export const ApplyEditResultSchema = z.object({
 
 // Verify Schemas
 export const VerifyParamsSchema = z.object({
-  componentId: z.string(),
+  target: z.string().optional(),
+  componentId: z.string().optional(),
   action: z.string(),
   payload: z.any().optional(),
 });
 
 export const VerifyResultSchema = z.object({
   status: z.enum(['passed', 'failed']),
-  componentId: z.string(),
+  target: z.string().optional(),
+  componentId: z.string().optional(),
   action: z.string(),
   diff: z.record(
     z.object({
@@ -169,13 +220,16 @@ export const VerifyResultSchema = z.object({
       })
     )
     .optional(),
-  timings: z.object({
-    t_action_ms: z.number(),
-    t_schema_ms: z.number(),
-    t_propagation_ms: z.number(),
-    t_dom_ms: z.number(),
-    t_total_ms: z.number(),
-  }),
+  timings: z
+    .object({
+      t_action_ms: z.number(),
+      t_schema_ms: z.number(),
+      t_propagation_ms: z.number(),
+      t_dom_ms: z.number(),
+      t_total_ms: z.number(),
+    })
+    .optional(),
   durationMs: z.number(),
+  evidence: EvidenceMetadataSchema.optional(),
   error: z.string().optional(),
 });

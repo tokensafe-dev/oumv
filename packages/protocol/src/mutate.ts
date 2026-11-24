@@ -1,19 +1,25 @@
+import type { EvidenceMetadata } from './resources.js';
+
 export interface GetSourceParams {
-  componentId: string;
+  target?: string;
+  componentId?: string;
   filePath: string;
 }
 
 export interface GetSourceResult {
-  componentId: string;
+  target?: string;
+  componentId?: string;
   filePath: string;
   version: string; // sha256:...
   source: string;
   contract?: {
-    componentId: string;
-    stateFields: string[];
-    actionNames: string[];
-    elementAgentIds: string[];
+    componentId?: string;
+    target?: string;
+    stateFields?: string[];
+    actionNames?: string[];
+    elementAgentIds?: string[];
   };
+  evidence?: EvidenceMetadata;
 }
 
 export interface ApplyEditParams {

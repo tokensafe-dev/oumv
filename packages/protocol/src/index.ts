@@ -5,4 +5,7 @@ export * from './observe.js';
 export * from './understand.js';
 export * from './mutate.js';
 export * from './verify.js';
+export * from './resources.js';
+export * from './profiles/frontend.js';
+export * from './profiles/backend.js';
 export * from './adapter.js';
