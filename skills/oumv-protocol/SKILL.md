@@ -1,11 +1,11 @@
 ---
 name: oumv-protocol
-description: "Universal OUMV (Observe, Understand, Mutate, Verify) protocol guide for autonomous AI coding agents interacting with running web interfaces. Trigger on: 'oumv', 'OUMV protocol', 'observe UI', 'understand UI state', 'why is button disabled', 'OCC mutation', 'verify UI action', 'oumv client'."
+description: "Universal OUMV (Observe, Understand, Mutate, Verify) protocol guide for autonomous AI coding agents interacting with running software systems — web frontends and backend services/APIs. Trigger on: 'oumv', 'OUMV protocol', 'observe UI', 'observe endpoint', 'understand UI state', 'why is button disabled', 'why is this request failing', 'OCC mutation', 'verify UI action', 'verify endpoint', 'oumv client'."
 ---
 
 # Universal OUMV Protocol Agent Skill
 
-The **OUMV Protocol** (Observe, Understand, Mutate, Verify) standardizes how autonomous AI coding agents inspect, reason about, edit, and verify live user interfaces across different frontend frameworks (`tokensafe-ui`, React, Vue, Solid).
+The **OUMV Protocol** (Observe, Understand, Mutate, Verify) standardizes how autonomous AI coding agents inspect, reason about, edit, and verify live software systems — web interfaces across frontend frameworks (`tokensafe-ui`, React, Vue, Solid) as well as backend services and APIs (`tokensafe-backend`: Go, Python/FastAPI). Frontend and backend are profiles of one protocol, not separate protocols.
 
 ---
 
