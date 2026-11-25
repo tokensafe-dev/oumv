@@ -9,5 +9,6 @@
     "strict": true,
     "skipLibCheck": true,
     "esModuleInterop": true
-  }
+  },
+  "exclude": ["benchmarks", "examples", "node_modules", "dist"]
 }

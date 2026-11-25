@@ -1,0 +1,10 @@
+# OUMV full-stack demo backend requirements.
+# tokensafe-python is published to PyPI from the tokensafe-backend monorepo:
+#   pip install tokensafe-python
+# For local development against the sibling checkout:
+#   pip install -e "<path-to>/tokensafe-backend/python"
+fastapi>=0.110
+uvicorn>=0.29
+httpx>=0.27
+pydantic>=2.6
+tokensafe-python>=0.2.0

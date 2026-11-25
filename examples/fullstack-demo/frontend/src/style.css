@@ -1,0 +1,53 @@
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  max-width: 640px;
+  margin: 2rem auto;
+  padding: 0 1rem;
+  color: #1a1a1a;
+}
+
+.orders-app h1 {
+  font-size: 1.4rem;
+}
+
+.orders-app input {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  margin-right: 0.5rem;
+}
+
+.orders-app button {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 6px;
+  background: #2563eb;
+  color: #fff;
+  cursor: pointer;
+}
+
+.orders-app button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.orders-app ul {
+  list-style: none;
+  padding: 0;
+}
+
+.orders-app li {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #eee;
+  border-radius: 6px;
+  margin-bottom: 0.4rem;
+}
+
+.status-error {
+  color: #dc2626;
+}
+
+.status-saving,
+.status-loading {
+  color: #d97706;
+}

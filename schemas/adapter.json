@@ -1,0 +1,101 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://oumv.org/schemas/adapter.json",
+  "title": "OUMV Adapter Contract",
+  "description": "Language-neutral contract for OUMV adapters (spec §8). The canonical adapter description is a JSON document conforming to this schema, exchangeable between TypeScript, Go, and Python runtimes without TypeScript tooling.",
+  "type": "object",
+  "required": ["identity", "profiles", "capabilities"],
+  "properties": {
+    "identity": {
+      "type": "object",
+      "required": ["id", "name", "version"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^(frontend|backend)/[a-z0-9-]+$",
+          "description": "Stable adapter id, e.g. 'frontend/react', 'backend/fastapi'."
+        },
+        "name": { "type": "string" },
+        "version": { "type": "string" },
+        "description": { "type": "string" },
+        "repo": { "type": "string" }
+      }
+    },
+    "technology": {
+      "type": "object",
+      "properties": {
+        "language": { "type": "string", "description": "e.g. 'typescript', 'go', 'python'" },
+        "framework": { "type": "string", "description": "e.g. 'react', 'gin', 'fastapi'" },
+        "minFrameworkVersion": { "type": "string" },
+        "package": {
+          "type": "object",
+          "properties": {
+            "manager": { "type": "string", "enum": ["npm", "pip", "go", "binary"] },
+            "name": { "type": "string" },
+            "install": { "type": "string", "description": "Install command, e.g. 'npm install @tokensafe-ui/oumv'" }
+          }
+        }
+      }
+    },
+    "profiles": {
+      "type": "array",
+      "items": { "enum": ["frontend", "backend"] },
+      "minItems": 1
+    },
+    "capabilities": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "constraints"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Granular capability, e.g. 'observe.runtime_state', 'mutate.source', 'verify.runtime_behavior'."
+          },
+          "constraints": {
+            "type": "object",
+            "properties": {
+              "readOnly": { "type": "boolean" },
+              "developmentOnly": { "type": "boolean", "description": "true when the capability must not run in production" },
+              "requiresPermission": { "type": "string", "description": "Permission token required, if any" },
+              "resourceTypes": { "type": "array", "items": { "type": "string" } },
+              "limitations": { "type": "array", "items": { "type": "string" } }
+            }
+          },
+          "conformanceLevel": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 3,
+            "description": "Conformance level (spec §10) with a reproducible passing run."
+          }
+        }
+      }
+    },
+    "lifecycle": {
+      "type": "object",
+      "description": "States the adapter reports in OUMVGateway.status().",
+      "properties": {
+        "state": {
+          "type": "string",
+          "enum": ["DISCOVER", "INSTALL", "CONFIGURE", "INITIALIZE", "HANDSHAKE", "ACTIVE", "UNAVAILABLE"],
+          "description": "Current lifecycle state."
+        },
+        "health": {
+          "type": "object",
+          "properties": {
+            "status": { "type": "string", "enum": ["healthy", "degraded", "unavailable"] },
+            "lastCheckedAt": { "type": "string" },
+            "detail": { "type": "string" }
+          }
+        }
+      }
+    },
+    "security": {
+      "type": "object",
+      "properties": {
+        "productionFailClosed": { "type": "boolean", "description": "true when the adapter refuses mutation/observation in production unless explicitly enabled" },
+        "workspaceBoundary": { "type": "boolean", "description": "true when all file access is jailed to the workspace root" }
+      }
+    }
+  }
+}
