@@ -5,6 +5,13 @@ changelog tracks the OUMV specification and its reference tooling.
 
 ## Unreleased
 
+- **Node/Express/Fastify adapter** (`tokensafe-backend/node`, `tokensafe-backend-node`):
+  one framework-neutral runtime (sessions, OCC guards in normative order, Babel syntax
+  guard, route introspection, trace ring, loopback verify, discovery registry) with
+  Express and Fastify bindings over HTTP (batch included), SSE and WebSocket.
+  Certified **Level 3, 18/18** in `tokensafe-backend/certification/node-express.json`
+  and `node-fastify.json`; `adapters/*.json` and the capability gate cover both.
+
 - **Golden wire examples.** `examples/wire/{backend,frontend}/<method>.json` capture
   real request/response pairs from the net/http adapter (`TestWireExamples`) and the
   React controller (`capture-wire-examples.mjs`). The conformance suite validates

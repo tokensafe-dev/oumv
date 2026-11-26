@@ -64,6 +64,37 @@ mount_tokensafe(app, auto_discover=True)      # HTTP + SSE + WebSocket + descrip
 Autoload (`sitecustomize`) mounts the same adapter without touching the app when
 `tokensafe inject` installed the Python hook.
 
+### Node.js (Express / Fastify)
+
+```ts
+import express from 'express';
+import { OumvRuntime, mountTokensafe, tracingMiddleware } from 'tokensafe-backend-node';
+
+const app = express();
+const runtime = new OumvRuntime({ workspaceDir: process.cwd() }); // before routes: tracing wraps them
+app.use(tracingMiddleware(runtime));
+// ...your routes...
+const oumv = mountTokensafe(app, { runtime, publicUrl: 'http://127.0.0.1:3000/__oumv/rpc' });
+const server = app.listen(3000);
+const ws = oumv.attachWebSocket(server); // optional: §2.4 binding
+```
+
+Fastify is the same runtime behind its `onRoute` hook:
+
+```ts
+import Fastify from 'fastify';
+import { OumvRuntime, registerTokensafe } from 'tokensafe-backend-node';
+
+const app = Fastify();
+const oumv = await registerTokensafe(app, { runtime: new OumvRuntime({ workspaceDir: process.cwd() }) });
+app.get('/api/orders', async () => ({ orders: [] })); // captured for L1 by onRoute
+await app.listen({ port: 3000 });
+const ws = oumv.attachWebSocket();
+```
+
+`oumv/verify` dispatches over loopback HTTP against the live handler, and `applyEdit`
+writes a backup under `.tokensafe/backups/` before an OCC-checked write.
+
 ### TypeScript (frontend, Vite)
 
 ```ts
@@ -169,9 +200,11 @@ Two rules that keep reports trustworthy:
 | `backend/chi` | backend | HTTP, SSE, WS, stdio | 3 | `tokensafe-backend/certification/go-chi.json` |
 | `backend/stdhttp` | backend | HTTP, SSE, WS, stdio | 3 | `tokensafe-backend/certification/go-stdhttp.json` |
 | `backend/fastapi` | backend | HTTP, SSE, WS | 3 | `tokensafe-backend/certification/python-fastapi.json` |
+| `backend/express` | backend | HTTP, batch, SSE, WS | 3 | `tokensafe-backend/certification/node-express.json` |
+| `backend/fastify` | backend | HTTP, batch, SSE, WS | 3 | `tokensafe-backend/certification/node-fastify.json` |
 | `frontend/react` | frontend | HTTP, batch, SSE, WS | **3 with a browser tab**, 1 offline | `agent-dom/certification/react-vite-browser.json` (L3), `react-vite.json` (L1 offline) |
 
-Node/Express, Django/Flask, Next and Angular adapters follow after the v1.0 freeze.
+Django/Flask, Next and Angular adapters follow.
 
 ---
 
