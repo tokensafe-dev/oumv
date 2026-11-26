@@ -1,0 +1,136 @@
+{
+  "identity": {
+    "id": "frontend/react",
+    "name": "tokensafe-ui OUMV adapter for React + Vite",
+    "version": "0.2.0",
+    "description": "OUMV frontend adapter served by the Vite dev server (HTTP, SSE, WebSocket, batch)",
+    "repo": "https://github.com/tokensafe-dev/agent-dom"
+  },
+  "technology": {
+    "language": "typescript",
+    "framework": "react",
+    "minFrameworkVersion": "18.0.0",
+    "package": {
+      "manager": "npm",
+      "name": "tokensafe-ui",
+      "install": "npm install -D tokensafe-ui @tokensafe-ui/vite"
+    }
+  },
+  "profiles": [
+    "frontend"
+  ],
+  "capabilities": [
+    {
+      "name": "observe.pulse",
+      "constraints": {
+        "developmentOnly": true,
+        "resourceTypes": [
+          "component",
+          "route",
+          "store"
+        ]
+      },
+      "conformanceLevel": 1
+    },
+    {
+      "name": "observe.surface",
+      "constraints": {
+        "developmentOnly": true,
+        "resourceTypes": [
+          "component",
+          "route",
+          "store"
+        ]
+      },
+      "conformanceLevel": 1
+    },
+    {
+      "name": "observe.contract",
+      "constraints": {
+        "developmentOnly": true,
+        "resourceTypes": [
+          "component"
+        ]
+      },
+      "conformanceLevel": 2
+    },
+    {
+      "name": "observe.source",
+      "constraints": {
+        "developmentOnly": true,
+        "resourceTypes": [
+          "file",
+          "component"
+        ]
+      },
+      "conformanceLevel": 2
+    },
+    {
+      "name": "observe.traces",
+      "constraints": {
+        "developmentOnly": true,
+        "resourceTypes": [
+          "runtime-event"
+        ],
+        "limitations": [
+          "requires an open browser tab streaming traces over the Vite HMR channel"
+        ]
+      },
+      "conformanceLevel": 3
+    },
+    {
+      "name": "understand.impact",
+      "constraints": {
+        "developmentOnly": true,
+        "resourceTypes": [
+          "component"
+        ]
+      },
+      "conformanceLevel": 2
+    },
+    {
+      "name": "understand.causality",
+      "constraints": {
+        "developmentOnly": true,
+        "resourceTypes": [
+          "runtime-event"
+        ],
+        "limitations": [
+          "reports observed=false and a note when no browser traces exist"
+        ]
+      },
+      "conformanceLevel": 3
+    },
+    {
+      "name": "mutate.source",
+      "constraints": {
+        "developmentOnly": true,
+        "resourceTypes": [
+          "file"
+        ],
+        "limitations": [
+          "expectedVersion is mandatory; stale tokens fail with -32001"
+        ]
+      },
+      "conformanceLevel": 2
+    },
+    {
+      "name": "verify.behavior",
+      "constraints": {
+        "developmentOnly": true,
+        "resourceTypes": [
+          "component"
+        ],
+        "requiresPermission": "browser-dispatch",
+        "limitations": [
+          "synthetic browser dispatch requires a connected tab; offline runs report scope.notExecuted"
+        ]
+      },
+      "conformanceLevel": 2
+    }
+  ],
+  "security": {
+    "productionFailClosed": true,
+    "workspaceBoundary": true
+  }
+}

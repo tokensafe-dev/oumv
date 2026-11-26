@@ -1,6 +1,7 @@
 {
   "name": "@oumv/conformance",
   "version": "0.1.0",
+  "license": "Apache-2.0",
   "description": "Standardized Conformance Test Suite for OUMV Protocol Runtimes and Adapters",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -19,11 +20,16 @@
   },
   "dependencies": {
     "@oumv/protocol": "workspace:*",
-    "@oumv/schema": "workspace:*"
+    "@oumv/schema": "workspace:*",
+    "ajv": "^8.20.0"
   },
   "devDependencies": {
     "tsup": "^8.3.5",
     "typescript": "^5.7.2",
     "vitest": "^2.1.8"
+  },
+  "bin": {
+    "oumv-certify": "./dist/cli/certify.js",
+    "oumv-lint-adapter": "./dist/cli/lint-adapter.js"
   }
 }

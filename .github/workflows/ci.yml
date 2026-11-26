@@ -36,5 +36,14 @@ jobs:
       - name: Lint (typecheck)
         run: pnpm lint
 
+      - name: Lint adapter manifests
+        run: |
+          for manifest in adapters/*.json; do
+            node packages/conformance/dist/cli/lint-adapter.js "$manifest"
+          done
+
+      - name: Check adapter capabilities against fixtures
+        run: node scripts/check_adapter_capabilities.mjs
+
       - name: Run test suite
         run: pnpm test

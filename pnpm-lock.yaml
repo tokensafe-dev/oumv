@@ -133,6 +133,9 @@ importers:
       '@oumv/schema':
         specifier: workspace:*
         version: link:../schema
+      ajv:
+        specifier: ^8.20.0
+        version: 8.20.0
     devDependencies:
       tsup:
         specifier: ^8.3.5

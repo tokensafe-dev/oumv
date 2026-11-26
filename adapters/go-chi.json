@@ -1,0 +1,130 @@
+{
+  "identity": {
+    "id": "backend/chi",
+    "name": "TokenSafe OUMV adapter for chi",
+    "version": "0.4.3",
+    "description": "OUMV adapter for chi",
+    "repo": "https://github.com/tokensafe-dev/tokensafe-backend"
+  },
+  "technology": {
+    "language": "go",
+    "framework": "chi",
+    "package": {
+      "manager": "go",
+      "name": "github.com/tokensafe-dev/tokensafe-backend/go",
+      "install": "go get github.com/tokensafe-dev/tokensafe-backend/go@v0.4.3"
+    }
+  },
+  "profiles": [
+    "backend"
+  ],
+  "capabilities": [
+    {
+      "name": "observe.pulse",
+      "constraints": {
+        "developmentOnly": true,
+        "resourceTypes": [
+          "route",
+          "file"
+        ]
+      },
+      "conformanceLevel": 1
+    },
+    {
+      "name": "observe.surface",
+      "constraints": {
+        "developmentOnly": true,
+        "resourceTypes": [
+          "route",
+          "file"
+        ]
+      },
+      "conformanceLevel": 1
+    },
+    {
+      "name": "observe.contract",
+      "constraints": {
+        "developmentOnly": true,
+        "resourceTypes": [
+          "route",
+          "file"
+        ]
+      },
+      "conformanceLevel": 2
+    },
+    {
+      "name": "observe.source",
+      "constraints": {
+        "developmentOnly": true,
+        "resourceTypes": [
+          "route",
+          "file"
+        ]
+      },
+      "conformanceLevel": 2
+    },
+    {
+      "name": "observe.traces",
+      "constraints": {
+        "developmentOnly": true,
+        "resourceTypes": [
+          "route",
+          "file"
+        ],
+        "limitations": []
+      },
+      "conformanceLevel": 3
+    },
+    {
+      "name": "understand.impact",
+      "constraints": {
+        "developmentOnly": true,
+        "resourceTypes": [
+          "route",
+          "file"
+        ]
+      },
+      "conformanceLevel": 2
+    },
+    {
+      "name": "understand.causality",
+      "constraints": {
+        "developmentOnly": true,
+        "resourceTypes": [
+          "route",
+          "file"
+        ]
+      },
+      "conformanceLevel": 3
+    },
+    {
+      "name": "mutate.source",
+      "constraints": {
+        "developmentOnly": true,
+        "resourceTypes": [
+          "route",
+          "file"
+        ],
+        "limitations": [
+          "OCC expectedVersion is mandatory; stale tokens fail with -32001"
+        ]
+      },
+      "conformanceLevel": 2
+    },
+    {
+      "name": "verify.behavior",
+      "constraints": {
+        "developmentOnly": true,
+        "resourceTypes": [
+          "route",
+          "file"
+        ]
+      },
+      "conformanceLevel": 2
+    }
+  ],
+  "security": {
+    "productionFailClosed": true,
+    "workspaceBoundary": true
+  }
+}

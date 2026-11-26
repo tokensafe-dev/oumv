@@ -9,9 +9,13 @@ import {
   ApplyEditResultSchema,
   VerifyResultSchema,
 } from '@oumv/schema';
+import { determineConformanceLevel, summarizeLevels } from './levels.js';
+import type { ConformanceLevel, LevelStatus } from './levels.js';
 
-export type ConformanceLevel = 0 | 1 | 2 | 3;
-export type LevelStatus = 'passed' | 'failed' | 'skipped';
+export { determineConformanceLevel, summarizeLevels } from './levels.js';
+export type { ConformanceLevel, LevelStatus } from './levels.js';
+export * from './fixtures.js';
+export * from './transports.js';
 
 export interface ConformanceTestResult {
   name: string;
@@ -42,39 +46,10 @@ export interface ConformanceReport {
 
 /**
  * Derives the attained conformance level from raw results (spec §10).
- * Levels are cumulative: Level N requires every case at level <= N to pass.
- * A skipped case is not a pass — it caps the claim instead of inflating it.
+ *
+ * Kept as a thin alias so existing adapter self-tests keep their import path.
  */
-export function determineConformanceLevel(
-  results: Pick<ConformanceTestResult, 'level' | 'status'>[]
-): ConformanceLevel {
-  let attained: ConformanceLevel = 0;
-  for (const level of [1, 2, 3] as const) {
-    const atLevel = results.filter((r) => r.level === level);
-    // No case at this level means the level was never exercised — stop there
-    // rather than inheriting a higher claim from a shorter suite.
-    if (atLevel.length === 0) break;
-    const upTo = results.filter((r) => r.level <= level);
-    if (upTo.some((r) => r.status !== 'passed')) break;
-    attained = level;
-  }
-  return attained;
-}
-
-/** Per-level verdicts for a report. */
-export function summarizeLevels(
-  results: Pick<ConformanceTestResult, 'level' | 'status'>[]
-): Record<1 | 2 | 3, LevelStatus> {
-  const out = {} as Record<1 | 2 | 3, LevelStatus>;
-  for (const level of [1, 2, 3] as const) {
-    const atLevel = results.filter((r) => r.level === level);
-    if (atLevel.length === 0) out[level] = 'skipped';
-    else if (atLevel.some((r) => r.status === 'failed')) out[level] = 'failed';
-    else if (atLevel.some((r) => r.status === 'skipped')) out[level] = 'skipped';
-    else out[level] = 'passed';
-  }
-  return out;
-}
+export { determineConformanceLevel as deriveConformanceLevel } from './levels.js';
 
 export interface ConformanceFixture {
   componentId: string;
