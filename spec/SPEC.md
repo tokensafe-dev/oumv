@@ -1,8 +1,8 @@
 # The OUMV Protocol Specification (v1.4-canonical)
 **The Universal Agent-Runtime Protocol (UARP)**
 
-- **Date**: 2026-11-22 (v1.0) · 2026-11-26 (v1.4-canonical)  
-- **Status**: Draft Standard  
+- **Date**: 2026-11-22 (v1.0 draft) · 2026-11-26 (v1.0.0 frozen; document revision v1.4-canonical)  
+- **Status**: Stable — v1.0.0, frozen 2026-11-26  
 - **Author**: Oleg Savelev  
 - **Repository**: [github.com/tokensafe-dev/oumv](https://github.com/tokensafe-dev/oumv)
 

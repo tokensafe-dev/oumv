@@ -3,8 +3,8 @@
 
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://github.com/tokensafe-dev/oumv/blob/main/LICENSE)
 [![Spec License: CC-BY-4.0](https://img.shields.io/badge/spec-CC--BY--4.0-lightgrey.svg)](https://github.com/tokensafe-dev/oumv/blob/main/spec/LICENSE)
-[![Protocol Version](https://img.shields.io/badge/OUMV-v1.4--canonical-orange)](https://github.com/tokensafe-dev/oumv/blob/main/spec/SPEC.md)
-[![Status: Draft Standard](https://img.shields.io/badge/status-draft%20standard-yellow)](https://github.com/tokensafe-dev/oumv/blob/main/spec/SPEC.md)
+[![Protocol Version](https://img.shields.io/badge/OUMV-v1.0.0--frozen-orange)](https://github.com/tokensafe-dev/oumv/blob/main/spec/SPEC.md)
+[![Status: Stable](https://img.shields.io/badge/status-stable%20%2F%20frozen-brightgreen)](https://github.com/tokensafe-dev/oumv/blob/main/spec/SPEC.md)
 [![Specification](https://img.shields.io/badge/docs-RFC%20Specification-blue)](https://github.com/tokensafe-dev/oumv/blob/main/spec/SPEC.md)
 
 > **OUMV (Observe, Understand, Mutate, Verify) is the open, transport-agnostic standard that enables autonomous AI coding agents to inspect, reason about, safely edit, and verify software systems (user interfaces, backend services, APIs) with zero context waste.**
@@ -57,8 +57,8 @@ instead of inflating it (spec §10.1).
 | :--- | :--- | :--- | :--- |
 | Frontend | React 18/19 + Vite | `tokensafe-ui/vite` (zero-footprint bridge) | Level 3 (in-process conformance) |
 | Frontend | Vue 3 + Vite | `tokensafe-ui/vite` (DOM level) | L0-L2 advertised, not yet certified |
-| Backend | Go (Gin / Chi / net/http) | `tokensafe-backend/go/pkg/adapters/*` | Level 3, 18/18 over HTTP (fixtures v3) |
-| Backend | Python / FastAPI | `tokensafe-backend-python` (`mount_tokensafe`) | Level 3, 18/18 over ASGI (fixtures v3) |
+| Backend | Go (Gin / Chi / net/http) | `tokensafe-backend/go/pkg/adapters/*` | Level 3, 18/18 over HTTP (fixtures v4) |
+| Backend | Python / FastAPI | `tokensafe-backend-python` (`mount_tokensafe`) | Level 3, 18/18 over ASGI (fixtures v4) |
 | Backend | Node.js / Express | — | planned |
 
 The native SolidJS runtime in `tokensafe-ui` and the `tokensafe.New()` Go framework remain
@@ -111,7 +111,7 @@ Every failure is a typed JSON-RPC error. The normative table is [spec §5.1](spe
 ## Reference Implementations
 
 - [**tokensafe-ui**](https://github.com/tokensafe-dev/tokensafe-ui) — Frontend Profile accumulator: React adapter (`tokensafe-ui/react` — Zustand, Redux, Context, useReducer), Vue adapter (`tokensafe-ui/vue`), and the zero-footprint Vite bridge (`tokensafe-ui/vite`). The native SolidJS runtime remains in the package as a legacy reference implementation, not the recommended path.
-- [**tokensafe-backend**](https://github.com/tokensafe-dev/tokensafe-backend) — Backend Profile accumulator: Go adapters (`go/` — Gin, Chi, net/http) and the Python runtime (`python/` — FastAPI, SQLAlchemy rollback sandbox), published as `tokensafe-backend-python`. All four adapters are certified Level 3, 18/18 (fixtures v3, spec §10). Node.js adapters are planned, not started.
+- [**tokensafe-backend**](https://github.com/tokensafe-dev/tokensafe-backend) — Backend Profile accumulator: Go adapters (`go/` — Gin, Chi, net/http) and the Python runtime (`python/` — FastAPI, SQLAlchemy rollback sandbox), published as `tokensafe-backend-python`. All four adapters are certified Level 3, 18/18 (fixtures v4, spec §10). Node.js adapters are planned, not started.
 - [**tokensafe**](https://github.com/tokensafe-dev/tokensafe) — Main engine containing the Retrofit CLI (`tokensafe integrate`), out-of-the-box stack detection, and the MCP OUMV Gateway with Level 1 static fallback.
 
 ---
@@ -122,13 +122,14 @@ Three independent numbers, often mistaken for a mismatch:
 
 | Axis | Current | Meaning |
 | :--- | :--- | :--- |
-| Document revision | `v1.4-canonical` | Revision of `spec/SPEC.md`; see the changelog in that file. |
+| Standard release | `v1.0.0` (2026-11-26) | The frozen standard. `tokensafe-oumv` and the monorepo are at 1.0.0. |
+| Document revision | `v1.4-canonical` | The revision of `spec/SPEC.md` that v1.0.0 freezes; see the changelog in that file. |
 | Wire `protocolVersion` | `1.1.0` | Sent in `oumv/handshake`. A runtime MUST echo the version it actually serves; clients accept a matching MAJOR. |
-| Package versions | `0.x` | `tokensafe-oumv` 0.2.0, `@oumv/*` 0.1–0.2, `tokensafe-ui` 0.1.22, `tokensafe-backend` 0.4.0. |
+| Fixtures | `fixtureVersion` 4 | 18 language-neutral cases; all four certified backend adapters re-ran against v4. |
 
-A 0.x package implementing revision v1.4-canonical while speaking wire 1.1.0 is correct, not
-drift: `v1.0` is reserved for the frozen standard, and package versions only track it after
-the freeze.
+These axes move independently by design: v1.0.0 freezes a document revision (v1.4-canonical),
+a wire version (1.1.0) and a fixture set (v4). Implementations negotiate the **wire** version,
+never the document revision.
 
 ---
 
