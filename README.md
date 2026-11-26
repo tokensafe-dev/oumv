@@ -151,4 +151,5 @@ the name does not. CC-BY-4.0 lets anyone quote, translate, and implement the spe
 attribution; implementing the protocol neither requires nor grants the code license.
 
 The name "OUMV Certified" and certification reports signed by the maintainers are marks and
-are not licensed by either grant.
+are not licensed by either grant. Usage rules, including the certification program and the
+fork/package-naming boundaries: [TRADEMARK.md](TRADEMARK.md).
