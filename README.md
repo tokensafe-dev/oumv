@@ -64,8 +64,8 @@ OUMV Core defines the transport-neutral JSON-RPC 2.0 handshake, OCC mutation lif
 
 ## Reference Implementations
 
-- [**tokensafe-ui**](https://github.com/tokensafe-dev/tokensafe-ui) — Unified frontend repository hosting Native SolidJS runtime, React adapter (`@tokensafe-ui/oumv/react` for Zustand, Redux, Context, useReducer), Vue adapter (`@tokensafe-ui/oumv/vue`), and Vite dev-server plugins.
-- [**tokensafe-backend**](https://github.com/tokensafe-dev/tokensafe-backend) — Unified polyglot backend repository hosting Go runtime (`go/` with Gin, Chi, net/http) and Python runtime (`python/` with FastAPI, SQLAlchemy rollback sandbox).
+- [**tokensafe-ui**](https://github.com/tokensafe-dev/tokensafe-ui) — Frontend Profile accumulator: React adapter (`tokensafe-ui/react` — Zustand, Redux, Context, useReducer), Vue adapter (`tokensafe-ui/vue`), and the zero-footprint Vite bridge (`tokensafe-ui/vite`). The native SolidJS runtime remains in the package as a legacy reference implementation, not the recommended path.
+- [**tokensafe-backend**](https://github.com/tokensafe-dev/tokensafe-backend) — Backend Profile accumulator: Go adapters (`go/` — Gin, Chi, net/http) and the Python runtime (`python/` — FastAPI, SQLAlchemy rollback sandbox). All four adapters are certified Level 3 (spec §10).
 - [**tokensafe**](https://github.com/tokensafe-dev/tokensafe) — Main engine containing the Retrofit CLI (`tokensafe integrate`), out-of-the-box stack detection, and the MCP OUMV Gateway with Level 1 static fallback.
 
 ---
