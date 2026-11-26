@@ -3,8 +3,8 @@
 
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://github.com/tokensafe-dev/oumv/blob/main/LICENSE)
 [![Spec License: CC-BY-4.0](https://img.shields.io/badge/spec-CC--BY--4.0-lightgrey.svg)](https://github.com/tokensafe-dev/oumv/blob/main/spec/LICENSE)
-[![Protocol Version](https://img.shields.io/badge/OUMV-v1.0.0--frozen-orange)](https://github.com/tokensafe-dev/oumv/blob/main/spec/SPEC.md)
-[![Status: Stable](https://img.shields.io/badge/status-stable%20%2F%20frozen-brightgreen)](https://github.com/tokensafe-dev/oumv/blob/main/spec/SPEC.md)
+[![Protocol Version](https://img.shields.io/badge/OUMV-v1.1.0-blue)](https://github.com/tokensafe-dev/oumv/blob/main/spec/SPEC.md)
+[![Status: Stable](https://img.shields.io/badge/status-stable%20%2F%20v1.1.0-brightgreen)](https://github.com/tokensafe-dev/oumv/blob/main/spec/SPEC.md)
 [![Specification](https://img.shields.io/badge/docs-RFC%20Specification-blue)](https://github.com/tokensafe-dev/oumv/blob/main/spec/SPEC.md)
 
 > **OUMV (Observe, Understand, Mutate, Verify) is the open, transport-agnostic standard that enables autonomous AI coding agents to inspect, reason about, safely edit, and verify software systems (user interfaces, backend services, APIs) with zero context waste.**
@@ -122,14 +122,15 @@ Three independent numbers, often mistaken for a mismatch:
 
 | Axis | Current | Meaning |
 | :--- | :--- | :--- |
-| Standard release | `v1.0.0` (2026-11-26) | The frozen standard. `tokensafe-oumv` and the monorepo are at 1.0.0. |
-| Document revision | `v1.4-canonical` | The revision of `spec/SPEC.md` that v1.0.0 freezes; see the changelog in that file. |
-| Wire `protocolVersion` | `1.1.0` | Sent in `oumv/handshake`. A runtime MUST echo the version it actually serves; clients accept a matching MAJOR. |
-| Fixtures | `fixtures/conformance-cases.json` | `fixtureVersion` and the case count live in the file itself; every backend report records the revision it ran. |
+| Standard release | `v1.1.0` (2026-11-26) | Additive MINOR: multi-step verify, symbol/delete/rename mutations, pagination. `tokensafe-oumv` and the monorepo are at 1.1.0. |
+| Document revision | `v1.5-canonical` | The revision of `spec/SPEC.md`; see the changelog in that file. |
+| Wire `protocolVersion` | `1.2.0` | Sent in `oumv/handshake`. A runtime MUST echo the version it actually serves; clients accept a matching MAJOR. |
+| Fixtures | `fixtureVersion 6` (25 cases) | `fixtures/conformance-cases.json`; every report records the revision it ran. |
 
-These axes move independently by design: v1.0.0 freezes a document revision (v1.4-canonical),
-a wire version (1.1.0) and a fixture set (v4). Implementations negotiate the **wire** version,
-never the document revision.
+These axes move independently by design: v1.1.0 ships document revision v1.5-canonical,
+wire version 1.2.0 and fixture set v6. A v1.0 adapter stays valid for the capabilities it
+declares — new modes answer `-32006` where unimplemented. Implementations negotiate the
+**wire** version, never the document revision.
 
 ---
 
