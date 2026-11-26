@@ -9,7 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "tokensafe-ui": "^0.1.16",
+    "tokensafe-ui": "^0.1.19",
     "zod": "^3.23.0"
   },
   "devDependencies": {

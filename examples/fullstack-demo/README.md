@@ -11,7 +11,7 @@ This demo reproduces the MVP acceptance criteria of the
 
 | Layer | Technology | OUMV integration |
 | :--- | :--- | :--- |
-| Frontend | tokensafe-ui (SolidJS runtime) + Vite | `@tokensafe-ui/vite` dev-server bridge → `/__oumv/rpc` |
+| Frontend | tokensafe-ui (SolidJS runtime) + Vite | `tokensafe-ui/vite` dev-server bridge → `/__oumv/rpc` |
 | Backend | FastAPI + `tokensafe-python` | `mount_tokensafe(app)` → `/__oumv/rpc` |
 | Orchestration | TokenSafe CLI + MCP | `tokensafe integrate`, `oumv_*` MCP tools, static cross-stack graph |
 

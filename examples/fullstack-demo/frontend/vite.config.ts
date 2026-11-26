@@ -1,5 +1,5 @@
 import { defineConfig } from 'vite';
-import { tokensafeUi } from '@tokensafe-ui/vite';
+import { tokensafeUi } from 'tokensafe-ui/vite';
 
 // The plugin mounts the OUMV JSON-RPC bridge at /__oumv/rpc in dev mode,
 // injects data-agent-id attributes, and writes the .tokensafe/runtime.json
