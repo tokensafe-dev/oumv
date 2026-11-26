@@ -221,14 +221,28 @@ never observed an execution MUST NOT return a root cause.
 
 `getSource`: request `{path, symbol?}` → `{path, symbol?, source, version, startLine, endLine}`.
 
-`applyEdit`: request `{path, symbol?, replacement, expectedVersion}` →
+`applyEdit`: request `{path, symbol?, replacement, expectedVersion?, mode?}` → 
 ```json
-{ "status": "APPLIED"|"CURRENT", "path": "src/api/orders.go", "symbol": "CreateOrder", "newVersion": "sha256:…",
+{ "status": "APPLIED"|"CURRENT", "path": "src/api/orders.go", "symbol": "CreateOrder",
+  "newVersion": "sha256:…", "created": true,
   "syntaxCheck": { "status": "passed"|"skipped"|"failed", "tool": "go/parser", "error": "…" },
   "backupPath": "/…/.tokensafe/backups/…", "rollbackHint": "…" }
 ```
 
-Normative guards, in this order (first failure wins):
+`mode` selects the mutation (default `"replace"`; `"delete"` and `"rename"` are reserved
+for a later MINOR and MUST be rejected with `-32006` until specified):
+
+* **`replace`** — rewrite an existing file. `expectedVersion` is mandatory.
+* **`create`** — write a file that must not exist yet. `expectedVersion` MUST be absent
+  (a caller that sends it is asking to replace, not create) and `created: true` is
+  returned. Creating a file that already exists is a conflict, never a silent overwrite.
+
+Why create is a mode and not a separate method: an agent that can only edit existing
+files falls back to shell redirects for new files, which bypasses the workspace jail, the
+syntax pre-flight and the mutation policy — the four pillars would have a hole exactly
+where new code enters the repository.
+
+Normative guards for `replace`, in this order (first failure wins):
 
 | # | Guard | Error |
 | :--- | :--- | :--- |
@@ -239,9 +253,14 @@ Normative guards, in this order (first failure wins):
 | 5 | `expectedVersion` matches current bytes | `-32001 CONFLICT_DETECTED` |
 | 6 | policy allows mutation | `-32007 PERMISSION_DENIED` |
 
+For `create` the same order applies with two substitutions: guard 2 becomes
+"target does **not** exist" (`-32001 CONFLICT_DETECTED`, `data.reason="file_exists"`), and
+guard 4 becomes "`expectedVersion` is absent" (`-32011`,
+`data.reason="create_forbids_version"`).
+
 `expectedVersion` is **mandatory** for an existing file; a write without it is never
 accepted. Backups are the previous bytes; the path is reported in `backupPath` when the
-runtime keeps one.
+runtime keeps one (`create` has no previous bytes, so no backup).
 
 ### 4.4 VERIFY (`oumv/verify`)
 

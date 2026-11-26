@@ -72,6 +72,13 @@
         "expectedVersion": {
           "type": "string",
           "pattern": "^sha256:[a-f0-9]{64}$"
+        },
+        "mode": {
+          "enum": [
+            "replace",
+            "create"
+          ],
+          "description": "replace (default) edits an existing file; create writes a new one and forbids expectedVersion"
         }
       }
     },
@@ -127,6 +134,10 @@
         },
         "rollbackHint": {
           "type": "string"
+        },
+        "created": {
+          "type": "boolean",
+          "description": "true when mode=create created the file"
         }
       }
     }
