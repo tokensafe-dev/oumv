@@ -199,10 +199,15 @@ Two rules that keep reports trustworthy:
 | `backend/gin` | backend | HTTP, SSE, WS, stdio | 3 | `tokensafe-backend/certification/go-gin.json` |
 | `backend/chi` | backend | HTTP, SSE, WS, stdio | 3 | `tokensafe-backend/certification/go-chi.json` |
 | `backend/stdhttp` | backend | HTTP, SSE, WS, stdio | 3 | `tokensafe-backend/certification/go-stdhttp.json` |
-| `backend/fastapi` | backend | HTTP, SSE, WS | 3 | `tokensafe-backend/certification/python-fastapi.json` |
-| `backend/express` | backend | HTTP, batch, SSE, WS | 3 | `tokensafe-backend/certification/node-express.json` |
-| `backend/fastify` | backend | HTTP, batch, SSE, WS | 3 | `tokensafe-backend/certification/node-fastify.json` |
+| `backend/fastapi` | backend | HTTP, SSE, WS, stdio | 3 | `tokensafe-backend/certification/python-fastapi.json` |
+| `backend/express` | backend | HTTP, batch, SSE, WS, stdio | 3 | `tokensafe-backend/certification/node-express.json` |
+| `backend/fastify` | backend | HTTP, batch, SSE, WS, stdio | 3 | `tokensafe-backend/certification/node-fastify.json` |
 | `frontend/react` | frontend | HTTP, batch, SSE, WS | **3 with a browser tab**, 1 offline | `agent-dom/certification/react-vite-browser.json` (L3), `react-vite.json` (L1 offline) |
+
+The stdio claim is backed by the same fixtures run over §2.5:
+`tokensafe-backend/certification/transports/node-stdio.json` and
+`python-stdio.json` (both Level 3, 20/20), regenerated in CI next to the HTTP
+reports. A transport claim without a report is not made.
 
 Django/Flask, Next and Angular adapters follow.
 
