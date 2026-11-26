@@ -26,6 +26,7 @@ export interface ConformanceCase {
   /** Setup calls needed before the assertion (currently only `verify`). */
   preconditions?: string[];
   expectResultFields?: string[];
+  expectValues?: Record<string, unknown>;
   expectError?: ConformanceCaseError;
   expectLevelEquals?: string;
   expectSha256Field?: string;
@@ -54,6 +55,16 @@ export interface CaseMarkers {
   l2Target: string;
   l3Target: string;
   verifyTarget: string;
+  symbolFile: string;
+  symbolName: string;
+  symbolReplacement: string;
+  symbolVersion: string;
+  symbolFileContent: string;
+  deleteFile: string;
+  deleteVersion: string;
+  renameSource: string;
+  renameTarget: string;
+  renameVersion: string;
 }
 
 export interface CaseResult {
@@ -117,7 +128,26 @@ const MARKER_KEYS: Record<string, keyof CaseMarkers> = {
   '${L2_TARGET}': 'l2Target',
   '${L3_TARGET}': 'l3Target',
   '${VERIFY_TARGET}': 'verifyTarget',
+  '${SYMBOL_FILE}': 'symbolFile',
+  '${SYMBOL_NAME}': 'symbolName',
+  '${SYMBOL_REPLACEMENT}': 'symbolReplacement',
+  '${SYMBOL_VERSION}': 'symbolVersion',
+  '${SYMBOL_FILE_CONTENT}': 'symbolFileContent',
+  '${DELETE_FILE}': 'deleteFile',
+  '${DELETE_VERSION}': 'deleteVersion',
+  '${RENAME_SOURCE}': 'renameSource',
+  '${RENAME_TARGET}': 'renameTarget',
+  '${RENAME_VERSION}': 'renameVersion',
 };
+
+/** Substitutes every `${MARKER}` in a string (params and expectations). */
+export function substituteText(text: string, markers: CaseMarkers): string {
+  let replaced = text;
+  for (const [marker, field] of Object.entries(MARKER_KEYS)) {
+    replaced = replaced.split(marker).join(String(markers[field]));
+  }
+  return replaced;
+}
 
 export function defaultMarkers(overrides: Partial<CaseMarkers> = {}): CaseMarkers {
   return {
@@ -131,6 +161,16 @@ export function defaultMarkers(overrides: Partial<CaseMarkers> = {}): CaseMarker
     l2Target: 'app.main:app',
     l3Target: 'app/main.py',
     verifyTarget: 'GET /health',
+    symbolFile: '__oumv_conformance_symbol.py',
+    symbolName: 'value',
+    symbolReplacement: 'def value():\n    return 42\n',
+    symbolVersion: occVersion('def value():\n    return 41\n'),
+    symbolFileContent: 'def value():\n    return 42\n',
+    deleteFile: '__oumv_conformance_delete.py',
+    deleteVersion: occVersion('value = 1\n'),
+    renameSource: '__oumv_conformance_rename.py',
+    renameTarget: '__oumv_conformance_renamed.py',
+    renameVersion: occVersion('value = 2\n'),
     ...overrides,
   };
 }
@@ -153,23 +193,21 @@ export function loadFixtures(path: string): FixtureSpec {
   return spec;
 }
 
-/** Substitutes `${MARKER}` placeholders in string params only. */
+/** Substitutes `${MARKER}` placeholders in params, recursing into arrays/objects. */
 export function substituteMarkers(
   params: Record<string, unknown> | undefined,
   markers: CaseMarkers
 ): Record<string, unknown> {
+  const walk = (value: unknown): unknown => {
+    if (typeof value === 'string') return substituteText(value, markers);
+    if (Array.isArray(value)) return value.map(walk);
+    if (value && typeof value === 'object') {
+      return Object.fromEntries(Object.entries(value as Record<string, unknown>).map(([k, v]) => [k, walk(v)]));
+    }
+    return value;
+  };
   const out: Record<string, unknown> = {};
-  for (const [key, value] of Object.entries(params ?? {})) {
-    if (typeof value !== 'string') {
-      out[key] = value;
-      continue;
-    }
-    let replaced = value;
-    for (const [marker, field] of Object.entries(MARKER_KEYS)) {
-      replaced = replaced.split(marker).join(String(markers[field]));
-    }
-    out[key] = replaced;
-  }
+  for (const [key, value] of Object.entries(params ?? {})) out[key] = walk(value);
   return out;
 }
 
@@ -181,9 +219,13 @@ export function occVersion(content: string): string {
 function jsonPathValue(data: unknown, path: string): { found: boolean; value?: unknown } {
   let current: unknown = data;
   for (const segment of path.split('.')) {
-    if (current === null || typeof current !== 'object' || Array.isArray(current)) {
-      return { found: false };
+    if (Array.isArray(current)) {
+      const index = Number(segment);
+      if (!Number.isInteger(index) || index < 0 || index >= current.length) return { found: false };
+      current = current[index];
+      continue;
     }
+    if (current === null || typeof current !== 'object') return { found: false };
     const record = current as Record<string, unknown>;
     if (!(segment in record)) return { found: false };
     current = record[segment];
@@ -251,8 +293,16 @@ export function evaluateCase(c: ConformanceCase, response: JsonRpcResponse, mark
       return `evidence provenance ${JSON.stringify(provenance)} is not a spec §6.2 value`;
     }
   }
+  for (const [path, rawWant] of Object.entries(c.expectValues ?? {})) {
+    const want = typeof rawWant === 'string' ? substituteText(rawWant, markers) : rawWant;
+    const { found, value } = jsonPathValue(result, path);
+    if (!found) return `result missing expected path ${JSON.stringify(path)}`;
+    if (JSON.stringify(value) !== JSON.stringify(want)) {
+      return `expected ${path}=${JSON.stringify(want)}, got ${JSON.stringify(value)}`;
+    }
+  }
   if (c.expectVersionMatchesContent) {
-    const expected = c.expectVersionMatchesContent.split('${EDIT_CONTENT}').join(markers.editContent);
+    const expected = substituteText(c.expectVersionMatchesContent, markers);
     const version = (result as Record<string, unknown> | undefined)?.newVersion;
     const want = occVersion(expected);
     if (version !== want) {

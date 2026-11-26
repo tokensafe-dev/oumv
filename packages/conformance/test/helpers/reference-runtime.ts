@@ -31,7 +31,7 @@ export function referenceRuntime(request: JsonRpcRequest): JsonRpcResponse {
   switch (request.method) {
     case 'oumv/handshake':
       return ok({
-        protocolVersion: '1.1.0',
+        protocolVersion: '1.2.0',
         profile: 'backend',
         sessionId: 'sess-reference',
         ttlSeconds: 3600,
@@ -50,7 +50,14 @@ export function referenceRuntime(request: JsonRpcRequest): JsonRpcResponse {
       }
       const level = String(params.level);
       if (level === 'L0') return ok({ level, format: 'json', data: { route: '/', mountedComponents: 3 } });
-      if (level === 'L1') return ok({ level, format: 'json', data: { target: params.target ?? '/', elements: [] } });
+      if (level === 'L1') {
+        const elements = [{ id: 'one' }, { id: 'two' }];
+        const limit = Number(params.limit) > 0 ? Math.floor(Number(params.limit)) : 0;
+        if (limit && limit < elements.length) {
+          return ok({ level, format: 'json', data: { target: params.target ?? '/', elements: elements.slice(0, limit), hasMore: true, nextCursor: String(limit) } });
+        }
+        return ok({ level, format: 'json', data: { target: params.target ?? '/', elements } });
+      }
       if (level === 'L2') {
         if (!params.target) return fail(-32602, 'INVALID_PARAMS: target is required');
         return ok({
@@ -134,6 +141,24 @@ export function referenceRuntime(request: JsonRpcRequest): JsonRpcResponse {
       });
 
     case 'oumv/verify':
+      if (Array.isArray(params.steps) && params.steps.length > 0) {
+        const steps = (params.steps as Array<Record<string, any>>).map((step) => ({
+          target: String(step.target),
+          statusCode: 200,
+          status: 'passed',
+          responseBody: '{}',
+        }));
+        return ok({
+          status: 'passed',
+          target: String(params.target ?? steps[0].target),
+          statusCode: 200,
+          steps,
+          diff: { stepCount: steps.length },
+          timings: { t_action_ms: 0.8, t_total_ms: 1.2 },
+          durationMs: 1.2,
+          scope: { checked: ['ordered steps'], notExecuted: [], notSupported: [] },
+        });
+      }
       return ok({
         status: 'passed',
         target: String(params.target),
@@ -159,6 +184,48 @@ export function referenceRuntime(request: JsonRpcRequest): JsonRpcResponse {
           newVersion: occToken(String(params.replacement)),
           syntaxCheck: { status: 'passed', tool: 'reference' },
           created: true,
+        });
+      }
+      if (params.mode === 'delete') {
+        if (params.replacement !== undefined && String(params.replacement) !== '') {
+          return fail(-32011, 'VALIDATION_FAILED: replacement must be omitted for mode=delete', {
+            reason: 'replacement_forbidden',
+          });
+        }
+        if (!params.expectedVersion) {
+          return fail(-32011, 'VALIDATION_FAILED: expectedVersion is required', { reason: 'expected_version_required' });
+        }
+        return ok({ status: 'APPLIED', path: params.path, syntaxCheck: { status: 'skipped' }, deleted: true });
+      }
+      if (params.mode === 'rename') {
+        if (!params.renameTo) {
+          return fail(-32011, 'VALIDATION_FAILED: renameTo is required for mode=rename', {
+            reason: 'rename_to_required',
+          });
+        }
+        if (params.replacement !== undefined && String(params.replacement) !== '') {
+          return fail(-32011, 'VALIDATION_FAILED: replacement must be omitted for mode=rename', {
+            reason: 'replacement_forbidden',
+          });
+        }
+        if (!params.expectedVersion) {
+          return fail(-32011, 'VALIDATION_FAILED: expectedVersion is required', { reason: 'expected_version_required' });
+        }
+        return ok({ status: 'APPLIED', path: params.path, newPath: params.renameTo, syntaxCheck: { status: 'skipped' } });
+      }
+      if (params.mode === 'symbol') {
+        if (!params.symbol) {
+          return fail(-32011, 'VALIDATION_FAILED: symbol is required for mode=symbol', { reason: 'symbol_required' });
+        }
+        if (!params.expectedVersion) {
+          return fail(-32011, 'VALIDATION_FAILED: expectedVersion is required', { reason: 'expected_version_required' });
+        }
+        return ok({
+          status: 'APPLIED',
+          path: params.path,
+          symbol: params.symbol,
+          newVersion: occToken(String(params.replacement)),
+          syntaxCheck: { status: 'passed', tool: 'reference' },
         });
       }
       if (!params.expectedVersion) {
