@@ -1,13 +1,15 @@
 # OUMV: The Universal Agent-Runtime Protocol (UARP)
 ### Observe · Understand · Mutate · Verify
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/tokensafe-dev/oumv/blob/main/LICENSE)
-[![Protocol Version](https://img.shields.io/badge/OUMV-v1.3--guidance-orange)](https://github.com/tokensafe-dev/oumv/blob/main/spec/SPEC.md)
+[![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://github.com/tokensafe-dev/oumv/blob/main/LICENSE)
+[![Spec License: CC-BY-4.0](https://img.shields.io/badge/spec-CC--BY--4.0-lightgrey.svg)](https://github.com/tokensafe-dev/oumv/blob/main/spec/LICENSE)
+[![Protocol Version](https://img.shields.io/badge/OUMV-v1.4--canonical-orange)](https://github.com/tokensafe-dev/oumv/blob/main/spec/SPEC.md)
+[![Status: Draft Standard](https://img.shields.io/badge/status-draft%20standard-yellow)](https://github.com/tokensafe-dev/oumv/blob/main/spec/SPEC.md)
 [![Specification](https://img.shields.io/badge/docs-RFC%20Specification-blue)](https://github.com/tokensafe-dev/oumv/blob/main/spec/SPEC.md)
 
 > **OUMV (Observe, Understand, Mutate, Verify) is the open, transport-agnostic standard that enables autonomous AI coding agents to inspect, reason about, safely edit, and verify software systems (user interfaces, backend services, APIs) with zero context waste.**
 >
-> With the **OUMV Retrofit Architecture**, any existing application (React, Vue, SolidJS, Go, Python/FastAPI, Node.js) can adopt OUMV progressively without rewriting its framework.
+> With the **OUMV Retrofit Architecture**, any existing application (React, Vue, SolidJS, Go, Python/FastAPI; Node.js adapters are planned) can adopt OUMV progressively without rewriting its framework.
 
 ---
 
@@ -47,15 +49,16 @@ OUMV Core defines the transport-neutral JSON-RPC 2.0 handshake, OCC mutation lif
 ### Supported stacks (adapters, not frameworks of our own)
 
 OUMV ships adapters for stacks users already have; there is no requirement to adopt a
-TokenSafe runtime. Each adapter below is certified per spec §10 — reports live in the
-implementation repo and are reproduced in CI.
+TokenSafe runtime. Certified rows have a committed report or a CI test asserting the level;
+uncertified rows are advertised capability, not a claim — a skipped case caps the claim
+instead of inflating it (spec §10.1).
 
 | Profile | Stack | Adapter entry point | Certification |
 | :--- | :--- | :--- | :--- |
 | Frontend | React 18/19 + Vite | `tokensafe-ui/vite` (zero-footprint bridge) | Level 3 (in-process conformance) |
 | Frontend | Vue 3 + Vite | `tokensafe-ui/vite` (DOM level) | L0-L2 advertised, not yet certified |
-| Backend | Go (Gin / Chi / net/http) | `tokensafe-backend/go/pkg/adapters/*` | Level 3, 15/15 over HTTP |
-| Backend | Python / FastAPI | `tokensafe-python` (`mount_tokensafe`) | Level 3, 15/15 over ASGI |
+| Backend | Go (Gin / Chi / net/http) | `tokensafe-backend/go/pkg/adapters/*` | Level 3, 18/18 over HTTP (fixtures v3) |
+| Backend | Python / FastAPI | `tokensafe-backend-python` (`mount_tokensafe`) | Level 3, 18/18 over ASGI (fixtures v3) |
 | Backend | Node.js / Express | — | planned |
 
 The native SolidJS runtime in `tokensafe-ui` and the `tokensafe.New()` Go framework remain
@@ -65,7 +68,33 @@ in the trees as reference implementations for tests; they are not the recommende
 
 - **Resource Reference (`ResourceReference`)**: Unified descriptor with stable resource ID, URI, source location, and available operations.
 - **Evidence Metadata (`EvidenceMetadata`)**: Every discovered relationship carries provenance (`static`, `runtime`, `contract`, `inferred`) and confidence (`confirmed`, `probable`, `unknown`).
-- **Standardized Error Model**: Distinct codes for `CONFLICT_DETECTED (-32001)`, `SYNTAX_ERROR (-32002)`, `SECURITY_VIOLATION (-32003)`, `TARGET_NOT_FOUND (-32004)`, `UNSUPPORTED_CAPABILITY (-32006)`, `PERMISSION_DENIED (-32007)`, and `RUNTIME_UNAVAILABLE (-32008)`.
+- **Standardized Error Model**: one typed JSON-RPC code per failure mode, never a silent no-op — full table in [Error model](#error-model) below.
+
+---
+
+## Error model
+
+Every failure is a typed JSON-RPC error. The normative table is [spec §5.1](spec/SPEC.md); this is the same set, kept in sync by hand.
+
+| Code | Name | Emitted when |
+| :--- | :--- | :--- |
+| **-32700** | `PARSE_ERROR` | Body is not valid JSON. |
+| **-32600** | `INVALID_REQUEST` | Not a valid JSON-RPC 2.0 request. |
+| **-32601** | `METHOD_NOT_FOUND` | Unknown `oumv/*` method. |
+| **-32602** | `INVALID_PARAMS` | Params missing or of the wrong type. |
+| **-32001** | `CONFLICT_DETECTED` | `expectedVersion` does not match the current bytes. |
+| **-32002** | `SYNTAX_ERROR` | Replacement failed the syntax pre-flight. |
+| **-32003** | `SECURITY_VIOLATION` | Path escapes the workspace or targets a sensitive file. |
+| **-32004** | `TARGET_NOT_FOUND` | Endpoint/component/symbol target does not exist in the runtime. |
+| **-32005** | `ACTION_NOT_FOUND` | Named action/effect is not defined on the target. |
+| **-32006** | `UNSUPPORTED_CAPABILITY` | Method/level/query not implemented (never a silent no-op). |
+| **-32007** | `PERMISSION_DENIED` | Policy forbids the operation. |
+| **-32008** | `RUNTIME_UNAVAILABLE` | Runtime or its sandbox is unreachable. |
+| **-32009** | `RESOURCE_NOT_FOUND` | File/resource does not exist. |
+| **-32011** | `VALIDATION_FAILED` | Payload violated a contract (missing `expectedVersion`, expired session). |
+| **-32603** | `INTERNAL_ERROR` | Unexpected adapter failure. |
+
+`-32010` is reserved and MUST NOT be emitted. `applyEdit` has a fixed guard order: workspace boundary → resource exists → syntax pre-flight → `expectedVersion` present → OCC match → policy (spec §4.3).
 
 ---
 
@@ -82,8 +111,24 @@ in the trees as reference implementations for tests; they are not the recommende
 ## Reference Implementations
 
 - [**tokensafe-ui**](https://github.com/tokensafe-dev/tokensafe-ui) — Frontend Profile accumulator: React adapter (`tokensafe-ui/react` — Zustand, Redux, Context, useReducer), Vue adapter (`tokensafe-ui/vue`), and the zero-footprint Vite bridge (`tokensafe-ui/vite`). The native SolidJS runtime remains in the package as a legacy reference implementation, not the recommended path.
-- [**tokensafe-backend**](https://github.com/tokensafe-dev/tokensafe-backend) — Backend Profile accumulator: Go adapters (`go/` — Gin, Chi, net/http) and the Python runtime (`python/` — FastAPI, SQLAlchemy rollback sandbox). All four adapters are certified Level 3 (spec §10).
+- [**tokensafe-backend**](https://github.com/tokensafe-dev/tokensafe-backend) — Backend Profile accumulator: Go adapters (`go/` — Gin, Chi, net/http) and the Python runtime (`python/` — FastAPI, SQLAlchemy rollback sandbox), published as `tokensafe-backend-python`. All four adapters are certified Level 3, 18/18 (fixtures v3, spec §10). Node.js adapters are planned, not started.
 - [**tokensafe**](https://github.com/tokensafe-dev/tokensafe) — Main engine containing the Retrofit CLI (`tokensafe integrate`), out-of-the-box stack detection, and the MCP OUMV Gateway with Level 1 static fallback.
+
+---
+
+## Versioning
+
+Three independent numbers, often mistaken for a mismatch:
+
+| Axis | Current | Meaning |
+| :--- | :--- | :--- |
+| Document revision | `v1.4-canonical` | Revision of `spec/SPEC.md`; see the changelog in that file. |
+| Wire `protocolVersion` | `1.1.0` | Sent in `oumv/handshake`. A runtime MUST echo the version it actually serves; clients accept a matching MAJOR. |
+| Package versions | `0.x` | `tokensafe-oumv` 0.2.0, `@oumv/*` 0.1–0.2, `tokensafe-ui` 0.1.22, `tokensafe-backend` 0.4.0. |
+
+A 0.x package implementing revision v1.4-canonical while speaking wire 1.1.0 is correct, not
+drift: `v1.0` is reserved for the frozen standard, and package versions only track it after
+the freeze.
 
 ---
 
@@ -95,4 +140,15 @@ Read the complete RFC specification in [spec/SPEC.md](https://github.com/tokensa
 
 ## License
 
-MIT © 2026 TokenSafe & Contributors
+| Artifact | License |
+| :--- | :--- |
+| Implementations (`packages/`, `schemas/`, `examples/`) | [Apache-2.0](LICENSE) |
+| Specification text (`spec/SPEC.md`) and conformance fixtures (`fixtures/`) | [CC-BY-4.0](spec/LICENSE) |
+
+Apache-2.0 adds an express patent grant (§3), terminates that grant for anyone who sues over
+the software, and explicitly excludes trademark rights (§6) — so the code stays open while
+the name does not. CC-BY-4.0 lets anyone quote, translate, and implement the spec with
+attribution; implementing the protocol neither requires nor grants the code license.
+
+The name "OUMV Certified" and certification reports signed by the maintainers are marks and
+are not licensed by either grant.

@@ -1,7 +1,7 @@
 # The OUMV Protocol Specification (v1.4-canonical)
 **The Universal Agent-Runtime Protocol (UARP)**
 
-- **Date**: 2026-11-22 (v1.0) · 2026-11-24 (v1.1-retrofit)  
+- **Date**: 2026-11-22 (v1.0) · 2026-11-26 (v1.4-canonical)  
 - **Status**: Draft Standard  
 - **Author**: Oleg Savelev  
 - **Repository**: [github.com/tokensafe-dev/oumv](https://github.com/tokensafe-dev/oumv)
@@ -12,7 +12,7 @@
 
 The **OUMV Protocol** (Observe, Understand, Mutate, Verify) defines an open, transport-agnostic standard for autonomous AI coding agents to inspect, reason about, modify, and verify running software systems (user interfaces, backend services, APIs) in real time.
 
-Much like the **Language Server Protocol (LSP)** decouples code intelligence from editor implementations, and the **Model Context Protocol (MCP)** standardizes tool calling for LLMs, **OUMV (The Universal Agent-Runtime Protocol)** decouples agent runtime interaction from technology stacks (tokensafe-ui, React, Vue, tokensafe-backend, Go, Node.js).
+Much like the **Language Server Protocol (LSP)** decouples code intelligence from editor implementations, and the **Model Context Protocol (MCP)** standardizes tool calling for LLMs, **OUMV (The Universal Agent-Runtime Protocol)** decouples agent runtime interaction from technology stacks (tokensafe-ui, React, Vue; tokensafe-backend, Go, Python — Node.js adapters are planned, not shipped).
 
 ```text
        AI Coding Agent (Claude Code / Codex / Antigravity)
@@ -447,7 +447,7 @@ The ecosystem consolidates technology knowledge into **two accumulator libraries
 
 | Repository | Role |
 | :--- | :--- |
-| [tokensafe-backend](https://github.com/tokensafe-dev/tokensafe-backend) | Backend Profile accumulator: Go runtime (native typed router, Gin, Chi, net/http) **and** Python/FastAPI runtime (pip package `tokensafe-python`, published from the `python/` subdirectory). |
+| [tokensafe-backend](https://github.com/tokensafe-dev/tokensafe-backend) | Backend Profile accumulator: Go runtime (native typed router, Gin, Chi, net/http) **and** Python/FastAPI runtime (package `tokensafe-backend-python` in the `python/` subdirectory — not on PyPI by decision). |
 | [tokensafe-ui](https://github.com/tokensafe-dev/tokensafe-ui) | Frontend Profile accumulator: native SolidJS runtime, React adapter (Zustand/Redux/Context/useReducer), Vue adapter, Vite dev-server bridge. |
 | [tokensafe](https://github.com/tokensafe-dev/tokensafe) | Orchestration: Retrofit CLI (`tokensafe integrate`), OUMV Gateway MCP tools, static Level-1 fallback, cross-stack graph. |
 

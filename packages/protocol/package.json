@@ -1,6 +1,7 @@
 {
   "name": "@oumv/protocol",
   "version": "0.2.0",
+  "license": "Apache-2.0",
   "description": "Universal OUMV Protocol TypeScript Contracts, Types, and Capability Flags",
   "type": "module",
   "main": "./dist/index.cjs",

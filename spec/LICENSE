@@ -1,0 +1,22 @@
+The OUMV Protocol specification document (SPEC.md) and the language-neutral
+conformance fixtures (../fixtures/) are licensed under the Creative Commons
+Attribution 4.0 International License (CC-BY-4.0).
+
+You are free to share and adapt this material for any purpose, including
+commercially, provided that you give appropriate credit, link to the license,
+and indicate if changes were made. No additional restrictions may be applied.
+
+    Attribution: "OUMV Protocol Specification (UARP), (c) 2026 Oleg Savelev,
+    https://github.com/tokensafe-dev/oumv" — for implementations, also cite
+    the document revision you implement (e.g. v1.4-canonical).
+
+    Canonical license text: https://creativecommons.org/licenses/by/4.0/legalcode
+
+Out of scope of this notice:
+
+  * Protocol implementations, the JSON Schemas used by validators, and all
+    code in this repository (packages/, examples/, schemas/) are licensed
+    under the Apache License 2.0 — see ../LICENSE.
+  * The "OUMV Certified" name, the certification badge, and conformance
+    reports signed by the protocol maintainers are trademarks and certified
+    marks. Neither license grants rights to use them.
