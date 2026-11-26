@@ -50,7 +50,7 @@ describe('language-neutral conformance fixtures', () => {
   it('references the OUMV spec, protocol version and fixture version', () => {
     const data = loadFixture();
     expect(data.protocolVersion).toBe('1.1.0');
-    expect(data.fixtureVersion).toBe(4);
+    expect(data.fixtureVersion).toBe(5);
     expect(data.spec).toContain('SPEC.md');
   });
 
@@ -95,9 +95,21 @@ describe('language-neutral conformance fixtures', () => {
 
   it('mutations never rely on an implicit version (OCC is mandatory)', () => {
     const editCases = loadFixture().cases.filter((c) => c.method === 'oumv/applyEdit');
-    const withoutVersion = editCases.filter((c) => c.params.expectedVersion === undefined);
-    expect(withoutVersion.map((c) => c.id)).toEqual(['apply-edit-without-version-rejected']);
-    expect(withoutVersion[0].expectError?.code).toBe(-32011);
+    const withoutVersion = editCases
+      .filter((c) => c.params.expectedVersion === undefined)
+      .map((c) => c.id)
+      .sort();
+    // Allowed only for the guard case itself, or when mode=create forbids the version.
+    expect(withoutVersion).toEqual([
+      'apply-edit-without-version-rejected',
+      'create-existing-file-rejected',
+      'create-new-file',
+    ]);
+    const guard = editCases.find((c) => c.id === 'apply-edit-without-version-rejected')!;
+    expect(guard.expectError?.code).toBe(-32011);
+    for (const id of ['create-existing-file-rejected', 'create-new-file']) {
+      expect(editCases.find((c) => c.id === id)!.params.mode).toBe('create');
+    }
   });
 
   it('every case declares a valid expectation', () => {

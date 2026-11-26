@@ -192,6 +192,10 @@ Response envelope (all levels):
 | L4 | `{target?, traces: [{method, path, route?, handler?, statusCode, durationMs, timestamp}], traceCount, note?}` | `{target?, events: [{type, signal?, value?, timestamp}], count}` |
 
 Rules: `target` is required for L2/L3; a target that cannot be resolved is `-32009`.
+`tokenEstimate` is the number of tokens in the returned `payload`/`data` under the
+adapter's documented tokenizer — never an estimate of the whole conversation. It is
+advisory (agents use it to budget an observation before making it) and MUST be omitted
+rather than guessed when the adapter has no calibrated tokenizer.
 `format` is a rendering hint: an adapter MAY return an additional `payload` string when
 `format` is `"yaml"` — the same information as `data`, rendered for token efficiency.
 `data` stays structured in every format, so an agent never has to parse YAML to act.
@@ -276,6 +280,8 @@ Request: `{target, method?, action?, payload?, headers?}` →
 `status` is `passed` iff the dispatched action satisfied the request (HTTP status < 400 for
 request targets). `surfaceDiff` is frontend-only. `rolledBack` MUST only be `true` when a
 rollback was observed; otherwise `rollbackStatus` says `unverified` or `not_applicable`.
+No v1.x runtime implements rollback yet, so both fields are normally **omitted** — an
+adapter must not emit `rolledBack: false` to imply a rollback happened and was verified.
 `scope` is mandatory: a verifier MUST state what it did not execute.
 
 ### 4.5 Target grammar
@@ -501,7 +507,7 @@ Conformance is **per adapter and per profile**, and it is a claim that MUST be b
 
 ### 10.2 Language-neutral fixtures
 
-Cases live in `fixtures/conformance-cases.json` (`fixtureVersion` 4). Every case declares the `level` it certifies and may declare `preconditions` such as `verify` (which establishes the runtime evidence that L4/causality cases assert on). Each runtime executes the same file with its native toolchain — no TypeScript required for Go or Python certification.
+Cases live in `fixtures/conformance-cases.json` (`fixtureVersion` 5). Every case declares the `level` it certifies and may declare `preconditions` such as `verify` (which establishes the runtime evidence that L4/causality cases assert on). Each runtime executes the same file with its native toolchain — no TypeScript required for Go or Python certification.
 
 A case declares its expectations declaratively: `expectResultFields`, `expectError.code` (with optional `expectError.data`), `expectLevelEquals`, `expectSha256Field`, `expectArrayField`, `expectEvidence`, `expectVersionMatchesContent`. The reference runners are the Go/Python packages in `tokensafe-backend` and `@oumv/conformance` (CLI `oumv-certify`); a certification claim is reproduced in CI by re-running one of them.
 
@@ -516,7 +522,7 @@ A level claim MUST be accompanied by a report (schema: `schemas/conformance-repo
   "adapterName": "go-gin",
   "framework": "gin",
   "specVersion": "1.1.0",
-  "fixtureVersion": 4,
+  "fixtureVersion": 5,
   "total": 15, "passed": 15, "failed": 0,
   "attainedLevel": 3,
   "levels": { "1": "passed", "2": "passed", "3": "passed" },

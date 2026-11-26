@@ -48,7 +48,7 @@ describe('fixture-driven conformance runner', () => {
     expect(report.failed).toBe(0);
     expect(report.attainedLevel).toBe(3);
     expect(report.levels).toEqual({ 1: 'passed', 2: 'passed', 3: 'passed' });
-    expect(report.fixtureVersion).toBe(4);
+    expect(report.fixtureVersion).toBe(5);
     expect(report.specVersion).toBe(spec.protocolVersion);
     expect(validateReport(report), reportErrors().join('; ')).toBe(true);
   });

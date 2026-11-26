@@ -47,6 +47,7 @@ export interface CaseMarkers {
   fixtureFile: string;
   missingFile: string;
   editTarget: string;
+  newFile: string;
   editVersion: string;
   editContent: string;
   brokenContent: string;
@@ -110,6 +111,7 @@ const MARKER_KEYS: Record<string, keyof CaseMarkers> = {
   '${MISSING_FILE}': 'missingFile',
   '${EDIT_TARGET_FILE}': 'editTarget',
   '${EDIT_TARGET_VERSION}': 'editVersion',
+  '${NEW_FILE}': 'newFile',
   '${EDIT_CONTENT}': 'editContent',
   '${BROKEN_CONTENT}': 'brokenContent',
   '${L2_TARGET}': 'l2Target',
@@ -122,6 +124,7 @@ export function defaultMarkers(overrides: Partial<CaseMarkers> = {}): CaseMarker
     fixtureFile: '__oumv_conformance_target.py',
     missingFile: '__oumv_conformance_missing.py',
     editTarget: '__oumv_conformance_edit.py',
+    newFile: '__oumv_conformance_created.py',
     editVersion: '',
     editContent: 'value = 1\n',
     brokenContent: 'def broken(:\n  pass\n',

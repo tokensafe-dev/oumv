@@ -5,6 +5,17 @@ changelog tracks the OUMV specification and its reference tooling.
 
 ## Unreleased
 
+- **`applyEdit` gains `mode: "create"`** (§4.3): new files are written through the
+  protocol instead of shell redirects, with the guard order jail → version-forbidden →
+  syntax → must-not-exist, `created: true` in the result, and `delete`/`rename` reserved
+  behind `-32006`. Implemented in Go, Python, Node and the React controller.
+- **Fixtures v5 (20 cases)** add `create-new-file` and `create-existing-file-rejected`;
+  all six backend adapters and the React adapter re-certified (20/20; React Level 3 in a
+  browser, Level 1 offline with the three browser-only failures named).
+- `tokenEstimate` semantics defined (payload tokens under the adapter's tokenizer, omit
+  rather than guess); `rolledBack`/`rollbackStatus` documented as normally omitted until
+  a runtime implements rollback.
+
 - **Node/Express/Fastify adapter** (`tokensafe-backend/node`, `tokensafe-backend-node`):
   one framework-neutral runtime (sessions, OCC guards in normative order, Babel syntax
   guard, route introspection, trace ring, loopback verify, discovery registry) with

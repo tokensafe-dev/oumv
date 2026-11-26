@@ -9,6 +9,10 @@ import crypto from 'node:crypto';
 import type { JsonRpcRequest, JsonRpcResponse } from '../../src/fixtures.js';
 
 export const REFERENCE_SOURCE = 'value = 1\n';
+// The reference runtime has no disk. A path "exists" unless it carries the create
+// marker ("created" appears in every runner's ${NEW_FILE}), which keeps create-mode
+// outcomes deterministic across cases.
+const pathExists = (candidate: string) => !String(candidate).includes('created');
 export const ZERO_VERSION = `sha256:${'0'.repeat(64)}`;
 
 export function occToken(content: string): string {
@@ -140,6 +144,23 @@ export function referenceRuntime(request: JsonRpcRequest): JsonRpcResponse {
       });
 
     case 'oumv/applyEdit': {
+      if (params.mode === 'create') {
+        if (params.expectedVersion) {
+          return fail(-32011, 'VALIDATION_FAILED: expectedVersion must be omitted for mode=create', {
+            reason: 'create_forbids_version',
+          });
+        }
+        if (pathExists(String(params.path))) {
+          return fail(-32001, 'CONFLICT_DETECTED: file already exists', { reason: 'file_exists' });
+        }
+        return ok({
+          status: 'APPLIED',
+          path: params.path,
+          newVersion: occToken(String(params.replacement)),
+          syntaxCheck: { status: 'passed', tool: 'reference' },
+          created: true,
+        });
+      }
       if (!params.expectedVersion) {
         return fail(-32011, 'VALIDATION_FAILED: expectedVersion is required', { reason: 'missing_version' });
       }
