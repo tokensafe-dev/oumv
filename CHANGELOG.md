@@ -3,7 +3,22 @@
 The wire contract is versioned by `protocolVersion` (currently **1.1.0**); this
 changelog tracks the OUMV specification and its reference tooling.
 
-## Unreleased
+## v1.0.1 — 2026-11-26 (reference tooling patch)
+
+No wire changes: `protocolVersion` stays **1.1.0** and the v1.0.0 fixtures/reports stay
+valid. This release ships the adapter-level fixes found by the first measured agent matrix.
+
+- **Go adapter: `observe L3` accepts endpoint targets** per the §4 grammar (`"METHOD /path"`,
+  `"/path"`). Adapters that hold the handler function register its reflection-derived
+  `file:line` (`RegisterRouteSource`), and the runtime returns the innermost enclosing
+  function with the sha256 OCC version. One call now replaces search + read for a route.
+- **React controller: symbol slices for class methods** (`toggleTask` and
+  `Store.toggleTask`), so `getSource` no longer falls back to the whole file; the
+  deprecated §4.6 `payload` alias is no longer emitted by `observe` (it duplicated `data`
+  and doubled L1). `create` mode and the OCC guards are unchanged.
+- **Measured agent matrix** published by the product repositories (Go and React/Vite,
+  3 tasks × 3 runs × 2 arms, real oracle, provider `usage`); this repo only links to the
+  reports in [`docs/BENCHMARKS.md`](docs/BENCHMARKS.md).
 
 - **`applyEdit` gains `mode: "create"`** (§4.3): new files are written through the
   protocol instead of shell redirects, with the guard order jail → version-forbidden →
@@ -20,7 +35,7 @@ changelog tracks the OUMV specification and its reference tooling.
   one framework-neutral runtime (sessions, OCC guards in normative order, Babel syntax
   guard, route introspection, trace ring, loopback verify, discovery registry) with
   Express and Fastify bindings over HTTP (batch included), SSE and WebSocket.
-  Certified **Level 3, 18/18** in `tokensafe-backend/certification/node-express.json`
+  Certified **Level 3, 20/20** (fixtures v5) in `tokensafe-backend/certification/node-express.json`
   and `node-fastify.json`; `adapters/*.json` and the capability gate cover both.
 
 - **Golden wire examples.** `examples/wire/{backend,frontend}/<method>.json` capture
@@ -32,16 +47,16 @@ changelog tracks the OUMV specification and its reference tooling.
   observe `levels`/`formats` to the client's `requestedCapabilities`; an empty
   intersection is reported as `[]` instead of being widened back.
 - **Canonical result types.** `@oumv/schema` (zod) now mirrors §4: observe is
-  `{level, format, data, payload?}`, getSource is `path`-keyed, applyEdit returns
+  `{level, format, data}`, getSource is `path`-keyed, applyEdit returns
   `status/path/newVersion`, verify requires timings/scope. The legacy in-process
   `runConformanceSuite` was removed — the fixture runner is the single definition
   of conformance.
-- **React adapter conformance.** Profile metadata moved inside `data` (the envelope
-  is `{level, format, data}` plus the optional YAML `payload`), L1 exposes spec
-  `elements`, L2/L3 `payload`/`data` are canonical, `getSource` no longer emits the
+- **React adapter conformance.** Profile metadata moved inside `data` (the envelope is
+  `{level, format, data}` only — the deprecated `payload` alias is never emitted), L1
+  exposes spec `elements`, L2/L3 `data` is canonical, `getSource` no longer emits the
   `filePath` alias. Two committed reports now exist: `react-vite.json` (offline,
   Level 1 — `verify` answers `-32008` without a tab) and
-  `react-vite-browser.json` (**Level 3, 18/18** in headless Chrome via
+  `react-vite-browser.json` (**Level 3, 20/20** in headless Chrome via
   `certify-react-browser.mjs` over the committed `certification/app`). The same
   Level 3 result is asserted in `react-conformance.test.ts` with a stubbed bridge.
 
