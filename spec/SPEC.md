@@ -1,4 +1,4 @@
-# The OUMV Protocol Specification (v1.3-guidance)
+# The OUMV Protocol Specification (v1.4-canonical)
 **The Universal Agent-Runtime Protocol (UARP)**
 
 - **Date**: 2026-11-22 (v1.0) · 2026-11-24 (v1.1-retrofit)  
@@ -72,9 +72,57 @@ Error Response:
 }
 ```
 
+### 2.2 HTTP binding (MUST for every adapter)
+
+* Endpoint: `POST <base>/__oumv/rpc` (other paths allowed, discovery advertises them).
+* Body: one JSON-RPC object **or** an array (batch). Batch responses are arrays in any
+  order; notifications (no `id`) get no entry.
+* `Content-Type: application/json` required; anything else → `-32600` with HTTP 415.
+* HTTP status is **200 for every well-formed request**, including JSON-RPC errors
+  (`error` field carries the code). 4xx is reserved for transport failures:
+  401/403 auth, 405 wrong method, 413 body too large.
+* Auth: `X-OUMV-Session-Token` or `Authorization: Bearer <token>`. Loopback development
+  MAY leave it empty; a non-loopback bind MUST require it.
+* Bodies above `maxBodyBytes` (default 8 MiB) → HTTP 413.
+
+### 2.3 SSE binding (optional, MUST be advertised)
+
+* Endpoint: `GET <base>/__oumv/events` with `Accept: text/event-stream`.
+* Events: `trace` (`oumv/observe` L4 entries), `state` (resource changed), `heartbeat`
+  (every 15 s). Each event has an `id:`; reconnecting with `Last-Event-ID` replays from
+  that id. Server MAY filter by `?target=` / `?types=`.
+* SSE is one-way: requests still go over HTTP (§2.2).
+
+### 2.4 WebSocket binding (optional, MUST be advertised)
+
+* Upgrade on `<base>/__oumv/rpc`; frames are JSON-RPC 2.0 objects (text frames), one
+  message per frame; batch arrays allowed.
+* Server-initiated notifications use `"method": "notifications/oumv.trace"` /
+  `"notifications/oumv.state"` with `params.sessionId`.
+* After `oumv/handshake` the connection is bound to that `sessionId`; closing the socket
+  ends the session.
+
+### 2.5 stdio binding (headless adapters/tools)
+
+Newline-delimited JSON-RPC, one object per line, stdout only for responses, diagnostics
+to stderr. Used by CLI/MCP bridges; no batching requirement.
+
 ---
 
 ## 3. Session Lifecycle & Capability Negotiation
+
+A session begins with `oumv/handshake` and ends with `oumv/disconnect` or a TTL expiry.
+
+* The runtime issues `sessionId` (opaque string, unique per workspace) in the handshake
+  result together with `ttlSeconds` (default 3600). The agent sends it back as
+  `params.sessionId` on every call; a runtime MAY accept calls without it (stateless
+  mode) but MUST then treat capabilities as re-negotiated per call.
+* Concurrent sessions per workspace are allowed; mutations are serialised by OCC, not by
+  session locks.
+* `notifications/oumv.trace` and other server-initiated messages are only sent on
+  transports that support them (SSE, WebSocket); see §2.1.
+* An expired or unknown `sessionId` MUST return `-32011 VALIDATION_FAILED` with
+  `data.reason = "session_expired"` — the agent re-handshakes.
 
 ### 3.1 Handshake (`oumv/handshake`)
 
@@ -121,67 +169,169 @@ Upon establishing a connection, the agent and runtime exchange capabilities:
 
 ## 4. The Four Pillars
 
-### Pillar 1: OBSERVE (`oumv/observe`)
+All payloads below are **normative**. Field names are exact; unknown fields are allowed
+but MUST be ignored. A runtime MUST NOT emit the deprecated aliases listed in §4.6.
 
-Progressive context disclosure guarantees agents do not waste token budgets on raw HTML/DOM:
+### 4.1 OBSERVE (`oumv/observe`)
 
-| Level | Name | Target Payload | Token Budget |
-| :--- | :--- | :--- | :--- |
-| **L0** | **Page Pulse** | Active route, mounted roots, global error count, loading status. | ~20 tokens |
-| **L1** | **Surface** | Focused map of actionable elements (buttons, inputs), ARIA roles, action triggers. | ~100–250 tokens |
-| **L2** | **Contract** | Schema, props, signals, pure actions, and managed effects of a targeted component. | ~80 tokens |
-| **L3** | **Source** | Symbol-level source code with AST line numbering and OCC version token. | ~300–600 tokens |
-| **L4** | **Traces** | Event stream, signal mutations, and active subscriptions. | On-demand |
+Request: `{ "level": "L0"|"L1"|"L2"|"L3"|"L4", "format": "json" (default), "target": string? }`
 
-### Pillar 2: UNDERSTAND (`oumv/understand`)
+Response envelope (all levels):
+```json
+{ "level": "L2", "format": "json", "data": { ... }, "tokenEstimate": 80, "evidence": { "provenance": "runtime", "sourceAdapter": "go-gin", "confidence": "confirmed" } }
+```
 
-Answers two fundamental questions:
-1. **Impact Analysis (`query: "impact"`)**:
-   Answers *"What breaks if I modify this state or component?"*
-2. **Runtime Causality Engine (`query: "causality"` / `query: "why_state"`)**:
-   Answers *"Why is this button disabled / why is field X invalid?"* by evaluating the live subscriber graph:
-   $$\text{Signal} \longrightarrow \text{Computed} \longrightarrow \text{Effect} \longrightarrow \text{DOM Binding}$$
+`data` per level and profile:
 
-### Pillar 3: MUTATE (`oumv/mutate`)
+| Level | Backend profile | Frontend profile |
+| :--- | :--- | :--- |
+| L0 | `{status: "HEALTHY"\|"DEGRADED"\|"ERROR", uptimeSeconds, goroutines?, memoryAllocMB?, activeRoutes, errorCount1m}` | `{route, mountedRoots[], errorCount, loading}` |
+| L1 | `{endpoints: [{method, path, handlerName, middlewares?}]}` | `{elements: [{id, tag, role?, label?, action?}]}` |
+| L2 | `{target, method?, path?, handlerName?, requestDTO?, responseDTO?, middlewares?, note?}` | `{target, componentId, propsSchema?, actions[], effects[], contracts[]}` |
+| L3 | `{path, symbol?, source, version: "sha256:…", startLine, endLine}` | same, `path` = component file |
+| L4 | `{target?, traces: [{method, path, route?, handler?, statusCode, durationMs, timestamp}], traceCount, note?}` | `{target?, events: [{type, signal?, value?, timestamp}], count}` |
 
-All mutations strictly implement **Optimistic Concurrency Control (OCC)**:
-1. The agent fetches component source via `oumv/getSource`, receiving content and `version: "sha256:..."`.
-2. The agent submits edits via `oumv/applyEdit` supplying `expectedVersion`.
-3. If concurrent modifications occurred, the edit is aborted with `CONFLICT_DETECTED`.
-4. Prior to disk persistence, syntax and security leak guards evaluate the payload.
+Rules: `target` is required for L2/L3; a target that cannot be resolved is `-32009`.
+`version` at L3 MUST be `"sha256:" + sha256(bytes of the returned source)`. An empty
+collection MUST be returned as `[]` with a `note`, never as an error.
 
-### Pillar 4: VERIFY (`oumv/verify`)
+### 4.2 UNDERSTAND (`oumv/understand`)
 
-Provides sub-millisecond to low-millisecond local action verification without launching heavy browser automation:
-- Returns structured state diffs (`diff`).
-- Returns accessibility surface diffs (`surfaceDiff`).
-- Returns 5-metric latency breakdown:
-  $$\Delta t = t_{\text{action}} + t_{\text{schema}} + t_{\text{propagation}} + t_{\text{dom}} + t_{\text{total}}$$
+Request: `{ "query": "impact"|"causality"|"why_state"|"dependencies"|"signals", "target": string }`
+
+Impact:
+```json
+{ "query": "impact", "target": "GET /api/orders",
+  "impact": { "target": "GET /api/orders", "affectedSymbols": ["handler.CreateOrder"], "breakingRisk": "LOW"|"MEDIUM"|"HIGH"|"UNKNOWN",
+              "summary": "…", "observed": false, "evidence": { "provenance": "static", "sourceAdapter": "go-gin", "confidence": "probable" } } }
+```
+Causality / why_state:
+```json
+{ "query": "causality", "target": "GET /api/orders",
+  "causality": { "target": "GET /api/orders", "observed": true, "traceCount": 3, "traceChain": ["GET /api/orders", "handler.CreateOrder"],
+                 "statusCode": 500, "latencyMs": 12.4, "rootCause": "…", "note": "…", "evidence": { "provenance": "runtime", "sourceAdapter": "go-gin", "confidence": "confirmed" } } }
+```
+`observed=false` MUST come with `note` explaining what evidence is missing; a runtime that
+never observed an execution MUST NOT return a root cause.
+
+### 4.3 MUTATE — source (`oumv/getSource`, `oumv/applyEdit`)
+
+`getSource`: request `{path, symbol?}` → `{path, symbol?, source, version, startLine, endLine}`.
+
+`applyEdit`: request `{path, symbol?, replacement, expectedVersion}` →
+```json
+{ "status": "APPLIED"|"CURRENT", "path": "src/api/orders.go", "symbol": "CreateOrder", "newVersion": "sha256:…",
+  "syntaxCheck": { "status": "passed"|"skipped"|"failed", "tool": "go/parser", "error": "…" },
+  "backupPath": "/…/.tokensafe/backups/…", "rollbackHint": "…" }
+```
+
+Normative guards, in this order (first failure wins):
+
+| # | Guard | Error |
+| :--- | :--- | :--- |
+| 1 | workspace boundary / sensitive path | `-32003 SECURITY_VIOLATION` |
+| 2 | resource exists | `-32009 RESOURCE_NOT_FOUND` |
+| 3 | syntax pre-flight of the replacement | `-32002 SYNTAX_ERROR` |
+| 4 | `expectedVersion` present | `-32011 VALIDATION_FAILED` (`data.reason="expected_version_required"`) |
+| 5 | `expectedVersion` matches current bytes | `-32001 CONFLICT_DETECTED` |
+| 6 | policy allows mutation | `-32007 PERMISSION_DENIED` |
+
+`expectedVersion` is **mandatory** for an existing file; a write without it is never
+accepted. Backups are the previous bytes; the path is reported in `backupPath` when the
+runtime keeps one.
+
+### 4.4 VERIFY (`oumv/verify`)
+
+Request: `{target, method?, action?, payload?, headers?}` → 
+```json
+{ "status": "passed"|"failed", "target": "POST /api/orders", "statusCode": 409,
+  "diff": { "…": { "before": …, "after": … } }, "surfaceDiff": [{ "op": "attr"|"text"|"visibility", "target": "…", "before": "…", "after": "…" }],
+  "timings": { "t_action_ms": 0.1, "t_schema_ms": 0, "t_propagation_ms": 0.2, "t_dom_ms": 0, "t_total_ms": 0.3 },
+  "durationMs": 0.3,
+  "scope": { "checked": ["in-memory dispatch"], "notExecuted": ["real network"], "notSupported": ["browser DOM"] },
+  "rolledBack": true, "rollbackStatus": "verified"|"unverified"|"not_applicable" }
+```
+`status` is `passed` iff the dispatched action satisfied the request (HTTP status < 400 for
+request targets). `surfaceDiff` is frontend-only. `rolledBack` MUST only be `true` when a
+rollback was observed; otherwise `rollbackStatus` says `unverified` or `not_applicable`.
+`scope` is mandatory: a verifier MUST state what it did not execute.
+
+### 4.5 Target grammar
+
+`target` strings use exactly one of:
+* `"METHOD /path"` — backend endpoint (e.g. `"POST /api/orders"`);
+* `"/path"` — backend endpoint, method unspecified;
+* `"path#symbol"` — source + symbol (`"src/orders.go#CreateOrder"`);
+* `"component:<id>"` — frontend component (`"component:CheckoutButton"`).
+
+`componentId` is an accepted alias for `component:<id>`; runtimes MUST NOT require both.
+
+### 4.6 Deprecated aliases (accepted on input, never emitted)
+
+| Canonical | Deprecated alias |
+| :--- | :--- |
+| `observe.data` | `observe.payload` (string form) |
+| `applyEdit.path` | `filePath` |
+| `applyEdit.replacement` | `source` |
+| `applyEdit` result `status`/`newVersion` | `success`/`version` |
+| `verify` result `status` | `success` (boolean) |
+
+Aliases are accepted for one minor version after v1.0 and then removed.
 
 ---
 
 ## 5. Standard Error Codes
 
-| Code | Name | Description |
+### 5.1 Code table
+
+| Code | Name | Meaning |
 | :--- | :--- | :--- |
-| **-32001** | `CONFLICT_DETECTED` | Stale version token in optimistic concurrency write. |
-| **-32002** | `SYNTAX_ERROR` | Target code edit failed compiler / AST parse. |
-| **-32003** | `SECURITY_VIOLATION` | Path traversal out of workspace jail or credential leak. |
-| **-32004** | `COMPONENT_NOT_FOUND` | Target component ID is not mounted or registered. |
-| **-32005** | `ACTION_NOT_FOUND` | Requested action or effect is not defined on target. |
-| **-32006** | `UNSUPPORTED_CAPABILITY` | Requested feature is not supported by runtime adapter. |
-| **-32007** | `PERMISSION_DENIED` | Runtime or workspace policy explicitly prohibits the operation. |
-| **-32008** | `RUNTIME_UNAVAILABLE` | Target runtime is offline or unreachable. |
-| **-32009** | `RESOURCE_NOT_FOUND` | Referenced resource does not exist (generic form of `COMPONENT_NOT_FOUND`). |
-| **-32010** | `STALE_RESOURCE_VERSION` | Resource version token is stale (generic OCC). |
-| **-32011** | `VALIDATION_FAILED` | Payload failed schema or contract validation. |
-| **-32603** | `INTERNAL_ERROR` | Unexpected adapter failure (JSON-RPC reserved). |
+| **-32700** | `PARSE_ERROR` | Body is not valid JSON. |
+| **-32600** | `INVALID_REQUEST` | Not a valid JSON-RPC 2.0 request. |
+| **-32601** | `METHOD_NOT_FOUND` | Unknown `oumv/*` method. |
+| **-32602** | `INVALID_PARAMS` | Params missing or of the wrong type. |
+| **-32001** | `CONFLICT_DETECTED` | `expectedVersion` does not match the current bytes. |
+| **-32002** | `SYNTAX_ERROR` | Replacement failed the syntax pre-flight. |
+| **-32003** | `SECURITY_VIOLATION` | Path escapes the workspace or targets a sensitive file. |
+| **-32004** | `TARGET_NOT_FOUND` | Endpoint/component/symbol target does not exist in the runtime. |
+| **-32005** | `ACTION_NOT_FOUND` | Named action/effect is not defined on the target. |
+| **-32006** | `UNSUPPORTED_CAPABILITY` | Method/level/query not implemented (never a silent no-op). |
+| **-32007** | `PERMISSION_DENIED` | Policy forbids the operation. |
+| **-32008** | `RUNTIME_UNAVAILABLE` | Runtime or its sandbox is unreachable. |
+| **-32009** | `RESOURCE_NOT_FOUND` | File/resource does not exist. |
+| **-32011** | `VALIDATION_FAILED` | Payload violated a contract (incl. missing `expectedVersion`, expired session). |
+| **-32603** | `INTERNAL_ERROR` | Unexpected adapter failure. |
+
+`-32010` is reserved and MUST NOT be emitted in v1.0 (it duplicated `-32001`).
+
+### 5.2 Method → code mapping
+
+| Method | Conditions |
+| :--- | :--- |
+| `handshake` | invalid params `-32602`; unsupported protocol version `-32006` |
+| `observe` | unknown level `-32006`; unresolvable target `-32009`; missing target for L2/L3 `-32602` |
+| `getSource` | boundary `-32003`; missing file `-32009`; policy `-32007` |
+| `applyEdit` | §4.3 guard order |
+| `verify` | missing target `-32602`; sandbox unavailable `-32008`; unknown action `-32005` |
+| `understand` | unknown query `-32006`; unresolvable target `-32009` |
+| any | malformed body `-32700`; unknown method `-32601`; store failure `-32603` |
+
+### 5.3 `error.data`
+
+Error objects MAY carry `data`; when present it is an object with:
+`{ "reason": snake_case_string, ...details }`. `reason` is the machine-readable cause
+(`"path_traversal"`, `"expected_version_required"`, `"session_expired"`,
+`"unsupported_level"`, `"syntax_error"`, …). Human-readable details belong in `message`,
+never in `reason`.
 
 ---
 
 ## 6. Resource Model & Evidence Metadata
 
-Every adapter MUST expose resources through the canonical `ResourceReference` model (contracts: `packages/protocol/src/resources.ts`, JSON Schema: `schemas/`):
+Every adapter MUST expose resources through the canonical `ResourceReference` model
+(JSON Schema: `schemas/resources.schema.json`; TypeScript types: `packages/protocol/src/resources.ts`).
+Required fields are `id`, `type`, `name`; the rest are optional and `evidence` is required
+whenever the resource was not read from a contract file:
 
 ```json
 {
@@ -200,6 +350,13 @@ Every adapter MUST expose resources through the canonical `ResourceReference` mo
 ```
 
 ### 6.1 Resource Type Namespace
+
+`type` is `"<profile>.<kind>"` with exactly these values:
+`backend.endpoint`, `backend.handler`, `backend.model`, `backend.operation`, `backend.service`,
+`frontend.component`, `frontend.route`, `frontend.store`, `frontend.action`.
+Identifiers are stable across runs: `backend.endpoint:GET:/api/orders`,
+`frontend.component:CheckoutButton`. `id` MUST NOT contain version or hash information.
+
 
 | Domain | Types |
 | :--- | :--- |
@@ -222,21 +379,47 @@ An `inferred` relationship MUST NOT be presented as a confirmed fact. Adapters M
 
 ## 7. Profiles
 
-Profiles extend Core with domain-specific semantic models. They are profiles of one protocol, not separate protocols.
+A profile fixes the meaning of the shared payloads (§4) for one kind of runtime. Both
+profiles implement the same six methods; only the `data` shapes differ (§4.1).
 
 ### 7.1 Frontend Profile
 
-`FrontendComponentContract`: `id`, `name`, `filePath`, `description`, `propsSchema`, `stateFields`, `actionNames`, `elementAgentIds`, `constraints`.
+Contract of a component (L2): 
+```json
+{ "target": "component:CheckoutButton", "componentId": "CheckoutButton",
+  "propsSchema": { "type": "object", "properties": { "disabled": { "type": "boolean" } } },
+  "actions": [{ "name": "submit", "params": { "type": "object" } }],
+  "effects": [{ "name": "saveCart", "managed": true }],
+  "contracts": [{ "id": "checkout.submit", "constraints": ["disabled when total=0"] }] }
+```
+L3 `source` is the component file (or symbol slice) with the OCC version of those bytes.
+L4 `events` are recorded user/state events with `type`, optional `signal`, `value`, `timestamp`.
 
-`FrontendVerifyResult`: `status` (`passed`/`failed`), `diff` (state before/after), `surfaceDiff` (A11y), `durationMs`, `evidence`.
+`verify` returns `surfaceDiff` for accessibility-relevant changes and `diff` for state.
+`rolledBack` applies to optimistic UI updates.
 
 ### 7.2 Backend Profile
 
-`BackendEndpointContract`: `id` (e.g. `backend.endpoint:POST:/api/orders`), `path`, `method`, `handlerName`, `summary`, `requestSchema`, `responseSchema`, `middleware`, `dbOperations`.
+Contract of an endpoint (L2):
+```json
+{ "target": "POST /api/orders", "method": "POST", "path": "/api/orders", "handlerName": "handler.CreateOrder",
+  "requestDTO": { "type": "object", "properties": { "items": { "type": "array" } } },
+  "responseDTO": { "type": "object", "properties": { "id": { "type": "string" } } },
+  "middlewares": ["auth", "rateLimit"],
+  "note": "DTOs are not reflectable from a mounted router — use L3 for the handler source" }
+```
+`requestDTO`/`responseDTO` are optional and MUST be omitted when the runtime cannot
+reflect them (the `note` then says why). L4 `traces` are recorded executions.
+`verify` for a request target returns `statusCode`, `responseBody` in `diff`, and
+`rolledBack`/`rollbackStatus` for sandboxed database work (`verified` only with evidence).
 
-`BackendOperationContract`: `id`, `description`, `inputSchema`, `constraints`, `verification`.
+### 7.3 Level requirements per profile
 
-`BackendVerifyResult`: `status`, `statusCode`, `responseBody`, `dbDiff`, `rolledBack`, `durationMs`, `evidence`.
+| Level | Frontend requires | Backend requires |
+| :--- | :--- | :--- |
+| 1 | handshake, L0–L1, verify | handshake, L0–L1 (routes/health), verify |
+| 2 | L2 contracts, L3 source+OCC, impact, OCC edits, surfaceDiff | L2 endpoint contract, L3 source+OCC, impact, OCC edits |
+| 3 | L4 events, signals graph, causality | L4 traces, causality from real traces |
 
 ---
 
@@ -324,8 +507,24 @@ Reports are committed per adapter (e.g. `tokensafe-backend/certification/*.json`
 
 ---
 
+## 11. Versioning & Compatibility
+
+* The protocol follows semver (`MAJOR.MINOR.PATCH`): MAJOR = breaking payload/error changes,
+  MINOR = additive fields/methods, PATCH = clarifications only.
+* `protocolVersion` in the handshake is the version the runtime serves. A runtime MUST
+  accept a client whose MAJOR matches and MAY reject others with `-32006`.
+* Deprecated fields (§4.6) remain accepted for one MINOR after their replacement ships,
+  are announced in the CHANGELOG, and are removed at the next MAJOR.
+* `fixtures/conformance-cases.json` carries `fixtureVersion`; a certification report is
+  only comparable with the same `fixtureVersion`.
+* Conformance claims are per `specVersion`; a runtime re-certifies when MAJOR changes and
+  SHOULD re-certify on MINOR.
+
+---
+
 ## Changelog
 
+- **v1.4-canonical (2026-11-26)**: normative transport bindings (§2.2 HTTP/batch, §2.3 SSE, §2.4 WebSocket, §2.5 stdio), §3 gains a session-lifecycle body (sessionId/TTL/disconnect, `session_expired`), §4 replaces prose with normative per-level/per-profile payloads, target grammar, mandatory-OCC guard order and the deprecated-alias table, §5 adds the full code table (JSON-RPC codes included, `-32010` reserved) plus method→code mapping and `error.data.reason`.
 - **v1.3-guidance (2026-11-26)**: handshake negotiation rules (profile required, no over-claiming, absent capability = unsupported), new §9.2 Runtime Discovery & Agent Guidance (zero-footprint descriptor contract, first-contact activation, no-trace injection preference).
 - **v1.2-conformance (2026-11-26)**: §10 rewritten — per-profile level definitions (frontend/backend), level-tagged fixtures (v2, `preconditions`), cumulative level derivation, mandatory-OCC guard case, and the certification report artifact (`schemas/conformance-report.json`) that a level claim must reference.
 - **v1.1-retrofit (2026-11-24)**: Retrofit architecture — resource model & evidence metadata (§6), profiles (§7), normative Mutation Policy (§8: enabled-by-default with guardrails, production fail-closed), error codes −32007…−32011 / −32603, accumulator repository landscape (§9), language-neutral conformance fixtures.
