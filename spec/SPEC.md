@@ -459,7 +459,7 @@ The **TokenSafe MCP Gateway is the primary agent entry point** for full installa
 
 An OUMV runtime is only useful if the agent can find it and knows what it is for. Three requirements make that automatic:
 
-1. **Zero-footprint discovery descriptor.** A dev-server sidecar writes a per-workspace descriptor to `~/.tokensafe/runtimes/<sha256(realpath(workspace))[:16]>.json` (mode 0600) — never into the repository. Required fields: `type` (`frontend` | `backend`), `name`, `version`, `url` (JSON-RPC endpoint), `sessionToken`, `capabilities.observeLevels`. Readers MUST prefer this file over port scanning and MUST treat a descriptor without a live handshake as stale.
+1. **Zero-footprint discovery registry.** A dev-server sidecar writes a per-workspace registry to `~/.tokensafe/runtimes/<sha256(realpath(workspace))[:16]>.json` (mode 0600) — never into the repository. The registry is keyed by profile, so a React frontend and a Go/FastAPI backend in one workspace share it: `{workspaceRoot, pid, updatedAt, frontend?, backend?}`, where each profile value carries `type` (`frontend` | `backend`), `name`, `version`, `url` (JSON-RPC endpoint), optional `sessionToken`, and `capabilities.observeLevels` + `capabilities.transports` (`http` | `sse` | `ws` | `stdio`). A writer MUST preserve the other profile's entry (read-modify-write, atomic rename) and MUST delete only its own entry on shutdown. Readers MUST prefer this file over port scanning and MUST treat an entry without a live handshake as stale.
 2. **Activation on first contact.** The host integration (CLI / hooks / MCP server) MUST, on the first prompt in a workspace, (a) detect the stack, (b) ensure the adapter is present or state the exact install command, and (c) inject a routing brief that names, per profile, whether the agent works through OUMV or through the host's own tools. The brief MUST be delivered out-of-band (hook context or MCP `instructions`) and MUST NOT require committing files to the repository.
 3. **No-trace preference.** Where a runtime can be launched by a wrapper (Vite dev server, ASGI/uvicorn), adapters SHOULD be loadable without editing tracked files: an inline dev-server config, a global `sitecustomize` hook, or a command wrapper. In-process edits (e.g. one `AutoMount` line in Go `main`) MUST be marker-delimited, backed up outside the repository, validated by a build, and revertible byte-for-byte.
 
@@ -479,9 +479,9 @@ Conformance is **per adapter and per profile**, and it is a claim that MUST be b
 
 ### 10.2 Language-neutral fixtures
 
-Cases live in `fixtures/conformance-cases.json` (`fixtureVersion` 2). Every case declares the `level` it certifies and may declare `preconditions` such as `verify` (which establishes the runtime evidence that L4/causality cases assert on). Each runtime executes the same file with its native toolchain — no TypeScript required for Go or Python certification.
+Cases live in `fixtures/conformance-cases.json` (`fixtureVersion` 3). Every case declares the `level` it certifies and may declare `preconditions` such as `verify` (which establishes the runtime evidence that L4/causality cases assert on). Each runtime executes the same file with its native toolchain — no TypeScript required for Go or Python certification.
 
-A case declares its expectations declaratively: `expectResultFields`, `expectError.code`, `expectLevelEquals`, `expectSha256Field`, `expectArrayField`, `expectEvidence`, `expectVersionMatchesContent`.
+A case declares its expectations declaratively: `expectResultFields`, `expectError.code` (with optional `expectError.data`), `expectLevelEquals`, `expectSha256Field`, `expectArrayField`, `expectEvidence`, `expectVersionMatchesContent`. The reference runners are the Go/Python packages in `tokensafe-backend` and `@oumv/conformance` (CLI `oumv-certify`); a certification claim is reproduced in CI by re-running one of them.
 
 **OCC is mandatory.** Exactly one case (`apply-edit-without-version-rejected`) omits `expectedVersion`, and it asserts `-32011 VALIDATION_FAILED`. A runtime that accepts an unversioned edit of an existing file cannot pass Level 2.
 
@@ -494,7 +494,7 @@ A level claim MUST be accompanied by a report (schema: `schemas/conformance-repo
   "adapterName": "go-gin",
   "framework": "gin",
   "specVersion": "1.1.0",
-  "fixtureVersion": 2,
+  "fixtureVersion": 3,
   "total": 15, "passed": 15, "failed": 0,
   "attainedLevel": 3,
   "levels": { "1": "passed", "2": "passed", "3": "passed" },

@@ -157,16 +157,53 @@ describe('OUMV JSON Schemas (2020-12)', () => {
 
     expect(validate('resources.schema.json', { id: 'x', type: 'frontend.widget', name: 'x' }).ok).toBe(false);
 
-    expect(validate('descriptor.schema.json', {
-      type: 'frontend',
-      name: 'tokensafe-ui',
-      version: '0.1.22',
-      url: 'http://127.0.0.1:5173/__oumv/rpc',
-      capabilities: { observeLevels: ['L0', 'L1', 'L2', 'L3', 'L4'], transports: ['http'] },
-    }).ok).toBe(true);
+    // The discovery file is a per-profile registry (§9.2): one workspace, two runtimes.
+    const registry = {
+      workspaceRoot: '/Users/dev/app',
+      pid: 4242,
+      updatedAt: 1_800_000_000_000,
+      frontend: {
+        type: 'frontend',
+        name: 'tokensafe-ui',
+        version: '0.1.22',
+        url: 'http://127.0.0.1:5173/__oumv/rpc',
+        sseUrl: 'http://127.0.0.1:5173/__oumv/events',
+        wsUrl: 'ws://127.0.0.1:5173/__oumv/rpc',
+        capabilities: { observeLevels: ['L0', 'L1', 'L2', 'L3', 'L4'], transports: ['http', 'sse', 'ws'] },
+      },
+      backend: {
+        type: 'backend',
+        name: 'go-gin',
+        version: '0.4.3',
+        url: 'http://127.0.0.1:8080/__oumv/rpc',
+        capabilities: { observeLevels: ['L0', 'L1', 'L2', 'L3', 'L4'], transports: ['http', 'sse', 'ws'] },
+      },
+    };
+    expect(validate('descriptor.schema.json', registry).ok).toBe(true);
 
-    expect(validate('descriptor.schema.json', {
-      type: 'frontend', name: 'x', version: '1', url: '/relative', capabilities: { observeLevels: [] },
-    }).ok).toBe(false);
+    // A registry with neither profile is not a discovery file.
+    expect(validate('descriptor.schema.json', { workspaceRoot: '/w', updatedAt: 1 }).ok).toBe(false);
+    // A relative JSON-RPC url is not dialable.
+    expect(
+      validate('descriptor.schema.json', {
+        workspaceRoot: '/w',
+        updatedAt: 1,
+        frontend: { type: 'frontend', name: 'x', version: '1', url: '/relative', capabilities: { observeLevels: [] } },
+      }).ok
+    ).toBe(false);
+    // Unknown transports are rejected: the enum is the contract.
+    expect(
+      validate('descriptor.schema.json', {
+        workspaceRoot: '/w',
+        updatedAt: 1,
+        backend: {
+          type: 'backend',
+          name: 'x',
+          version: '1',
+          url: 'http://127.0.0.1:1/__oumv/rpc',
+          capabilities: { observeLevels: ['L0'], transports: ['carrier-pigeon'] },
+        },
+      }).ok
+    ).toBe(false);
   });
 });

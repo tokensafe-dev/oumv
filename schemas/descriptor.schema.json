@@ -1,72 +1,128 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/tokensafe-dev/oumv/schemas/descriptor.schema.json",
-  "title": "OUMV discovery descriptor",
+  "title": "OUMV runtime discovery registry",
+  "description": "Per-workspace discovery file (spec §9.2) at ~/.tokensafe/runtimes/<sha256(realpath(workspace))[:16]>.json, mode 0600. Keyed by profile so a frontend and a backend in one workspace share it: writers do read-modify-write + atomic rename and remove only their own entry on shutdown.",
   "type": "object",
   "additionalProperties": false,
   "required": [
-    "type",
-    "name",
-    "version",
-    "url",
-    "capabilities"
+    "workspaceRoot",
+    "updatedAt"
   ],
-  "properties": {
-    "type": {
-      "enum": [
-        "frontend",
-        "backend"
+  "anyOf": [
+    {
+      "required": [
+        "frontend"
       ]
     },
-    "name": {
-      "type": "string"
-    },
-    "version": {
-      "type": "string"
-    },
-    "url": {
-      "type": "string",
-      "pattern": "^(https?://|ws://)"
-    },
-    "sessionToken": {
-      "type": "string"
-    },
-    "workspace": {
-      "type": "string"
-    },
-    "capabilities": {
-      "type": "object",
+    {
       "required": [
-        "observeLevels"
+        "backend"
+      ]
+    }
+  ],
+  "properties": {
+    "workspaceRoot": {
+      "type": "string"
+    },
+    "pid": {
+      "type": "integer"
+    },
+    "updatedAt": {
+      "type": "integer"
+    },
+    "frontend": {
+      "$ref": "#/$defs/descriptor"
+    },
+    "backend": {
+      "$ref": "#/$defs/descriptor"
+    }
+  },
+  "$defs": {
+    "descriptor": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "type",
+        "name",
+        "version",
+        "url",
+        "capabilities"
       ],
       "properties": {
-        "observeLevels": {
-          "type": "array",
-          "items": {
-            "enum": [
-              "L0",
-              "L1",
-              "L2",
-              "L3",
-              "L4"
-            ]
+        "type": {
+          "enum": [
+            "frontend",
+            "backend"
+          ]
+        },
+        "name": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "url": {
+          "type": "string",
+          "pattern": "^(https?://|ws://)"
+        },
+        "sseUrl": {
+          "type": "string"
+        },
+        "wsUrl": {
+          "type": "string"
+        },
+        "sessionToken": {
+          "type": "string"
+        },
+        "workspace": {
+          "type": "string"
+        },
+        "capabilities": {
+          "type": "object",
+          "additionalProperties": true,
+          "required": [
+            "observeLevels"
+          ],
+          "properties": {
+            "observeLevels": {
+              "type": "array",
+              "items": {
+                "enum": [
+                  "L0",
+                  "L1",
+                  "L2",
+                  "L3",
+                  "L4"
+                ]
+              }
+            },
+            "transports": {
+              "type": "array",
+              "items": {
+                "enum": [
+                  "http",
+                  "sse",
+                  "ws",
+                  "stdio"
+                ]
+              }
+            },
+            "causality": {
+              "type": "boolean"
+            },
+            "occ": {
+              "type": "boolean"
+            },
+            "verify": {
+              "type": "boolean"
+            }
           }
         },
-        "transports": {
-          "type": "array",
-          "items": {
-            "enum": [
-              "http",
-              "sse",
-              "ws",
-              "stdio"
-            ]
-          }
+        "startedAt": {
+          "type": "string"
         }
       }
-    },
-    "startedAt": {
-      "type": "string"
     }
   }
 }

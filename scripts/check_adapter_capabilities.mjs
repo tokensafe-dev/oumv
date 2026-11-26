@@ -47,7 +47,9 @@ for (const file of readdirSync(ADAPTERS_DIR).filter((f) => f.endsWith('.json')).
       continue;
     }
     const declared = capability.conformanceLevel;
-    if (typeof declared === 'number' && declared < testCase.level) {
+    // A conservative claim (declared below the case level) is allowed; claiming
+    // more than the case proves is the failure this gate exists for.
+    if (typeof declared === 'number' && declared > testCase.level) {
       problems.push(
         `${file}: capability ${capability.name} claims level ${declared} but its case ${caseId} is level ${testCase.level}`
       );

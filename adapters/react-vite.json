@@ -28,6 +28,9 @@
           "component",
           "route",
           "store"
+        ],
+        "limitations": [
+          "certified at level 1 offline (stdio/HTTP, no browser); levels 2-3 require an open browser tab, which automated certification does not yet drive"
         ]
       },
       "conformanceLevel": 1
@@ -40,6 +43,9 @@
           "component",
           "route",
           "store"
+        ],
+        "limitations": [
+          "certified at level 1 offline (stdio/HTTP, no browser); levels 2-3 require an open browser tab, which automated certification does not yet drive"
         ]
       },
       "conformanceLevel": 1
@@ -50,9 +56,12 @@
         "developmentOnly": true,
         "resourceTypes": [
           "component"
+        ],
+        "limitations": [
+          "certified at level 1 offline (stdio/HTTP, no browser); levels 2-3 require an open browser tab, which automated certification does not yet drive"
         ]
       },
-      "conformanceLevel": 2
+      "conformanceLevel": 1
     },
     {
       "name": "observe.source",
@@ -61,9 +70,12 @@
         "resourceTypes": [
           "file",
           "component"
+        ],
+        "limitations": [
+          "certified at level 1 offline (stdio/HTTP, no browser); levels 2-3 require an open browser tab, which automated certification does not yet drive"
         ]
       },
-      "conformanceLevel": 2
+      "conformanceLevel": 1
     },
     {
       "name": "observe.traces",
@@ -73,10 +85,11 @@
           "runtime-event"
         ],
         "limitations": [
-          "requires an open browser tab streaming traces over the Vite HMR channel"
+          "requires an open browser tab streaming traces over the Vite HMR channel",
+          "certified at level 1 offline (stdio/HTTP, no browser); levels 2-3 require an open browser tab, which automated certification does not yet drive"
         ]
       },
-      "conformanceLevel": 3
+      "conformanceLevel": 1
     },
     {
       "name": "understand.impact",
@@ -84,9 +97,12 @@
         "developmentOnly": true,
         "resourceTypes": [
           "component"
+        ],
+        "limitations": [
+          "certified at level 1 offline (stdio/HTTP, no browser); levels 2-3 require an open browser tab, which automated certification does not yet drive"
         ]
       },
-      "conformanceLevel": 2
+      "conformanceLevel": 1
     },
     {
       "name": "understand.causality",
@@ -96,10 +112,11 @@
           "runtime-event"
         ],
         "limitations": [
-          "reports observed=false and a note when no browser traces exist"
+          "reports observed=false and a note when no browser traces exist",
+          "certified at level 1 offline (stdio/HTTP, no browser); levels 2-3 require an open browser tab, which automated certification does not yet drive"
         ]
       },
-      "conformanceLevel": 3
+      "conformanceLevel": 1
     },
     {
       "name": "mutate.source",
@@ -109,10 +126,11 @@
           "file"
         ],
         "limitations": [
-          "expectedVersion is mandatory; stale tokens fail with -32001"
+          "expectedVersion is mandatory; stale tokens fail with -32001",
+          "certified at level 1 offline (stdio/HTTP, no browser); levels 2-3 require an open browser tab, which automated certification does not yet drive"
         ]
       },
-      "conformanceLevel": 2
+      "conformanceLevel": 1
     },
     {
       "name": "verify.behavior",
@@ -123,10 +141,11 @@
         ],
         "requiresPermission": "browser-dispatch",
         "limitations": [
-          "synthetic browser dispatch requires a connected tab; offline runs report scope.notExecuted"
+          "synthetic browser dispatch requires a connected tab; offline runs report scope.notExecuted",
+          "certified at level 1 offline (stdio/HTTP, no browser); levels 2-3 require an open browser tab, which automated certification does not yet drive"
         ]
       },
-      "conformanceLevel": 2
+      "conformanceLevel": 1
     }
   ],
   "security": {

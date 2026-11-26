@@ -109,6 +109,21 @@ npx @oumv/conformance oumv-lint-adapter adapters/react-vite.json
 Committed reports are re-generated in CI and diffed (`scripts/check_certification.py`
 in `tokensafe-backend`) — a level that stops reproducing fails the build.
 
+For the React adapter the runtime is a Vite plugin, so certification runs it headless
+over stdio (`packages/vite/scripts/oumv-stdio.mjs` in `agent-dom`) against a copy of a
+React workspace:
+
+```bash
+oumv-certify --adapter frontend/react --framework react --profile frontend \
+  --stdio "node agent-dom/packages/vite/scripts/oumv-stdio.mjs --root /tmp/app" \
+  --markers @markers.json --report agent-dom/certification/react-vite.json --min-level 1
+```
+
+Without an open browser tab `oumv/verify` answers `-32008` and `observe` L4 has no
+traces, so the committed report certifies **level 1** and names both failures. Levels
+2–3 need a browser-driving harness (Playwright) that does not exist yet — the honest
+claim today is level 1 offline, not a footnote.
+
 ---
 
 ## 4. Capability honesty
@@ -138,7 +153,7 @@ Two rules that keep reports trustworthy:
 | `backend/chi` | backend | HTTP, SSE, WS, stdio | 3 | `tokensafe-backend/certification/go-chi.json` |
 | `backend/stdhttp` | backend | HTTP, SSE, WS, stdio | 3 | `tokensafe-backend/certification/go-stdhttp.json` |
 | `backend/fastapi` | backend | HTTP, SSE, WS | 3 | `tokensafe-backend/certification/python-fastapi.json` |
-| `frontend/react` | frontend | HTTP, batch, SSE, WS | 2 offline / 3 with a live tab | `agent-dom/certification/react-vite.json` |
+| `frontend/react` | frontend | HTTP, batch, SSE, WS | 1 offline (L2–L3 need a live tab, not yet driven by CI) | `agent-dom/certification/react-vite.json` |
 
 Node/Express, Django/Flask, Next and Angular adapters follow after the v1.0 freeze.
 
