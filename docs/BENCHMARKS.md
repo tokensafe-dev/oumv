@@ -25,7 +25,7 @@ belong to the product repositories and are versioned there:
 | Tool-level token savings on 15 real repositories (measured BPE, zero-loss gates) | `tokensafe/docs/BENCHMARK_REAL.json` | measured 2026-11-14, **TokenSafe tools**, not OUMV |
 | Three-arm backend comparison (oracle 12/12) | `tokensafe-backend/go/benchmark/THREE_ARM_REPORT.md` | `oumv` arm measured in real JSON-RPC bytes; `baseline`/`tokensafe` arms **SIMULATED** |
 | Agent benchmark harness (DeepSeek tool loop, hard USD cap, real oracle) | `tokensafe/src/bench/` + `tokensafe bench-oumv` | harness ready; measured results live in the product repos below |
-| Agent matrix, Go backend (3 tasks × 3 runs × 3 arms incl. TokenSafe MCP, measured) | `tokensafe-backend/go/benchmark/OUMV_AGENT_MATRIX.md` | measured 2026-11-26; the TokenSafe row carries a post-run correction and is superseded until re-measured |
+| Agent matrix, Go backend (3 tasks × 3 runs × 3 arms incl. TokenSafe MCP, measured) | `tokensafe-backend/go/benchmark/OUMV_AGENT_MATRIX_V3.md` | measured twice 2026-11-26 (27 sessions each): all arms 9/9, TokenSafe −20.2% input / −30.2% cost, OUMV −49.6% / −25.6% vs baseline; the earlier losing row is corrected in `OUMV_AGENT_MATRIX.md` |
 | Agent matrix, React/Vite (3 tasks × 3 runs × 2 arms, measured) | `agent-dom/benchmarks/REACT_AGENT_MATRIX.md` | measured 2026-11-26; the TokenSafe arm is smoke-tested, not part of the published React matrix |
 
 Why the protocol repo does not host an "OUMV is N× faster" table:
