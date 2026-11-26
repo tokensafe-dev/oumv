@@ -1,0 +1,106 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/tokensafe-dev/oumv/schemas/resources.schema.json",
+  "title": "ResourceReference",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "type",
+    "name"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "type": {
+      "enum": [
+        "backend.endpoint",
+        "backend.handler",
+        "backend.model",
+        "backend.operation",
+        "backend.service",
+        "frontend.component",
+        "frontend.route",
+        "frontend.store",
+        "frontend.action"
+      ]
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "sourceLocation": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "filePath": {
+          "type": "string"
+        },
+        "lineStart": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "lineEnd": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "availableOperations": {
+      "type": "array",
+      "items": {
+        "enum": [
+          "observe",
+          "understand",
+          "getSource",
+          "applyEdit",
+          "verify"
+        ]
+      }
+    },
+    "parentRef": {
+      "type": "string"
+    },
+    "schemaRef": {
+      "type": "string"
+    },
+    "observedAt": {
+      "type": "string"
+    },
+    "details": {
+      "type": "object"
+    },
+    "evidence": {
+      "type": "object",
+      "required": [
+        "provenance",
+        "sourceAdapter",
+        "confidence"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "provenance": {
+          "enum": [
+            "runtime",
+            "static",
+            "contract",
+            "inferred",
+            "external"
+          ]
+        },
+        "sourceAdapter": {
+          "type": "string"
+        },
+        "confidence": {
+          "enum": [
+            "confirmed",
+            "probable",
+            "unknown"
+          ]
+        }
+      }
+    }
+  }
+}

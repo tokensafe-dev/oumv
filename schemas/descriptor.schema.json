@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/tokensafe-dev/oumv/schemas/descriptor.schema.json",
+  "title": "OUMV discovery descriptor",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "type",
+    "name",
+    "version",
+    "url",
+    "capabilities"
+  ],
+  "properties": {
+    "type": {
+      "enum": [
+        "frontend",
+        "backend"
+      ]
+    },
+    "name": {
+      "type": "string"
+    },
+    "version": {
+      "type": "string"
+    },
+    "url": {
+      "type": "string",
+      "pattern": "^(https?://|ws://)"
+    },
+    "sessionToken": {
+      "type": "string"
+    },
+    "workspace": {
+      "type": "string"
+    },
+    "capabilities": {
+      "type": "object",
+      "required": [
+        "observeLevels"
+      ],
+      "properties": {
+        "observeLevels": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "L0",
+              "L1",
+              "L2",
+              "L3",
+              "L4"
+            ]
+          }
+        },
+        "transports": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "http",
+              "sse",
+              "ws",
+              "stdio"
+            ]
+          }
+        }
+      }
+    },
+    "startedAt": {
+      "type": "string"
+    }
+  }
+}

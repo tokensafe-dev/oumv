@@ -1,46 +1,147 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://oumv.org/schemas/oumv-mutate.json",
-  "title": "OUMV Mutate Schema",
-  "description": "Optimistic Concurrency Control source mutations and ephemeral actions",
-  "definitions": {
+  "$id": "https://github.com/tokensafe-dev/oumv/schemas/oumv-mutate.json",
+  "title": "oumv/getSource + oumv/applyEdit",
+  "$defs": {
     "GetSourceRequest": {
       "type": "object",
-      "required": ["componentId", "filePath"],
+      "additionalProperties": false,
+      "required": [
+        "path"
+      ],
       "properties": {
-        "componentId": { "type": "string" },
-        "filePath": { "type": "string" }
+        "path": {
+          "type": "string"
+        },
+        "symbol": {
+          "type": "string"
+        }
       }
     },
     "GetSourceResponse": {
       "type": "object",
-      "required": ["componentId", "filePath", "version", "source"],
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "source",
+        "version"
+      ],
       "properties": {
-        "componentId": { "type": "string" },
-        "filePath": { "type": "string" },
-        "version": { "type": "string" },
-        "source": { "type": "string" },
-        "contract": { "type": "object" }
+        "path": {
+          "type": "string"
+        },
+        "symbol": {
+          "type": "string"
+        },
+        "source": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string",
+          "pattern": "^sha256:[a-f0-9]{64}$"
+        },
+        "startLine": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "endLine": {
+          "type": "integer",
+          "minimum": 1
+        }
       }
     },
     "ApplyEditRequest": {
       "type": "object",
-      "required": ["filePath", "source", "expectedVersion"],
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "replacement",
+        "expectedVersion"
+      ],
       "properties": {
-        "filePath": { "type": "string" },
-        "source": { "type": "string" },
-        "expectedVersion": { "type": "string" }
+        "path": {
+          "type": "string"
+        },
+        "symbol": {
+          "type": "string"
+        },
+        "replacement": {
+          "type": "string"
+        },
+        "expectedVersion": {
+          "type": "string",
+          "pattern": "^sha256:[a-f0-9]{64}$"
+        }
       }
     },
     "ApplyEditResponse": {
       "type": "object",
-      "required": ["success", "filePath", "version"],
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "path",
+        "newVersion"
+      ],
       "properties": {
-        "success": { "type": "boolean" },
-        "filePath": { "type": "string" },
-        "version": { "type": "string" },
-        "message": { "type": "string" }
+        "status": {
+          "enum": [
+            "APPLIED",
+            "CURRENT"
+          ]
+        },
+        "path": {
+          "type": "string"
+        },
+        "symbol": {
+          "type": "string"
+        },
+        "newVersion": {
+          "type": "string",
+          "pattern": "^sha256:[a-f0-9]{64}$"
+        },
+        "syntaxCheck": {
+          "type": "object",
+          "required": [
+            "status"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "status": {
+              "enum": [
+                "passed",
+                "skipped",
+                "failed"
+              ]
+            },
+            "tool": {
+              "type": "string"
+            },
+            "error": {
+              "type": "string"
+            }
+          }
+        },
+        "backupPath": {
+          "type": "string"
+        },
+        "rollbackHint": {
+          "type": "string"
+        }
       }
     }
-  }
+  },
+  "anyOf": [
+    {
+      "$ref": "#/$defs/GetSourceRequest"
+    },
+    {
+      "$ref": "#/$defs/GetSourceResponse"
+    },
+    {
+      "$ref": "#/$defs/ApplyEditRequest"
+    },
+    {
+      "$ref": "#/$defs/ApplyEditResponse"
+    }
+  ]
 }

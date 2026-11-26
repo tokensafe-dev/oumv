@@ -1,0 +1,127 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/tokensafe-dev/oumv/schemas/fixtures.schema.json",
+  "title": "OUMV conformance fixtures",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "protocolVersion",
+    "fixtureVersion",
+    "levelDefinitions",
+    "cases"
+  ],
+  "properties": {
+    "protocolVersion": {
+      "type": "string"
+    },
+    "fixtureVersion": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "spec": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "levelDefinitions": {
+      "type": "object",
+      "required": [
+        "1",
+        "2",
+        "3"
+      ],
+      "properties": {
+        "1": {
+          "type": "string"
+        },
+        "2": {
+          "type": "string"
+        },
+        "3": {
+          "type": "string"
+        }
+      }
+    },
+    "cases": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "level",
+          "method",
+          "params"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9-]+$"
+          },
+          "level": {
+            "enum": [
+              1,
+              2,
+              3
+            ]
+          },
+          "method": {
+            "type": "string",
+            "pattern": "^oumv/"
+          },
+          "params": {
+            "type": "object"
+          },
+          "preconditions": {
+            "type": "array",
+            "items": {
+              "enum": [
+                "verify"
+              ]
+            }
+          },
+          "expectResultFields": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "expectError": {
+            "type": "object",
+            "required": [
+              "code"
+            ],
+            "properties": {
+              "code": {
+                "type": "integer"
+              },
+              "reason": {
+                "type": "string"
+              }
+            }
+          },
+          "expectLevelEquals": {
+            "type": "string"
+          },
+          "expectSha256Field": {
+            "type": "string"
+          },
+          "expectArrayField": {
+            "type": "string"
+          },
+          "expectEvidence": {
+            "type": "boolean"
+          },
+          "expectVersionMatchesContent": {
+            "type": "string"
+          },
+          "expectSchema": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}
