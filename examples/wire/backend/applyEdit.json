@@ -1,0 +1,35 @@
+{
+  "method": "oumv/applyEdit",
+  "profile": "backend",
+  "specVersion": "1.1.0",
+  "adapter": "backend/stdhttp",
+  "note": "captured from the net/http adapter against a temp workspace; paths are relative to it",
+  "cases": [
+    {
+      "name": "versioned edit",
+      "request": {
+        "id": "oumv/applyEdit:versioned edit",
+        "jsonrpc": "2.0",
+        "method": "oumv/applyEdit",
+        "params": {
+          "expectedVersion": "sha256:8b877082c7e07db686c4776a0944ae99490148df91758fcae8dce7387d39d100",
+          "path": "cert_edit_target.go",
+          "replacement": "package cert\n\nfunc Value() int {\n\treturn 42\n}\n"
+        }
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": "oumv/applyEdit:versioned edit",
+        "result": {
+          "status": "APPLIED",
+          "path": "cert_edit_target.go",
+          "newVersion": "sha256:e1023abc426bb4df999a27bd70e8a6e436b559a64e08bf4db679b048b96ad7e2",
+          "syntaxCheck": {
+            "status": "passed",
+            "tool": "go/parser"
+          }
+        }
+      }
+    }
+  ]
+}

@@ -29,9 +29,7 @@
           "route",
           "store"
         ],
-        "limitations": [
-          "certified at level 1 offline (stdio/HTTP, no browser); levels 2-3 require an open browser tab, which automated certification does not yet drive"
-        ]
+        "limitations": []
       },
       "conformanceLevel": 1
     },
@@ -44,9 +42,7 @@
           "route",
           "store"
         ],
-        "limitations": [
-          "certified at level 1 offline (stdio/HTTP, no browser); levels 2-3 require an open browser tab, which automated certification does not yet drive"
-        ]
+        "limitations": []
       },
       "conformanceLevel": 1
     },
@@ -57,11 +53,9 @@
         "resourceTypes": [
           "component"
         ],
-        "limitations": [
-          "certified at level 1 offline (stdio/HTTP, no browser); levels 2-3 require an open browser tab, which automated certification does not yet drive"
-        ]
+        "limitations": []
       },
-      "conformanceLevel": 1
+      "conformanceLevel": 2
     },
     {
       "name": "observe.source",
@@ -71,11 +65,9 @@
           "file",
           "component"
         ],
-        "limitations": [
-          "certified at level 1 offline (stdio/HTTP, no browser); levels 2-3 require an open browser tab, which automated certification does not yet drive"
-        ]
+        "limitations": []
       },
-      "conformanceLevel": 1
+      "conformanceLevel": 2
     },
     {
       "name": "observe.traces",
@@ -86,10 +78,10 @@
         ],
         "limitations": [
           "requires an open browser tab streaming traces over the Vite HMR channel",
-          "certified at level 1 offline (stdio/HTTP, no browser); levels 2-3 require an open browser tab, which automated certification does not yet drive"
+          "certified in a real headless-Chrome tab (agent-dom/certification/react-vite-browser.json); the offline run attains level 1 because oumv/verify needs the tab"
         ]
       },
-      "conformanceLevel": 1
+      "conformanceLevel": 3
     },
     {
       "name": "understand.impact",
@@ -98,11 +90,9 @@
         "resourceTypes": [
           "component"
         ],
-        "limitations": [
-          "certified at level 1 offline (stdio/HTTP, no browser); levels 2-3 require an open browser tab, which automated certification does not yet drive"
-        ]
+        "limitations": []
       },
-      "conformanceLevel": 1
+      "conformanceLevel": 2
     },
     {
       "name": "understand.causality",
@@ -113,10 +103,10 @@
         ],
         "limitations": [
           "reports observed=false and a note when no browser traces exist",
-          "certified at level 1 offline (stdio/HTTP, no browser); levels 2-3 require an open browser tab, which automated certification does not yet drive"
+          "certified in a real headless-Chrome tab (agent-dom/certification/react-vite-browser.json); the offline run attains level 1 because oumv/verify needs the tab"
         ]
       },
-      "conformanceLevel": 1
+      "conformanceLevel": 3
     },
     {
       "name": "mutate.source",
@@ -126,11 +116,10 @@
           "file"
         ],
         "limitations": [
-          "expectedVersion is mandatory; stale tokens fail with -32001",
-          "certified at level 1 offline (stdio/HTTP, no browser); levels 2-3 require an open browser tab, which automated certification does not yet drive"
+          "expectedVersion is mandatory; stale tokens fail with -32001"
         ]
       },
-      "conformanceLevel": 1
+      "conformanceLevel": 2
     },
     {
       "name": "verify.behavior",
@@ -142,10 +131,10 @@
         "requiresPermission": "browser-dispatch",
         "limitations": [
           "synthetic browser dispatch requires a connected tab; offline runs report scope.notExecuted",
-          "certified at level 1 offline (stdio/HTTP, no browser); levels 2-3 require an open browser tab, which automated certification does not yet drive"
+          "certified in a real headless-Chrome tab (agent-dom/certification/react-vite-browser.json); the offline run attains level 1 because oumv/verify needs the tab"
         ]
       },
-      "conformanceLevel": 1
+      "conformanceLevel": 2
     }
   ],
   "security": {

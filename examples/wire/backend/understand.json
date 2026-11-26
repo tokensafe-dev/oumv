@@ -1,0 +1,79 @@
+{
+  "method": "oumv/understand",
+  "profile": "backend",
+  "specVersion": "1.1.0",
+  "adapter": "backend/stdhttp",
+  "note": "captured from the net/http adapter against a temp workspace; paths are relative to it",
+  "cases": [
+    {
+      "name": "impact from route metadata",
+      "request": {
+        "id": "oumv/understand:impact from route metadata",
+        "jsonrpc": "2.0",
+        "method": "oumv/understand",
+        "params": {
+          "query": "impact",
+          "target": "GET /api/v1/orders"
+        }
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": "oumv/understand:impact from route metadata",
+        "result": {
+          "query": "impact",
+          "target": "GET /api/v1/orders",
+          "impact": {
+            "target": "GET /api/v1/orders",
+            "affectedSymbols": [
+              "stdhttp.Handler"
+            ],
+            "breakingRisk": "UNKNOWN",
+            "summary": "Impact derived from registered route metadata for \"GET /api/v1/orders\"; runtime execution evidence: matching request traces observed",
+            "observed": true,
+            "evidence": {
+              "provenance": "static",
+              "sourceAdapter": "tokensafe-backend-go",
+              "confidence": "probable"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "causality from observed traces",
+      "request": {
+        "id": "oumv/understand:causality from observed traces",
+        "jsonrpc": "2.0",
+        "method": "oumv/understand",
+        "params": {
+          "query": "causality",
+          "target": "GET /api/v1/orders"
+        }
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": "oumv/understand:causality from observed traces",
+        "result": {
+          "query": "causality",
+          "target": "GET /api/v1/orders",
+          "causality": {
+            "target": "GET /api/v1/orders",
+            "statusCode": 200,
+            "rootCause": "OK — handler completed without error (observed)",
+            "traceChain": [
+              "adapter.ServeHTTP"
+            ],
+            "observed": true,
+            "traceCount": 2,
+            "latencyMs": 0.016,
+            "evidence": {
+              "provenance": "runtime",
+              "sourceAdapter": "tokensafe-backend-go",
+              "confidence": "confirmed"
+            }
+          }
+        }
+      }
+    }
+  ]
+}

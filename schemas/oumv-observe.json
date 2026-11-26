@@ -309,6 +309,10 @@
               "$ref": "#/$defs/L4"
             }
           ]
+        },
+        "payload": {
+          "type": "string",
+          "description": "Rendered form of `data` when `format` is \"yaml\" (token-efficient transport of the same information); additive, MINOR-compatible."
         }
       }
     }

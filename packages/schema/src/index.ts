@@ -62,52 +62,12 @@ export const ObserveParamsSchema = z.object({
   componentId: z.string().optional(),
 });
 
-export const ObserveResultSchema = z.object({
-  level: z.enum(['L0', 'L1', 'L2', 'L3', 'L4']),
-  format: z.enum(['yaml', 'json', 'sexp']),
-  payload: z.string(),
-  tokenEstimate: z.number().optional(),
-  timestamp: z.number(),
-});
-
-// Understand Schemas
-export const UnderstandParamsSchema = z.object({
-  query: z.enum(['impact', 'dependencies', 'causality', 'why_state', 'signals']),
-  target: z.string().optional(),
-});
-
-export const ImpactResultSchema = z.object({
-  target: z.string(),
-  directlyAffected: z.array(z.string()),
-  indirectlyAffected: z.array(z.string()),
-  safeComponents: z.array(z.string()),
-  recommendation: z.string(),
-});
-
-export const CausalityResultSchema = z.object({
-  target: z.string(),
-  componentId: z.string(),
-  stateKey: z.string(),
-  value: z.any(),
-  subscribers: z.array(
-    z.object({
-      id: z.string(),
-      name: z.string().optional(),
-      kind: z.string(),
-    })
-  ),
-  lastMutation: z
-    .object({
-      actionName: z.string().optional(),
-      timestamp: z.number().optional(),
-      oldValue: z.any().optional(),
-      newValue: z.any().optional(),
-    })
-    .optional(),
-  explanation: z.string(),
-});
-
-// Evidence & Resource Schemas
+/**
+ * Canonical observe result (spec §4.1): the envelope is `{level, format, data}`;
+ * profile-specific fields belong inside `data`; `payload` is the optional YAML
+ * rendering of the same information.
+ */
+// Evidence metadata is referenced by every result schema below.
 export const EvidenceMetadataSchema = z.object({
   provenance: z.enum(['static', 'runtime', 'contract', 'inferred', 'external']),
   sourceAdapter: z.string(),
@@ -117,6 +77,62 @@ export const EvidenceMetadataSchema = z.object({
   lineRange: z.tuple([z.number(), z.number()]).optional(),
   details: z.record(z.any()).optional(),
 });
+
+export const ObserveResultSchema = z
+  .object({
+    level: z.enum(['L0', 'L1', 'L2', 'L3', 'L4']),
+    format: z.enum(['yaml', 'json', 'sexp']),
+    data: z.record(z.string(), z.any()),
+    payload: z.string().optional(),
+    tokenEstimate: z.number().optional(),
+    evidence: EvidenceMetadataSchema.passthrough().optional(),
+  })
+  .passthrough();
+
+// Understand Schemas
+export const UnderstandParamsSchema = z.object({
+  query: z.enum(['impact', 'dependencies', 'causality', 'why_state', 'signals']),
+  target: z.string().optional(),
+});
+
+export const ImpactResultSchema = z
+  .object({
+    query: z.literal('impact').optional(),
+    target: z.string(),
+    impact: z
+      .object({
+        target: z.string(),
+        affectedSymbols: z.array(z.string()).optional(),
+        breakingRisk: z.enum(['LOW', 'MEDIUM', 'HIGH', 'UNKNOWN', 'low', 'medium', 'high', 'unknown']).optional(),
+        summary: z.string().optional(),
+        observed: z.boolean().optional(),
+        evidence: EvidenceMetadataSchema.passthrough().optional(),
+      })
+      .passthrough(),
+  })
+  .passthrough();
+
+export const CausalityResultSchema = z
+  .object({
+    query: z.enum(['causality', 'why_state']).optional(),
+    target: z.string(),
+    causality: z
+      .object({
+        target: z.string(),
+        observed: z.boolean(),
+        traceCount: z.number().optional(),
+        traceChain: z.array(z.any()).optional(),
+        statusCode: z.number().optional(),
+        latencyMs: z.number().optional(),
+        rootCause: z.string().optional(),
+        note: z.string().optional(),
+        evidence: EvidenceMetadataSchema.passthrough().optional(),
+      })
+      .passthrough(),
+  })
+  .passthrough();
+
+// Evidence & Resource Schemas
 
 export const ResourceReferenceSchema = z.object({
   id: z.string(),
@@ -159,56 +175,67 @@ export const GetSourceParamsSchema = z.object({
   filePath: z.string(),
 });
 
-export const GetSourceResultSchema = z.object({
-  target: z.string().optional(),
-  componentId: z.string().optional(),
-  filePath: z.string(),
-  version: z.string().regex(/^sha256:[a-f0-9]{64}$/),
-  source: z.string(),
-  contract: z
-    .object({
-      target: z.string().optional(),
-      componentId: z.string().optional(),
-      stateFields: z.array(z.string()).optional(),
-      actionNames: z.array(z.string()).optional(),
-      elementAgentIds: z.array(z.string()).optional(),
-    })
-    .optional(),
-  evidence: EvidenceMetadataSchema.optional(),
-});
+export const GetSourceResultSchema = z
+  .object({
+    path: z.string(),
+    symbol: z.string().optional(),
+    version: z.string().regex(/^sha256:[a-f0-9]{64}$/),
+    source: z.string(),
+    startLine: z.number().optional(),
+    endLine: z.number().optional(),
+    contract: z
+      .object({
+        target: z.string().optional(),
+        componentId: z.string().optional(),
+        stateFields: z.array(z.string()).optional(),
+        actionNames: z.array(z.string()).optional(),
+        elementAgentIds: z.array(z.string()).optional(),
+      })
+      .optional(),
+    evidence: EvidenceMetadataSchema.passthrough().optional(),
+  })
+  .passthrough();
 
 export const ApplyEditParamsSchema = z.object({
-  filePath: z.string(),
-  source: z.string(),
+  path: z.string(),
+  symbol: z.string().optional(),
+  replacement: z.string(),
   expectedVersion: z.string(),
 });
 
-export const ApplyEditResultSchema = z.object({
-  success: z.boolean(),
-  filePath: z.string(),
-  version: z.string().regex(/^sha256:[a-f0-9]{64}$/),
-  message: z.string().optional(),
-});
+export const ApplyEditResultSchema = z
+  .object({
+    status: z.enum(['APPLIED', 'CURRENT']),
+    path: z.string(),
+    symbol: z.string().optional(),
+    newVersion: z.string().regex(/^sha256:[a-f0-9]{64}$/),
+    syntaxCheck: z
+      .object({
+        status: z.enum(['passed', 'skipped', 'failed']),
+        tool: z.string().optional(),
+        error: z.string().optional(),
+      })
+      .optional(),
+    backupPath: z.string().optional(),
+    rollbackHint: z.string().optional(),
+  })
+  .passthrough();
 
 // Verify Schemas
 export const VerifyParamsSchema = z.object({
   target: z.string().optional(),
   componentId: z.string().optional(),
-  action: z.string(),
+  action: z.string().optional(),
   payload: z.any().optional(),
 });
 
-export const VerifyResultSchema = z.object({
+export const VerifyResultSchema = z
+  .object({
   status: z.enum(['passed', 'failed']),
   target: z.string().optional(),
   componentId: z.string().optional(),
-  action: z.string(),
-  diff: z.record(
-    z.object({
-      before: z.any(),
-      after: z.any(),
-    })
-  ),
+  action: z.string().optional(),
+  diff: z.record(z.any()),
   surfaceDiff: z
     .array(
       z.object({
@@ -230,6 +257,15 @@ export const VerifyResultSchema = z.object({
     })
     .optional(),
   durationMs: z.number(),
-  evidence: EvidenceMetadataSchema.optional(),
+  scope: z
+    .object({
+      checked: z.array(z.string()),
+      notExecuted: z.array(z.string()).optional(),
+      notSupported: z.array(z.string()).optional(),
+    })
+    .passthrough()
+    .optional(),
+  evidence: EvidenceMetadataSchema.passthrough().optional(),
   error: z.string().optional(),
-});
+  })
+  .passthrough();

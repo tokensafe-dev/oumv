@@ -1,0 +1,128 @@
+{
+  "method": "oumv/handshake",
+  "profile": "frontend",
+  "specVersion": "1.1.0",
+  "adapter": "frontend/react",
+  "note": "captured from the React/Vite controller without a browser tab; verify answers -32008 and L4 has no traces, which is the honest offline shape",
+  "cases": [
+    {
+      "name": "negotiates capabilities",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": "oumv/handshake:negotiates capabilities",
+        "method": "oumv/handshake",
+        "params": {
+          "protocolVersion": "1.1.0",
+          "clientInfo": {
+            "name": "oumv-examples",
+            "version": "1.0.0"
+          }
+        }
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": "oumv/handshake:negotiates capabilities",
+        "result": {
+          "protocolVersion": "1.1.0",
+          "profile": "frontend",
+          "sessionId": "sess-a64b301a35894fba",
+          "ttlSeconds": 3600,
+          "runtimeInfo": {
+            "name": "react",
+            "version": "18.x/19.x",
+            "framework": "React + Vite"
+          },
+          "capabilities": {
+            "observe": {
+              "levels": [
+                "L0",
+                "L1",
+                "L2",
+                "L3",
+                "L4"
+              ],
+              "formats": [
+                "yaml",
+                "json"
+              ]
+            },
+            "understand": {
+              "causality": true,
+              "signalsGraph": false,
+              "impactAnalysis": true
+            },
+            "mutate": {
+              "occ": true,
+              "syntaxGuard": true,
+              "ephemeralDispatch": true
+            },
+            "verify": {
+              "multiMetric": true,
+              "surfaceDiff": true
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "narrows requested observe levels",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": "oumv/handshake:narrows requested observe levels",
+        "method": "oumv/handshake",
+        "params": {
+          "protocolVersion": "1.1.0",
+          "requestedCapabilities": {
+            "observe": {
+              "levels": [
+                "L0",
+                "L1"
+              ]
+            }
+          }
+        }
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": "oumv/handshake:narrows requested observe levels",
+        "result": {
+          "protocolVersion": "1.1.0",
+          "profile": "frontend",
+          "sessionId": "sess-ada81df2cf26771a",
+          "ttlSeconds": 3600,
+          "runtimeInfo": {
+            "name": "react",
+            "version": "18.x/19.x",
+            "framework": "React + Vite"
+          },
+          "capabilities": {
+            "observe": {
+              "levels": [
+                "L0",
+                "L1"
+              ],
+              "formats": [
+                "yaml",
+                "json"
+              ]
+            },
+            "understand": {
+              "causality": true,
+              "signalsGraph": false,
+              "impactAnalysis": true
+            },
+            "mutate": {
+              "occ": true,
+              "syntaxGuard": true,
+              "ephemeralDispatch": true
+            },
+            "verify": {
+              "multiMetric": true,
+              "surfaceDiff": true
+            }
+          }
+        }
+      }
+    }
+  ]
+}

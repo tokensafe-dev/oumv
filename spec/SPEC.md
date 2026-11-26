@@ -192,6 +192,9 @@ Response envelope (all levels):
 | L4 | `{target?, traces: [{method, path, route?, handler?, statusCode, durationMs, timestamp}], traceCount, note?}` | `{target?, events: [{type, signal?, value?, timestamp}], count}` |
 
 Rules: `target` is required for L2/L3; a target that cannot be resolved is `-32009`.
+`format` is a rendering hint: an adapter MAY return an additional `payload` string when
+`format` is `"yaml"` — the same information as `data`, rendered for token efficiency.
+`data` stays structured in every format, so an agent never has to parse YAML to act.
 `version` at L3 MUST be `"sha256:" + sha256(bytes of the returned source)`. An empty
 collection MUST be returned as `[]` with a `note`, never as an error.
 

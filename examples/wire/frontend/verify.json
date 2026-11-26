@@ -1,0 +1,29 @@
+{
+  "method": "oumv/verify",
+  "profile": "frontend",
+  "specVersion": "1.1.0",
+  "adapter": "frontend/react",
+  "note": "captured from the React/Vite controller without a browser tab; verify answers -32008 and L4 has no traces, which is the honest offline shape",
+  "cases": [
+    {
+      "name": "browser-only verification, no tab",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": "oumv/verify:browser-only verification, no tab",
+        "method": "oumv/verify",
+        "params": {
+          "target": "component:TaskManager",
+          "action": "conformance-probe"
+        }
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": "oumv/verify:browser-only verification, no tab",
+        "error": {
+          "code": -32008,
+          "message": "No live browser tab connected to Vite DevServer. Open the app URL in a browser to verify React actions live."
+        }
+      }
+    }
+  ]
+}

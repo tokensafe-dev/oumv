@@ -3,6 +3,30 @@
 The wire contract is versioned by `protocolVersion` (currently **1.1.0**); this
 changelog tracks the OUMV specification and its reference tooling.
 
+## Unreleased
+
+- **Golden wire examples.** `examples/wire/{backend,frontend}/<method>.json` capture
+  real request/response pairs from the net/http adapter (`TestWireExamples`) and the
+  React controller (`capture-wire-examples.mjs`). The conformance suite validates
+  every captured params object against `$defs/Request` and every result against
+  `$defs/Response`, so the examples cannot drift from the schemas.
+- **Capability negotiation (§3.1).** Go, Python and React narrow the advertised
+  observe `levels`/`formats` to the client's `requestedCapabilities`; an empty
+  intersection is reported as `[]` instead of being widened back.
+- **Canonical result types.** `@oumv/schema` (zod) now mirrors §4: observe is
+  `{level, format, data, payload?}`, getSource is `path`-keyed, applyEdit returns
+  `status/path/newVersion`, verify requires timings/scope. The legacy in-process
+  `runConformanceSuite` was removed — the fixture runner is the single definition
+  of conformance.
+- **React adapter conformance.** Profile metadata moved inside `data` (the envelope
+  is `{level, format, data}` plus the optional YAML `payload`), L1 exposes spec
+  `elements`, L2/L3 `payload`/`data` are canonical, `getSource` no longer emits the
+  `filePath` alias. Two committed reports now exist: `react-vite.json` (offline,
+  Level 1 — `verify` answers `-32008` without a tab) and
+  `react-vite-browser.json` (**Level 3, 18/18** in headless Chrome via
+  `certify-react-browser.mjs` over the committed `certification/app`). The same
+  Level 3 result is asserted in `react-conformance.test.ts` with a stubbed bridge.
+
 ## v1.0.0 — 2026-11-26 (protocol freeze)
 
 OUMV leaves design-document status: the spec is an implementable contract, every

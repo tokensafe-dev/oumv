@@ -1,0 +1,118 @@
+{
+  "method": "oumv/handshake",
+  "profile": "backend",
+  "specVersion": "1.1.0",
+  "adapter": "backend/stdhttp",
+  "note": "captured from the net/http adapter against a temp workspace; paths are relative to it",
+  "cases": [
+    {
+      "name": "negotiates capabilities",
+      "request": {
+        "id": "oumv/handshake:negotiates capabilities",
+        "jsonrpc": "2.0",
+        "method": "oumv/handshake",
+        "params": {
+          "clientInfo": {
+            "name": "oumv-examples",
+            "version": "1.0.0"
+          },
+          "protocolVersion": "1.1.0"
+        }
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": "oumv/handshake:negotiates capabilities",
+        "result": {
+          "protocolVersion": "1.1.0",
+          "profile": "backend",
+          "sessionId": "sess-9d3d455a72e4d8dd",
+          "ttlSeconds": 3600,
+          "runtimeInfo": {
+            "name": "tokensafe-stdhttp",
+            "version": "cert"
+          },
+          "capabilities": {
+            "observe": {
+              "levels": [
+                "L0",
+                "L1",
+                "L2",
+                "L3",
+                "L4"
+              ],
+              "formats": [
+                "json"
+              ]
+            },
+            "understand": {
+              "causality": true,
+              "impactAnalysis": true
+            },
+            "mutate": {
+              "occ": true,
+              "syntaxGuard": true
+            },
+            "verify": {
+              "multiMetric": true
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "narrows requested observe levels",
+      "request": {
+        "id": "oumv/handshake:narrows requested observe levels",
+        "jsonrpc": "2.0",
+        "method": "oumv/handshake",
+        "params": {
+          "protocolVersion": "1.1.0",
+          "requestedCapabilities": {
+            "observe": {
+              "levels": [
+                "L0",
+                "L1"
+              ]
+            }
+          }
+        }
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": "oumv/handshake:narrows requested observe levels",
+        "result": {
+          "protocolVersion": "1.1.0",
+          "profile": "backend",
+          "sessionId": "sess-d0b156a5034dc286",
+          "ttlSeconds": 3600,
+          "runtimeInfo": {
+            "name": "tokensafe-stdhttp",
+            "version": "cert"
+          },
+          "capabilities": {
+            "observe": {
+              "levels": [
+                "L0",
+                "L1"
+              ],
+              "formats": [
+                "json"
+              ]
+            },
+            "understand": {
+              "causality": true,
+              "impactAnalysis": true
+            },
+            "mutate": {
+              "occ": true,
+              "syntaxGuard": true
+            },
+            "verify": {
+              "multiMetric": true
+            }
+          }
+        }
+      }
+    }
+  ]
+}

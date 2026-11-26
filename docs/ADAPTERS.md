@@ -106,12 +106,28 @@ Validate an adapter manifest (identity, profiles, capability constraints) agains
 npx -p tokensafe-oumv oumv-lint-adapter adapters/react-vite.json
 ```
 
+Golden request/response pairs live in `examples/wire/<profile>/<method>.json`; the
+schema suite validates them, so the documented wire and the tested wire cannot drift.
+Regenerate them with `TestWireExamples` (Go) and
+`agent-dom/packages/vite/scripts/capture-wire-examples.mjs` (React).
+
 Committed reports are re-generated in CI and diffed (`scripts/check_certification.py`
 in `tokensafe-backend`) — a level that stops reproducing fails the build.
 
-For the React adapter the runtime is a Vite plugin, so certification runs it headless
-over stdio (`packages/vite/scripts/oumv-stdio.mjs` in `agent-dom`) against a copy of a
-React workspace:
+For the React adapter there are two runs. The **browser** run is the real certificate:
+it starts the app's Vite dev server, opens it in headless Chrome (`playwright-core`
+with the system Chrome channel), waits for the bridge, and runs `oumv-certify --url`
+against the committed `certification/app` — 18/18, level 3.
+
+```bash
+cd agent-dom/certification/app && npm install && cd ../..
+node agent-dom/packages/vite/scripts/certify-react-browser.mjs \
+  --root agent-dom/certification/app \
+  --certify agent-oumv/packages/conformance/dist/cli/certify.js \
+  --report agent-dom/certification/react-vite-browser.json
+```
+
+The headless **stdio** run stays as the honest offline shape:
 
 ```bash
 oumv-certify --adapter frontend/react --framework react --profile frontend \
@@ -153,7 +169,7 @@ Two rules that keep reports trustworthy:
 | `backend/chi` | backend | HTTP, SSE, WS, stdio | 3 | `tokensafe-backend/certification/go-chi.json` |
 | `backend/stdhttp` | backend | HTTP, SSE, WS, stdio | 3 | `tokensafe-backend/certification/go-stdhttp.json` |
 | `backend/fastapi` | backend | HTTP, SSE, WS | 3 | `tokensafe-backend/certification/python-fastapi.json` |
-| `frontend/react` | frontend | HTTP, batch, SSE, WS | 1 offline (L2–L3 need a live tab, not yet driven by CI) | `agent-dom/certification/react-vite.json` |
+| `frontend/react` | frontend | HTTP, batch, SSE, WS | **3 with a browser tab**, 1 offline | `agent-dom/certification/react-vite-browser.json` (L3), `react-vite.json` (L1 offline) |
 
 Node/Express, Django/Flask, Next and Angular adapters follow after the v1.0 freeze.
 

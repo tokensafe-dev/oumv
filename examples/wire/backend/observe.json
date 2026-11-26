@@ -1,0 +1,239 @@
+{
+  "method": "oumv/observe",
+  "profile": "backend",
+  "specVersion": "1.1.0",
+  "adapter": "backend/stdhttp",
+  "note": "captured from the net/http adapter against a temp workspace; paths are relative to it",
+  "cases": [
+    {
+      "name": "L0 pulse/surface",
+      "request": {
+        "id": "oumv/observe:L0 pulse/surface",
+        "jsonrpc": "2.0",
+        "method": "oumv/observe",
+        "params": {
+          "level": "L0"
+        }
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": "oumv/observe:L0 pulse/surface",
+        "result": {
+          "level": "L0",
+          "format": "json",
+          "data": {
+            "uptimeSeconds": 0,
+            "goroutines": 7,
+            "memoryAllocMB": 0,
+            "activeRoutes": 1,
+            "errorCount1m": 0,
+            "status": "HEALTHY"
+          },
+          "tokenEstimate": 30
+        }
+      }
+    },
+    {
+      "name": "L1 pulse/surface",
+      "request": {
+        "id": "oumv/observe:L1 pulse/surface",
+        "jsonrpc": "2.0",
+        "method": "oumv/observe",
+        "params": {
+          "level": "L1"
+        }
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": "oumv/observe:L1 pulse/surface",
+        "result": {
+          "level": "L1",
+          "format": "json",
+          "data": {
+            "endpoints": [
+              {
+                "method": "GET",
+                "path": "/api/v1/orders",
+                "handlerName": "stdhttp.Handler"
+              }
+            ]
+          },
+          "tokenEstimate": 45
+        }
+      }
+    },
+    {
+      "name": "L2 route contract",
+      "request": {
+        "id": "oumv/observe:L2 route contract",
+        "jsonrpc": "2.0",
+        "method": "oumv/observe",
+        "params": {
+          "level": "L2",
+          "target": "GET /api/v1/orders"
+        }
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": "oumv/observe:L2 route contract",
+        "result": {
+          "level": "L2",
+          "format": "json",
+          "data": {
+            "target": "GET /api/v1/orders",
+            "method": "GET",
+            "path": "/api/v1/orders",
+            "handlerName": "stdhttp.Handler",
+            "note": "route contract from live router registration; request/response DTOs are not reflectable from a mounted router — use observe L3 for the handler source",
+            "evidence": {
+              "provenance": "runtime",
+              "sourceAdapter": "tokensafe-stdhttp",
+              "confidence": "confirmed"
+            }
+          },
+          "tokenEstimate": 80
+        }
+      }
+    },
+    {
+      "name": "L3 handler source",
+      "request": {
+        "id": "oumv/observe:L3 handler source",
+        "jsonrpc": "2.0",
+        "method": "oumv/observe",
+        "params": {
+          "level": "L3",
+          "target": "cert_edit_target.go"
+        }
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": "oumv/observe:L3 handler source",
+        "result": {
+          "level": "L3",
+          "format": "json",
+          "data": {
+            "symbol": "",
+            "path": "cert_edit_target.go",
+            "source": "package cert\n\nfunc Value() int {\n\treturn 41\n}\n",
+            "version": "sha256:8b877082c7e07db686c4776a0944ae99490148df91758fcae8dce7387d39d100",
+            "startLine": 1,
+            "endLine": 6
+          },
+          "tokenEstimate": 300
+        }
+      }
+    },
+    {
+      "name": "L4 recorded traces",
+      "request": {
+        "id": "oumv/observe:L4 recorded traces",
+        "jsonrpc": "2.0",
+        "method": "oumv/observe",
+        "params": {
+          "level": "L4"
+        }
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": "oumv/observe:L4 recorded traces",
+        "result": {
+          "level": "L4",
+          "format": "json",
+          "data": {
+            "traces": [
+              {
+                "method": "POST",
+                "path": "/__oumv/rpc",
+                "route": "/__oumv/rpc",
+                "handler": "stdhttp.Handler",
+                "statusCode": 200,
+                "durationMs": 0.091,
+                "timestamp": "2026-11-26T15:23:43.037897Z"
+              },
+              {
+                "method": "GET",
+                "path": "/api/v1/orders",
+                "route": "/api/v1/orders",
+                "handler": "",
+                "statusCode": 200,
+                "durationMs": 0.016,
+                "timestamp": "2026-11-26T15:23:43.037843Z"
+              },
+              {
+                "method": "GET",
+                "path": "/api/v1/orders",
+                "route": "/api/v1/orders",
+                "handler": "stdhttp.Handler",
+                "statusCode": 200,
+                "durationMs": 0.002,
+                "timestamp": "2026-11-26T15:23:43.037842Z"
+              },
+              {
+                "method": "POST",
+                "path": "/__oumv/rpc",
+                "route": "/__oumv/rpc",
+                "handler": "stdhttp.Handler",
+                "statusCode": 200,
+                "durationMs": 0.12,
+                "timestamp": "2026-11-26T15:23:43.037649Z"
+              },
+              {
+                "method": "POST",
+                "path": "/__oumv/rpc",
+                "route": "/__oumv/rpc",
+                "handler": "stdhttp.Handler",
+                "statusCode": 200,
+                "durationMs": 0.054,
+                "timestamp": "2026-11-26T15:23:43.037121Z"
+              },
+              {
+                "method": "POST",
+                "path": "/__oumv/rpc",
+                "route": "/__oumv/rpc",
+                "handler": "stdhttp.Handler",
+                "statusCode": 200,
+                "durationMs": 0.026,
+                "timestamp": "2026-11-26T15:23:43.036892Z"
+              },
+              {
+                "method": "POST",
+                "path": "/__oumv/rpc",
+                "route": "/__oumv/rpc",
+                "handler": "stdhttp.Handler",
+                "statusCode": 200,
+                "durationMs": 0.359,
+                "timestamp": "2026-11-26T15:23:43.036694Z"
+              },
+              {
+                "method": "POST",
+                "path": "/__oumv/rpc",
+                "route": "/__oumv/rpc",
+                "handler": "stdhttp.Handler",
+                "statusCode": 200,
+                "durationMs": 0.072,
+                "timestamp": "2026-11-26T15:23:43.036155Z"
+              },
+              {
+                "method": "POST",
+                "path": "/__oumv/rpc",
+                "route": "/__oumv/rpc",
+                "handler": "stdhttp.Handler",
+                "statusCode": 200,
+                "durationMs": 4.445,
+                "timestamp": "2026-11-26T15:23:43.0336Z"
+              }
+            ],
+            "traceCount": 9,
+            "evidence": {
+              "provenance": "runtime",
+              "sourceAdapter": "tokensafe-stdhttp",
+              "confidence": "confirmed"
+            }
+          },
+          "tokenEstimate": 175
+        }
+      }
+    }
+  ]
+}

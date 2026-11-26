@@ -1,0 +1,31 @@
+{
+  "method": "oumv/getSource",
+  "profile": "frontend",
+  "specVersion": "1.1.0",
+  "adapter": "frontend/react",
+  "note": "captured from the React/Vite controller without a browser tab; verify answers -32008 and L4 has no traces, which is the honest offline shape",
+  "cases": [
+    {
+      "name": "component source with OCC token",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": "oumv/getSource:component source with OCC token",
+        "method": "oumv/getSource",
+        "params": {
+          "path": "src/store.ts"
+        }
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": "oumv/getSource:component source with OCC token",
+        "result": {
+          "path": "src/store.ts",
+          "version": "sha256:61915a502f70592141b3d32a7a806b512d98938a2c9deb0cb4e52d4433f411db",
+          "source": "import type { TaskItem } from '../../../src/types.js';\nimport type { MockTaskBackend } from '../../../src/oracle/mock-api.js';\n\nexport interface TaskManagerState {\n  tasks: TaskItem[];\n  filterStatus: string;\n  filterPriority: string;\n  searchQuery: string;\n  isSaving: boolean;\n  errorMessage: string | null;\n  successMessage: string | null;\n}\n\n/**\n * Synchronous store behind the React view.\n *\n * The oracle asserts on state immediately after a dispatch (including \"isSaving is\n * true while the request is in flight\"), which React's concurrent scheduler cannot\n * guarantee on its own. Keeping the source of truth here — and rendering it through\n * `useSyncExternalStore` — keeps the UI genuinely React while making state reads\n * deterministic.\n */\nexport class TaskManagerStore {\n  private state: TaskManagerState;\n  private listeners = new Set<() => void>();\n\n  constructor(initialTasks: TaskItem[], private backend?: MockTaskBackend) {\n    this.state = {\n      tasks: JSON.parse(JSON.stringify(initialTasks)),\n      filterStatus: 'All',\n      filterPriority: 'All',\n      searchQuery: '',\n      isSaving: false,\n      errorMessage: null,\n      successMessage: null,\n    };\n  }\n\n  getSnapshot = (): TaskManagerState => this.state;\n\n  subscribe = (listener: () => void): (() => void) => {\n    this.listeners.add(listener);\n    return () => this.listeners.delete(listener);\n  };\n\n  private set(patch: Partial<TaskManagerState>): void {\n    this.state = { ...this.state, ...patch };\n    for (const listener of this.listeners) listener();\n  }\n\n  getState(): TaskManagerState {\n    return this.state;\n  }\n\n  addTask(payload: { title: string; priority?: TaskItem['priority']; tags?: string[] }): void {\n    if (!payload?.title?.trim()) return;\n    const task: TaskItem = {\n      id: `task-${Date.now()}`,\n      title: payload.title.trim(),\n      status: 'Active',\n      priority: payload.priority ?? 'Medium',\n      tags: payload.tags ?? [],\n      updatedAt: Date.now(),\n    };\n    this.set({ tasks: [...this.state.tasks, task] });\n  }\n\n  toggleTask(id: string): void {\n    this.set({\n      tasks: this.state.tasks.map((t) =>\n        t.id === id\n          ? { ...t, status: t.status === 'Active' ? 'Completed' : 'Active', updatedAt: Date.now() }\n          : t\n      ),\n    });\n  }\n\n  setSearchQuery(query: string): void {\n    this.set({ searchQuery: query });\n  }\n\n  setFilterStatus(status: string): void {\n    this.set({ filterStatus: status });\n  }\n\n  setFilterPriority(priority: string): void {\n    this.set({ filterPriority: priority });\n  }\n\n  async saveTasks(): Promise<void> {\n    if (!this.backend) return;\n    this.set({ isSaving: true, errorMessage: null, successMessage: null });\n    try {\n      await this.backend.saveTasks(this.state.tasks);\n      this.set({ isSaving: false, successMessage: 'Saved successfully' });\n    } catch (err: any) {\n      this.set({ isSaving: false, errorMessage: err?.message || 'Failed to save tasks' });\n      throw err;\n    }\n  }\n\n  async retrySave(): Promise<void> {\n    return this.saveTasks();\n  }\n\n  async optimisticToggleTask(id: string): Promise<void> {\n    const prior = this.state.tasks.find((t) => t.id === id);\n    if (!prior) return;\n    const nextStatus: TaskItem['status'] = prior.status === 'Active' ? 'Completed' : 'Active';\n\n    this.set({\n      tasks: this.state.tasks.map((t) => (t.id === id ? { ...t, status: nextStatus } : t)),\n    });\n\n    if (!this.backend) return;\n    try {\n      await this.backend.syncTask({ ...prior, status: nextStatus });\n    } catch (err: any) {\n      this.set({\n        tasks: this.state.tasks.map((t) => (t.id === id ? { ...t, status: prior.status } : t)),\n        errorMessage: err?.message || 'Optimistic sync failed',\n      });\n      throw err;\n    }\n  }\n}\n\nexport function selectFilteredTasks(state: TaskManagerState): TaskItem[] {\n  return state.tasks.filter((task) => {\n    if (state.filterStatus === 'Active' && task.status !== 'Active') return false;\n    if (state.filterStatus === 'Completed' && task.status !== 'Completed') return false;\n    if (state.filterPriority !== 'All' && task.priority !== state.filterPriority) return false;\n    if (state.searchQuery.trim()) {\n      const q = state.searchQuery.toLowerCase();\n      const inTitle = task.title.toLowerCase().includes(q);\n      const inTags = task.tags?.some((tag) => tag.toLowerCase().includes(q)) ?? false;\n      if (!inTitle && !inTags) return false;\n    }\n    return true;\n  });\n}\n",
+          "startLine": 1,
+          "endLine": 142
+        }
+      }
+    }
+  ]
+}

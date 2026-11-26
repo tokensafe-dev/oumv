@@ -1,0 +1,46 @@
+{
+  "method": "oumv/understand",
+  "profile": "frontend",
+  "specVersion": "1.1.0",
+  "adapter": "frontend/react",
+  "note": "captured from the React/Vite controller without a browser tab; verify answers -32008 and L4 has no traces, which is the honest offline shape",
+  "cases": [
+    {
+      "name": "impact from the static graph",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": "oumv/understand:impact from the static graph",
+        "method": "oumv/understand",
+        "params": {
+          "query": "impact",
+          "target": "TaskManager"
+        }
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": "oumv/understand:impact from the static graph",
+        "result": {
+          "query": "impact",
+          "target": "TaskManager",
+          "impact": {
+            "target": "TaskManager",
+            "filePath": "TaskManager",
+            "directlyAffected": [],
+            "indirectlyAffected": [],
+            "safeComponents": [
+              "ReactTaskManager"
+            ],
+            "recommendation": "Safe: no direct importers found for 'TaskManager'.",
+            "contracts": [],
+            "observed": false,
+            "evidence": {
+              "provenance": "static",
+              "sourceAdapter": "tokensafe-ui-react-vite",
+              "confidence": "probable"
+            }
+          }
+        }
+      }
+    }
+  ]
+}

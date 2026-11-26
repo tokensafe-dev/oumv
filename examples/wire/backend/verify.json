@@ -1,0 +1,55 @@
+{
+  "method": "oumv/verify",
+  "profile": "backend",
+  "specVersion": "1.1.0",
+  "adapter": "backend/stdhttp",
+  "note": "captured from the net/http adapter against a temp workspace; paths are relative to it",
+  "cases": [
+    {
+      "name": "executes the live handler",
+      "request": {
+        "id": "oumv/verify:executes the live handler",
+        "jsonrpc": "2.0",
+        "method": "oumv/verify",
+        "params": {
+          "action": "conformance-probe",
+          "target": "GET /api/v1/orders"
+        }
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": "oumv/verify:executes the live handler",
+        "result": {
+          "status": "passed",
+          "target": "GET /api/v1/orders",
+          "statusCode": 200,
+          "diff": {
+            "responseBody": "{\"orders\":[]}",
+            "status": 200
+          },
+          "timings": {
+            "t_action_ms": 0.016,
+            "t_schema_ms": 0,
+            "t_propagation_ms": 0,
+            "t_dom_ms": 0,
+            "t_total_ms": 0.016
+          },
+          "durationMs": 0.016,
+          "scope": {
+            "checked": [
+              "in-memory dispatch against the live handler"
+            ],
+            "notExecuted": [
+              "external processes",
+              "real network",
+              "persistent database state"
+            ],
+            "notSupported": [
+              "browser/DOM assertions"
+            ]
+          }
+        }
+      }
+    }
+  ]
+}
