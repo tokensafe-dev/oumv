@@ -40,10 +40,17 @@ const loadFixture = () => JSON.parse(readFileSync(FIXTURES_PATH, 'utf-8')) as {
 };
 
 describe('language-neutral conformance fixtures', () => {
+  it('requires the handshake to prove profile and sessionId', () => {
+    const handshake = loadFixture().cases.find((c) => c.id === 'handshake-negotiates-capabilities')!;
+    expect(handshake.expectResultFields).toEqual(
+      expect.arrayContaining(['profile', 'sessionId', 'capabilities'])
+    );
+  });
+
   it('references the OUMV spec, protocol version and fixture version', () => {
     const data = loadFixture();
     expect(data.protocolVersion).toBe('1.1.0');
-    expect(data.fixtureVersion).toBe(2);
+    expect(data.fixtureVersion).toBe(3);
     expect(data.spec).toContain('SPEC.md');
   });
 
@@ -56,6 +63,9 @@ describe('language-neutral conformance fixtures', () => {
   it('contains the mandatory core cases', () => {
     const ids = loadFixture().cases.map((c) => c.id);
     expect(ids).toContain('handshake-negotiates-capabilities');
+    expect(ids).toContain('unknown-session-is-rejected');
+    expect(ids).toContain('get-source-returns-occ-token');
+    expect(ids).toContain('verify-returns-status-timings-and-scope');
     expect(ids).toContain('unknown-method-is-jsonrpc-method-not-found');
     expect(ids).toContain('occ-conflict-rejected');
     expect(ids).toContain('apply-edit-without-version-rejected');
