@@ -2,6 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/tokensafe-dev/oumv/schemas/oumv-handshake.json",
   "title": "oumv/handshake",
+  "x-oumv-spec-version": "1.1.0",
   "$defs": {
     "Request": {
       "type": "object",

@@ -513,6 +513,9 @@ Reports are committed per adapter (e.g. `tokensafe-backend/certification/*.json`
   MINOR = additive fields/methods, PATCH = clarifications only.
 * `protocolVersion` in the handshake is the version the runtime serves. A runtime MUST
   accept a client whose MAJOR matches and MAY reject others with `-32006`.
+* **Minimum supported version.** A runtime MUST serve its own version and every earlier
+  MINOR of the same MAJOR; a client sending a higher MINOR MUST tolerate additive
+  fields it does not know. Dropping support for a MINOR is a MAJOR change.
 * Deprecated fields (§4.6) remain accepted for one MINOR after their replacement ships,
   are announced in the CHANGELOG, and are removed at the next MAJOR.
 * `fixtures/conformance-cases.json` carries `fixtureVersion`; a certification report is
@@ -524,6 +527,7 @@ Reports are committed per adapter (e.g. `tokensafe-backend/certification/*.json`
 
 ## Changelog
 
+- **v1.0.0 release (2026-11-26)**: first stable release. Freezes document revision `v1.4-canonical`, wire `protocolVersion` **1.1.0** and `fixtureVersion` **4**. Certification: go-gin/go-chi/go-stdhttp/python-fastapi level 3 (18/18), React/Vite level 1 offline (15/18; L2–L3 need a browser tab). Tooling: `oumv-certify`, `oumv-lint-adapter`, adapter manifests with a capability gate.
 - **v1.4-canonical (2026-11-26)**: normative transport bindings (§2.2 HTTP/batch, §2.3 SSE, §2.4 WebSocket, §2.5 stdio), §3 gains a session-lifecycle body (sessionId/TTL/disconnect, `session_expired`), §4 replaces prose with normative per-level/per-profile payloads, target grammar, mandatory-OCC guard order and the deprecated-alias table, §5 adds the full code table (JSON-RPC codes included, `-32010` reserved) plus method→code mapping and `error.data.reason`.
 - **v1.3-guidance (2026-11-26)**: handshake negotiation rules (profile required, no over-claiming, absent capability = unsupported), new §9.2 Runtime Discovery & Agent Guidance (zero-footprint descriptor contract, first-contact activation, no-trace injection preference).
 - **v1.2-conformance (2026-11-26)**: §10 rewritten — per-profile level definitions (frontend/backend), level-tagged fixtures (v2, `preconditions`), cumulative level derivation, mandatory-OCC guard case, and the certification report artifact (`schemas/conformance-report.json`) that a level claim must reference.

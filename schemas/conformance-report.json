@@ -2,7 +2,8 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/tokensafe-dev/oumv/schemas/conformance-report.json",
   "title": "OUMV Conformance Report",
-  "description": "Machine-readable certification artifact (spec §10.3). A runtime MUST NOT claim a conformance level without a report of this shape produced by a reproducible passing run.",
+  "x-oumv-spec-version": "1.1.0",
+  "description": "Machine-readable certification artifact (spec \u00a710.3). A runtime MUST NOT claim a conformance level without a report of this shape produced by a reproducible passing run.",
   "type": "object",
   "required": [
     "adapterName",
@@ -35,10 +36,22 @@
       "minimum": 1,
       "description": "Version of fixtures/conformance-cases.json that was executed."
     },
-    "total": { "type": "integer", "minimum": 0 },
-    "passed": { "type": "integer", "minimum": 0 },
-    "failed": { "type": "integer", "minimum": 0 },
-    "skipped": { "type": "integer", "minimum": 0 },
+    "total": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "passed": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "failed": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "skipped": {
+      "type": "integer",
+      "minimum": 0
+    },
     "attainedLevel": {
       "type": "integer",
       "minimum": 0,
@@ -47,25 +60,57 @@
     },
     "levels": {
       "type": "object",
-      "required": ["1", "2", "3"],
+      "required": [
+        "1",
+        "2",
+        "3"
+      ],
       "additionalProperties": false,
       "properties": {
-        "1": { "$ref": "#/$defs/levelStatus" },
-        "2": { "$ref": "#/$defs/levelStatus" },
-        "3": { "$ref": "#/$defs/levelStatus" }
+        "1": {
+          "$ref": "#/$defs/levelStatus"
+        },
+        "2": {
+          "$ref": "#/$defs/levelStatus"
+        },
+        "3": {
+          "$ref": "#/$defs/levelStatus"
+        }
       }
     },
     "cases": {
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["id", "level", "status"],
+        "required": [
+          "id",
+          "level",
+          "status"
+        ],
         "properties": {
-          "id": { "type": "string", "minLength": 1 },
-          "level": { "type": "integer", "minimum": 1, "maximum": 3 },
-          "status": { "type": "string", "enum": ["passed", "failed", "skipped"] },
-          "error": { "type": "string" },
-          "reason": { "type": "string" }
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "level": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 3
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "passed",
+              "failed",
+              "skipped"
+            ]
+          },
+          "error": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          }
         },
         "additionalProperties": true
       }
@@ -88,7 +133,11 @@
   "$defs": {
     "levelStatus": {
       "type": "string",
-      "enum": ["passed", "failed", "skipped"],
+      "enum": [
+        "passed",
+        "failed",
+        "skipped"
+      ],
       "description": "A level with any skipped or failed case is not 'passed'."
     }
   }

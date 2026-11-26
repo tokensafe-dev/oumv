@@ -2,40 +2,89 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://oumv.org/schemas/oumv-envelope.json",
   "title": "OUMV Protocol Envelope",
+  "x-oumv-spec-version": "1.1.0",
   "description": "Standard JSON-RPC 2.0 message envelope for OUMV requests and responses",
   "oneOf": [
     {
       "type": "object",
-      "required": ["jsonrpc", "id", "method"],
+      "required": [
+        "jsonrpc",
+        "id",
+        "method"
+      ],
       "properties": {
-        "jsonrpc": { "const": "2.0" },
-        "id": { "type": ["string", "number"] },
-        "method": { "type": "string" },
-        "params": { "type": "object" }
+        "jsonrpc": {
+          "const": "2.0"
+        },
+        "id": {
+          "type": [
+            "string",
+            "number"
+          ]
+        },
+        "method": {
+          "type": "string"
+        },
+        "params": {
+          "type": "object"
+        }
       }
     },
     {
       "type": "object",
-      "required": ["jsonrpc", "id", "result"],
+      "required": [
+        "jsonrpc",
+        "id",
+        "result"
+      ],
       "properties": {
-        "jsonrpc": { "const": "2.0" },
-        "id": { "type": ["string", "number"] },
-        "result": { "type": "object" }
+        "jsonrpc": {
+          "const": "2.0"
+        },
+        "id": {
+          "type": [
+            "string",
+            "number"
+          ]
+        },
+        "result": {
+          "type": "object"
+        }
       }
     },
     {
       "type": "object",
-      "required": ["jsonrpc", "id", "error"],
+      "required": [
+        "jsonrpc",
+        "id",
+        "error"
+      ],
       "properties": {
-        "jsonrpc": { "const": "2.0" },
-        "id": { "type": ["string", "number"] },
+        "jsonrpc": {
+          "const": "2.0"
+        },
+        "id": {
+          "type": [
+            "string",
+            "number"
+          ]
+        },
         "error": {
           "type": "object",
-          "required": ["code", "message"],
+          "required": [
+            "code",
+            "message"
+          ],
           "properties": {
-            "code": { "type": "integer" },
-            "message": { "type": "string" },
-            "data": { "type": "object" }
+            "code": {
+              "type": "integer"
+            },
+            "message": {
+              "type": "string"
+            },
+            "data": {
+              "type": "object"
+            }
           }
         }
       }
