@@ -1,4 +1,4 @@
-# The OUMV Protocol Specification (v1.2-conformance)
+# The OUMV Protocol Specification (v1.3-guidance)
 **The Universal Agent-Runtime Protocol (UARP)**
 
 - **Date**: 2026-11-22 (v1.0) · 2026-11-24 (v1.1-retrofit)  
@@ -83,7 +83,7 @@ Upon establishing a connection, the agent and runtime exchange capabilities:
 **Client Request:**
 ```json
 {
-  "protocolVersion": "1.0.0",
+  "protocolVersion": "1.1.0",
   "clientInfo": { "name": "Antigravity", "version": "2.0.0" },
   "supportedTransports": ["http", "memory"],
   "requestedCapabilities": {
@@ -98,8 +98,9 @@ Upon establishing a connection, the agent and runtime exchange capabilities:
 **Server Response:**
 ```json
 {
-  "protocolVersion": "1.0.0",
-  "runtimeInfo": { "name": "tokensafe-ui", "version": "0.1.6" },
+  "protocolVersion": "1.1.0",
+  "profile": "frontend",
+  "runtimeInfo": { "name": "tokensafe-ui", "version": "0.1.22" },
   "capabilities": {
     "observe": { "levels": ["L0", "L1", "L2", "L3", "L4"], "formats": ["yaml", "json"] },
     "understand": { "causality": true, "signalsGraph": true },
@@ -108,6 +109,13 @@ Upon establishing a connection, the agent and runtime exchange capabilities:
   }
 }
 ```
+
+**Negotiation rules (normative).**
+
+1. `protocolVersion` is the version the runtime actually implements; a runtime MUST NOT echo a version it does not serve.
+2. `profile` MUST be `"frontend"` or `"backend"` (spec §7). A runtime serving both reports the profile of the surface the agent is attached to.
+3. A runtime MUST either honour `requestedCapabilities` (returning only the requested capabilities it implements) or return the full implemented set and omit the rest. It MUST NOT advertise a level, method or capability it cannot serve: over-claiming is a conformance failure (§10).
+4. `requestedCapabilities` is advisory. Runtimes that cannot negotiate (older adapters) return their static capability set, and the agent MUST treat absent keys as unsupported.
 
 ---
 
@@ -264,6 +272,14 @@ The ecosystem consolidates technology knowledge into **two accumulator libraries
 
 The **TokenSafe MCP Gateway is the primary agent entry point** for full installations: its `oumv_*` tools route to live frontend/backend runtimes, fall back to static AST analysis, and merge cross-stack intelligence. The tokensafe-ui standalone MCP server (12 `tokensafe_*` tools) remains available for consumers of the npm package without the full TokenSafe install. Adapters MUST NOT be required to know which entry point an agent uses — both speak the same OUMV methods over the same transports.
 
+### 9.2 Runtime Discovery & Agent Guidance
+
+An OUMV runtime is only useful if the agent can find it and knows what it is for. Three requirements make that automatic:
+
+1. **Zero-footprint discovery descriptor.** A dev-server sidecar writes a per-workspace descriptor to `~/.tokensafe/runtimes/<sha256(realpath(workspace))[:16]>.json` (mode 0600) — never into the repository. Required fields: `type` (`frontend` | `backend`), `name`, `version`, `url` (JSON-RPC endpoint), `sessionToken`, `capabilities.observeLevels`. Readers MUST prefer this file over port scanning and MUST treat a descriptor without a live handshake as stale.
+2. **Activation on first contact.** The host integration (CLI / hooks / MCP server) MUST, on the first prompt in a workspace, (a) detect the stack, (b) ensure the adapter is present or state the exact install command, and (c) inject a routing brief that names, per profile, whether the agent works through OUMV or through the host's own tools. The brief MUST be delivered out-of-band (hook context or MCP `instructions`) and MUST NOT require committing files to the repository.
+3. **No-trace preference.** Where a runtime can be launched by a wrapper (Vite dev server, ASGI/uvicorn), adapters SHOULD be loadable without editing tracked files: an inline dev-server config, a global `sitecustomize` hook, or a command wrapper. In-process edits (e.g. one `AutoMount` line in Go `main`) MUST be marker-delimited, backed up outside the repository, validated by a build, and revertible byte-for-byte.
+
 ---
 
 ## 10. Conformance & Certification
@@ -310,6 +326,7 @@ Reports are committed per adapter (e.g. `tokensafe-backend/certification/*.json`
 
 ## Changelog
 
+- **v1.3-guidance (2026-11-26)**: handshake negotiation rules (profile required, no over-claiming, absent capability = unsupported), new §9.2 Runtime Discovery & Agent Guidance (zero-footprint descriptor contract, first-contact activation, no-trace injection preference).
 - **v1.2-conformance (2026-11-26)**: §10 rewritten — per-profile level definitions (frontend/backend), level-tagged fixtures (v2, `preconditions`), cumulative level derivation, mandatory-OCC guard case, and the certification report artifact (`schemas/conformance-report.json`) that a level claim must reference.
 - **v1.1-retrofit (2026-11-24)**: Retrofit architecture — resource model & evidence metadata (§6), profiles (§7), normative Mutation Policy (§8: enabled-by-default with guardrails, production fail-closed), error codes −32007…−32011 / −32603, accumulator repository landscape (§9), language-neutral conformance fixtures.
 - **v1.0 (2026-11-22)**: Initial draft — transports, handshake, four pillars, error codes −32001…−32006, conformance levels.

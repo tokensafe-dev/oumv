@@ -2,7 +2,7 @@
 ### Observe · Understand · Mutate · Verify
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/tokensafe-dev/oumv/blob/main/LICENSE)
-[![Protocol Version](https://img.shields.io/badge/OUMV-v1.1--retrofit-orange)](https://github.com/tokensafe-dev/oumv/blob/main/spec/SPEC.md)
+[![Protocol Version](https://img.shields.io/badge/OUMV-v1.3--guidance-orange)](https://github.com/tokensafe-dev/oumv/blob/main/spec/SPEC.md)
 [![Specification](https://img.shields.io/badge/docs-RFC%20Specification-blue)](https://github.com/tokensafe-dev/oumv/blob/main/spec/SPEC.md)
 
 > **OUMV (Observe, Understand, Mutate, Verify) is the open, transport-agnostic standard that enables autonomous AI coding agents to inspect, reason about, safely edit, and verify software systems (user interfaces, backend services, APIs) with zero context waste.**
@@ -41,8 +41,25 @@ OUMV Core defines the transport-neutral JSON-RPC 2.0 handshake, OCC mutation lif
              │                               │
              ▼                               ▼
        tokensafe-ui                  tokensafe-backend
- (SolidJS, React, Vue, Vite)       (Go: Gin/Chi · Python: FastAPI)
+ (React, Vue, Vite)               (Go: Gin/Chi/net-http · Python: FastAPI)
 ```
+
+### Supported stacks (adapters, not frameworks of our own)
+
+OUMV ships adapters for stacks users already have; there is no requirement to adopt a
+TokenSafe runtime. Each adapter below is certified per spec §10 — reports live in the
+implementation repo and are reproduced in CI.
+
+| Profile | Stack | Adapter entry point | Certification |
+| :--- | :--- | :--- | :--- |
+| Frontend | React 18/19 + Vite | `tokensafe-ui/vite` (zero-footprint bridge) | Level 3 (in-process conformance) |
+| Frontend | Vue 3 + Vite | `tokensafe-ui/vite` (DOM level) | L0-L2 advertised, not yet certified |
+| Backend | Go (Gin / Chi / net/http) | `tokensafe-backend/go/pkg/adapters/*` | Level 3, 15/15 over HTTP |
+| Backend | Python / FastAPI | `tokensafe-python` (`mount_tokensafe`) | Level 3, 15/15 over ASGI |
+| Backend | Node.js / Express | — | planned |
+
+The native SolidJS runtime in `tokensafe-ui` and the `tokensafe.New()` Go framework remain
+in the trees as reference implementations for tests; they are not the recommended path.
 
 ### Core Concepts
 
