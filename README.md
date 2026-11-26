@@ -9,7 +9,7 @@
 
 > **OUMV (Observe, Understand, Mutate, Verify) is the open, transport-agnostic standard that enables autonomous AI coding agents to inspect, reason about, safely edit, and verify software systems (user interfaces, backend services, APIs) with zero context waste.**
 >
-> With the **OUMV Retrofit Architecture**, any existing application (React, Vue, SolidJS, Go, Python/FastAPI; Node.js adapters are planned) can adopt OUMV progressively without rewriting its framework.
+> With the **OUMV Retrofit Architecture**, any existing application (React, Node.js/Express/Fastify, Go, Python/FastAPI; Vue is planned) can adopt OUMV progressively without rewriting its framework.
 
 ---
 
@@ -56,10 +56,10 @@ instead of inflating it (spec §10.1).
 | Profile | Stack | Adapter entry point | Certification |
 | :--- | :--- | :--- | :--- |
 | Frontend | React 18/19 + Vite | `tokensafe-ui/vite` (zero-footprint bridge) | Level 3 (in-process conformance) |
-| Frontend | Vue 3 + Vite | `tokensafe-ui/vite` (DOM level) | L0-L2 advertised, not yet certified |
-| Backend | Go (Gin / Chi / net/http) | `tokensafe-backend/go/pkg/adapters/*` | Level 3, 18/18 over HTTP (fixtures v4) |
-| Backend | Python / FastAPI | `tokensafe-backend-python` (`mount_tokensafe`) | Level 3, 18/18 over ASGI (fixtures v4) |
-| Backend | Node.js / Express | — | planned |
+| Frontend | Vue 3 + Vite | — | planned: the Vite plugin serves no OUMV endpoints for Vue yet |
+| Backend | Go (Gin / Chi / net/http) | `tokensafe-backend/go/pkg/adapters/*` | Level 3, 20/20 over HTTP (fixtures v5) |
+| Backend | Python / FastAPI | `tokensafe-backend-python` (`mount_tokensafe`) | Level 3, 20/20 over ASGI (fixtures v5) |
+| Backend | Node.js / Express, Fastify | `tokensafe-backend/node` | Level 3, 20/20 over HTTP (fixtures v5) |
 
 The native SolidJS runtime in `tokensafe-ui` and the `tokensafe.New()` Go framework remain
 in the trees as reference implementations for tests; they are not the recommended path.
@@ -111,7 +111,7 @@ Every failure is a typed JSON-RPC error. The normative table is [spec §5.1](spe
 ## Reference Implementations
 
 - [**tokensafe-ui**](https://github.com/tokensafe-dev/tokensafe-ui) — Frontend Profile accumulator: React adapter (`tokensafe-ui/react` — Zustand, Redux, Context, useReducer), Vue adapter (`tokensafe-ui/vue`), and the zero-footprint Vite bridge (`tokensafe-ui/vite`). The native SolidJS runtime remains in the package as a legacy reference implementation, not the recommended path.
-- [**tokensafe-backend**](https://github.com/tokensafe-dev/tokensafe-backend) — Backend Profile accumulator: Go adapters (`go/` — Gin, Chi, net/http) and the Python runtime (`python/` — FastAPI, SQLAlchemy rollback sandbox), published as `tokensafe-backend-python`. All four adapters are certified Level 3, 18/18 (fixtures v4, spec §10). Node.js adapters are planned, not started.
+- [**tokensafe-backend**](https://github.com/tokensafe-dev/tokensafe-backend) — Backend Profile accumulator: Go adapters (`go/` — Gin, Chi, net/http) and the Python runtime (`python/` — FastAPI, SQLAlchemy rollback sandbox), published as `tokensafe-backend-python`. All six adapters are certified Level 3, 20/20 (fixtures v5, spec §10).
 - [**tokensafe**](https://github.com/tokensafe-dev/tokensafe) — Main engine containing the Retrofit CLI (`tokensafe integrate`), out-of-the-box stack detection, and the MCP OUMV Gateway with Level 1 static fallback.
 
 ---
@@ -125,7 +125,7 @@ Three independent numbers, often mistaken for a mismatch:
 | Standard release | `v1.0.0` (2026-11-26) | The frozen standard. `tokensafe-oumv` and the monorepo are at 1.0.0. |
 | Document revision | `v1.4-canonical` | The revision of `spec/SPEC.md` that v1.0.0 freezes; see the changelog in that file. |
 | Wire `protocolVersion` | `1.1.0` | Sent in `oumv/handshake`. A runtime MUST echo the version it actually serves; clients accept a matching MAJOR. |
-| Fixtures | `fixtureVersion` 4 | 18 language-neutral cases; all four certified backend adapters re-ran against v4. |
+| Fixtures | `fixtureVersion` 5 | 20 language-neutral cases; all six certified backend adapters re-ran against v5. |
 
 These axes move independently by design: v1.0.0 freezes a document revision (v1.4-canonical),
 a wire version (1.1.0) and a fixture set (v4). Implementations negotiate the **wire** version,
