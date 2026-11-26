@@ -1,4 +1,4 @@
-# The OUMV Protocol Specification (v1.1-retrofit)
+# The OUMV Protocol Specification (v1.2-conformance)
 **The Universal Agent-Runtime Protocol (UARP)**
 
 - **Date**: 2026-11-22 (v1.0) · 2026-11-24 (v1.1-retrofit)  
@@ -268,16 +268,48 @@ The **TokenSafe MCP Gateway is the primary agent entry point** for full installa
 
 ## 10. Conformance & Certification
 
-Any frontend runtime claiming OUMV compliance MUST pass the test suites in `@oumv/conformance`:
-1. **Level 1 (Basic)**: Handshake, L0–L1 Observe, Action Verification.
-2. **Level 2 (Standard)**: L2–L3 Observe, Impact Analysis, OCC Mutations, A11y surface diffs.
-3. **Level 3 (Full)**: L4 Traces, Dynamic Signals Graph, Runtime Causality (`why_state`).
+Conformance is **per adapter and per profile**, and it is a claim that MUST be backed by a report artifact (see §10.3). Levels are cumulative: a runtime attains Level N only when every case at level ≤ N passes. A skipped case is never a pass — it caps the claim.
 
-Conformance fixtures are **language-neutral JSON** (`fixtures/`) so that Go and Python runtimes can be certified with their native toolchains, without TypeScript tooling. A runtime MUST NOT claim a conformance level without a reproducible passing run.
+### 10.1 Level definitions
+
+| Level | Frontend Profile requires | Backend Profile requires |
+| :--- | :--- | :--- |
+| **1 (Basic)** | Handshake, L0–L1 observe, action verification | Handshake, L0–L1 observe (routes/health), in-memory verify |
+| **2 (Standard)** | L2–L3 observe (contracts, source + OCC token), impact analysis, OCC mutations, surface diffs | L2–L3 observe (declared contract / DTOs, source + OCC token), impact analysis, OCC mutations with mandatory `expectedVersion` |
+| **3 (Full)** | L4 traces, dynamic signals graph, runtime causality (`why_state`) | L4 request traces, runtime causality (`observed` from real traces, never fabricated) |
+
+### 10.2 Language-neutral fixtures
+
+Cases live in `fixtures/conformance-cases.json` (`fixtureVersion` 2). Every case declares the `level` it certifies and may declare `preconditions` such as `verify` (which establishes the runtime evidence that L4/causality cases assert on). Each runtime executes the same file with its native toolchain — no TypeScript required for Go or Python certification.
+
+A case declares its expectations declaratively: `expectResultFields`, `expectError.code`, `expectLevelEquals`, `expectSha256Field`, `expectArrayField`, `expectEvidence`, `expectVersionMatchesContent`.
+
+**OCC is mandatory.** Exactly one case (`apply-edit-without-version-rejected`) omits `expectedVersion`, and it asserts `-32011 VALIDATION_FAILED`. A runtime that accepts an unversioned edit of an existing file cannot pass Level 2.
+
+### 10.3 Certification report
+
+A level claim MUST be accompanied by a report (schema: `schemas/conformance-report.json`) produced by a reproducible run:
+
+```json
+{
+  "adapterName": "go-gin",
+  "framework": "gin",
+  "specVersion": "1.1.0",
+  "fixtureVersion": 2,
+  "total": 15, "passed": 15, "failed": 0,
+  "attainedLevel": 3,
+  "levels": { "1": "passed", "2": "passed", "3": "passed" },
+  "cases": [{ "id": "handshake-negotiates-capabilities", "level": 1, "status": "passed" }],
+  "generatedAt": "2026-11-26T09:20:37Z"
+}
+```
+
+Reports are committed per adapter (e.g. `tokensafe-backend/certification/*.json`) and regenerated in CI, so a claim that stops passing is visible as a failing build rather than stale prose. An adapter MUST NOT advertise capabilities or observe levels it does not implement: over-claiming is a conformance failure in its own right.
 
 ---
 
 ## Changelog
 
+- **v1.2-conformance (2026-11-26)**: §10 rewritten — per-profile level definitions (frontend/backend), level-tagged fixtures (v2, `preconditions`), cumulative level derivation, mandatory-OCC guard case, and the certification report artifact (`schemas/conformance-report.json`) that a level claim must reference.
 - **v1.1-retrofit (2026-11-24)**: Retrofit architecture — resource model & evidence metadata (§6), profiles (§7), normative Mutation Policy (§8: enabled-by-default with guardrails, production fail-closed), error codes −32007…−32011 / −32603, accumulator repository landscape (§9), language-neutral conformance fixtures.
 - **v1.0 (2026-11-22)**: Initial draft — transports, handshake, four pillars, error codes −32001…−32006, conformance levels.
