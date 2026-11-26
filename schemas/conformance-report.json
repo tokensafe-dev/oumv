@@ -1,144 +1,144 @@
 {
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/tokensafe-dev/oumv/schemas/conformance-report.json",
-  "title": "OUMV Conformance Report",
-  "x-oumv-spec-version": "1.1.0",
-  "description": "Machine-readable certification artifact (spec \u00a710.3). A runtime MUST NOT claim a conformance level without a report of this shape produced by a reproducible passing run.",
-  "type": "object",
-  "required": [
-    "adapterName",
-    "specVersion",
-    "fixtureVersion",
-    "total",
-    "passed",
-    "failed",
-    "attainedLevel",
-    "levels",
-    "cases",
-    "generatedAt"
-  ],
-  "properties": {
-    "adapterName": {
-      "type": "string",
-      "minLength": 1,
-      "description": "Stable adapter identifier, e.g. go-gin, go-chi, go-stdhttp, python-fastapi, tokensafe-ui-react."
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "https://github.com/tokensafe-dev/oumv/schemas/conformance-report.json",
+ "title": "OUMV Conformance Report",
+ "x-oumv-spec-version": "1.2.0",
+ "description": "Machine-readable certification artifact (spec \u00a710.3). A runtime MUST NOT claim a conformance level without a report of this shape produced by a reproducible passing run.",
+ "type": "object",
+ "required": [
+  "adapterName",
+  "specVersion",
+  "fixtureVersion",
+  "total",
+  "passed",
+  "failed",
+  "attainedLevel",
+  "levels",
+  "cases",
+  "generatedAt"
+ ],
+ "properties": {
+  "adapterName": {
+   "type": "string",
+   "minLength": 1,
+   "description": "Stable adapter identifier, e.g. go-gin, go-chi, go-stdhttp, python-fastapi, tokensafe-ui-react."
+  },
+  "framework": {
+   "type": "string",
+   "description": "Underlying framework/technology, e.g. gin, chi, net/http, fastapi, react, solid."
+  },
+  "specVersion": {
+   "type": "string",
+   "description": "OUMV protocol version the run certified against."
+  },
+  "fixtureVersion": {
+   "type": "integer",
+   "minimum": 1,
+   "description": "Version of fixtures/conformance-cases.json that was executed."
+  },
+  "total": {
+   "type": "integer",
+   "minimum": 0
+  },
+  "passed": {
+   "type": "integer",
+   "minimum": 0
+  },
+  "failed": {
+   "type": "integer",
+   "minimum": 0
+  },
+  "skipped": {
+   "type": "integer",
+   "minimum": 0
+  },
+  "attainedLevel": {
+   "type": "integer",
+   "minimum": 0,
+   "maximum": 3,
+   "description": "Highest cumulative level whose cases all passed. 0 means no level is claimed."
+  },
+  "levels": {
+   "type": "object",
+   "required": [
+    "1",
+    "2",
+    "3"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "1": {
+     "$ref": "#/$defs/levelStatus"
     },
-    "framework": {
-      "type": "string",
-      "description": "Underlying framework/technology, e.g. gin, chi, net/http, fastapi, react, solid."
+    "2": {
+     "$ref": "#/$defs/levelStatus"
     },
-    "specVersion": {
+    "3": {
+     "$ref": "#/$defs/levelStatus"
+    }
+   }
+  },
+  "cases": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "required": [
+     "id",
+     "level",
+     "status"
+    ],
+    "properties": {
+     "id": {
       "type": "string",
-      "description": "OUMV protocol version the run certified against."
-    },
-    "fixtureVersion": {
+      "minLength": 1
+     },
+     "level": {
       "type": "integer",
       "minimum": 1,
-      "description": "Version of fixtures/conformance-cases.json that was executed."
-    },
-    "total": {
-      "type": "integer",
-      "minimum": 0
-    },
-    "passed": {
-      "type": "integer",
-      "minimum": 0
-    },
-    "failed": {
-      "type": "integer",
-      "minimum": 0
-    },
-    "skipped": {
-      "type": "integer",
-      "minimum": 0
-    },
-    "attainedLevel": {
-      "type": "integer",
-      "minimum": 0,
-      "maximum": 3,
-      "description": "Highest cumulative level whose cases all passed. 0 means no level is claimed."
-    },
-    "levels": {
-      "type": "object",
-      "required": [
-        "1",
-        "2",
-        "3"
-      ],
-      "additionalProperties": false,
-      "properties": {
-        "1": {
-          "$ref": "#/$defs/levelStatus"
-        },
-        "2": {
-          "$ref": "#/$defs/levelStatus"
-        },
-        "3": {
-          "$ref": "#/$defs/levelStatus"
-        }
-      }
-    },
-    "cases": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "required": [
-          "id",
-          "level",
-          "status"
-        ],
-        "properties": {
-          "id": {
-            "type": "string",
-            "minLength": 1
-          },
-          "level": {
-            "type": "integer",
-            "minimum": 1,
-            "maximum": 3
-          },
-          "status": {
-            "type": "string",
-            "enum": [
-              "passed",
-              "failed",
-              "skipped"
-            ]
-          },
-          "error": {
-            "type": "string"
-          },
-          "reason": {
-            "type": "string"
-          }
-        },
-        "additionalProperties": true
-      }
-    },
-    "generatedAt": {
-      "type": "string",
-      "description": "ISO-8601 UTC timestamp of the run."
-    },
-    "commit": {
-      "type": "string",
-      "description": "Optional VCS revision the report was produced from."
-    },
-    "environment": {
-      "type": "object",
-      "description": "Optional runner environment (toolchain versions, transport).",
-      "additionalProperties": true
-    }
-  },
-  "additionalProperties": false,
-  "$defs": {
-    "levelStatus": {
+      "maximum": 3
+     },
+     "status": {
       "type": "string",
       "enum": [
-        "passed",
-        "failed",
-        "skipped"
-      ],
-      "description": "A level with any skipped or failed case is not 'passed'."
-    }
+       "passed",
+       "failed",
+       "skipped"
+      ]
+     },
+     "error": {
+      "type": "string"
+     },
+     "reason": {
+      "type": "string"
+     }
+    },
+    "additionalProperties": true
+   }
+  },
+  "generatedAt": {
+   "type": "string",
+   "description": "ISO-8601 UTC timestamp of the run."
+  },
+  "commit": {
+   "type": "string",
+   "description": "Optional VCS revision the report was produced from."
+  },
+  "environment": {
+   "type": "object",
+   "description": "Optional runner environment (toolchain versions, transport).",
+   "additionalProperties": true
   }
+ },
+ "additionalProperties": false,
+ "$defs": {
+  "levelStatus": {
+   "type": "string",
+   "enum": [
+    "passed",
+    "failed",
+    "skipped"
+   ],
+   "description": "A level with any skipped or failed case is not 'passed'."
+  }
+ }
 }

@@ -1,209 +1,209 @@
 {
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/tokensafe-dev/oumv/schemas/oumv-understand.json",
-  "title": "oumv/understand",
-  "x-oumv-spec-version": "1.1.0",
-  "$defs": {
-    "Request": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "query"
-      ],
-      "properties": {
-        "query": {
-          "enum": [
-            "impact",
-            "causality",
-            "why_state",
-            "dependencies",
-            "signals"
-          ]
-        },
-        "target": {
-          "type": "string"
-        }
-      }
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "https://github.com/tokensafe-dev/oumv/schemas/oumv-understand.json",
+ "title": "oumv/understand",
+ "x-oumv-spec-version": "1.2.0",
+ "$defs": {
+  "Request": {
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "query"
+   ],
+   "properties": {
+    "query": {
+     "enum": [
+      "impact",
+      "causality",
+      "why_state",
+      "dependencies",
+      "signals"
+     ]
     },
-    "Impact": {
-      "type": "object",
-      "required": [
-        "target"
-      ],
-      "properties": {
-        "target": {
-          "type": "string"
-        },
-        "affectedSymbols": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "breakingRisk": {
-          "enum": [
-            "LOW",
-            "MEDIUM",
-            "HIGH",
-            "UNKNOWN"
-          ]
-        },
-        "summary": {
-          "type": "string"
-        },
-        "observed": {
-          "type": "boolean"
-        },
-        "evidence": {
-          "type": "object",
-          "required": [
-            "provenance",
-            "sourceAdapter",
-            "confidence"
-          ],
-          "additionalProperties": false,
-          "properties": {
-            "provenance": {
-              "enum": [
-                "runtime",
-                "static",
-                "contract",
-                "inferred",
-                "external"
-              ]
-            },
-            "sourceAdapter": {
-              "type": "string"
-            },
-            "confidence": {
-              "enum": [
-                "confirmed",
-                "probable",
-                "unknown"
-              ]
-            },
-            "filePath": {
-              "type": "string"
-            },
-            "lineRange": {
-              "type": "array",
-              "items": {
-                "type": "integer"
-              },
-              "minItems": 2,
-              "maxItems": 2
-            }
-          }
-        }
-      }
-    },
-    "Causality": {
-      "type": "object",
-      "required": [
-        "target",
-        "observed"
-      ],
-      "properties": {
-        "target": {
-          "type": "string"
-        },
-        "observed": {
-          "type": "boolean"
-        },
-        "traceCount": {
-          "type": "integer",
-          "minimum": 0
-        },
-        "traceChain": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "statusCode": {
-          "type": "integer"
-        },
-        "latencyMs": {
-          "type": "number"
-        },
-        "rootCause": {
-          "type": "string"
-        },
-        "note": {
-          "type": "string"
-        },
-        "evidence": {
-          "type": "object",
-          "required": [
-            "provenance",
-            "sourceAdapter",
-            "confidence"
-          ],
-          "additionalProperties": false,
-          "properties": {
-            "provenance": {
-              "enum": [
-                "runtime",
-                "static",
-                "contract",
-                "inferred",
-                "external"
-              ]
-            },
-            "sourceAdapter": {
-              "type": "string"
-            },
-            "confidence": {
-              "enum": [
-                "confirmed",
-                "probable",
-                "unknown"
-              ]
-            },
-            "filePath": {
-              "type": "string"
-            },
-            "lineRange": {
-              "type": "array",
-              "items": {
-                "type": "integer"
-              },
-              "minItems": 2,
-              "maxItems": 2
-            }
-          }
-        }
-      }
-    },
-    "Response": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "query",
-        "target"
-      ],
-      "properties": {
-        "query": {
-          "type": "string"
-        },
-        "target": {
-          "type": "string"
-        },
-        "impact": {
-          "$ref": "#/$defs/Impact"
-        },
-        "causality": {
-          "$ref": "#/$defs/Causality"
-        }
-      }
+    "target": {
+     "type": "string"
     }
+   }
   },
-  "anyOf": [
-    {
-      "$ref": "#/$defs/Request"
+  "Impact": {
+   "type": "object",
+   "required": [
+    "target"
+   ],
+   "properties": {
+    "target": {
+     "type": "string"
     },
-    {
-      "$ref": "#/$defs/Response"
+    "affectedSymbols": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "breakingRisk": {
+     "enum": [
+      "LOW",
+      "MEDIUM",
+      "HIGH",
+      "UNKNOWN"
+     ]
+    },
+    "summary": {
+     "type": "string"
+    },
+    "observed": {
+     "type": "boolean"
+    },
+    "evidence": {
+     "type": "object",
+     "required": [
+      "provenance",
+      "sourceAdapter",
+      "confidence"
+     ],
+     "additionalProperties": false,
+     "properties": {
+      "provenance": {
+       "enum": [
+        "runtime",
+        "static",
+        "contract",
+        "inferred",
+        "external"
+       ]
+      },
+      "sourceAdapter": {
+       "type": "string"
+      },
+      "confidence": {
+       "enum": [
+        "confirmed",
+        "probable",
+        "unknown"
+       ]
+      },
+      "filePath": {
+       "type": "string"
+      },
+      "lineRange": {
+       "type": "array",
+       "items": {
+        "type": "integer"
+       },
+       "minItems": 2,
+       "maxItems": 2
+      }
+     }
     }
-  ]
+   }
+  },
+  "Causality": {
+   "type": "object",
+   "required": [
+    "target",
+    "observed"
+   ],
+   "properties": {
+    "target": {
+     "type": "string"
+    },
+    "observed": {
+     "type": "boolean"
+    },
+    "traceCount": {
+     "type": "integer",
+     "minimum": 0
+    },
+    "traceChain": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "statusCode": {
+     "type": "integer"
+    },
+    "latencyMs": {
+     "type": "number"
+    },
+    "rootCause": {
+     "type": "string"
+    },
+    "note": {
+     "type": "string"
+    },
+    "evidence": {
+     "type": "object",
+     "required": [
+      "provenance",
+      "sourceAdapter",
+      "confidence"
+     ],
+     "additionalProperties": false,
+     "properties": {
+      "provenance": {
+       "enum": [
+        "runtime",
+        "static",
+        "contract",
+        "inferred",
+        "external"
+       ]
+      },
+      "sourceAdapter": {
+       "type": "string"
+      },
+      "confidence": {
+       "enum": [
+        "confirmed",
+        "probable",
+        "unknown"
+       ]
+      },
+      "filePath": {
+       "type": "string"
+      },
+      "lineRange": {
+       "type": "array",
+       "items": {
+        "type": "integer"
+       },
+       "minItems": 2,
+       "maxItems": 2
+      }
+     }
+    }
+   }
+  },
+  "Response": {
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "query",
+    "target"
+   ],
+   "properties": {
+    "query": {
+     "type": "string"
+    },
+    "target": {
+     "type": "string"
+    },
+    "impact": {
+     "$ref": "#/$defs/Impact"
+    },
+    "causality": {
+     "$ref": "#/$defs/Causality"
+    }
+   }
+  }
+ },
+ "anyOf": [
+  {
+   "$ref": "#/$defs/Request"
+  },
+  {
+   "$ref": "#/$defs/Response"
+  }
+ ]
 }

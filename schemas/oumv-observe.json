@@ -1,328 +1,361 @@
 {
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/tokensafe-dev/oumv/schemas/oumv-observe.json",
-  "title": "oumv/observe",
-  "x-oumv-spec-version": "1.1.0",
-  "$defs": {
-    "Request": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "level"
-      ],
-      "properties": {
-        "level": {
-          "enum": [
-            "L0",
-            "L1",
-            "L2",
-            "L3",
-            "L4"
-          ]
-        },
-        "format": {
-          "enum": [
-            "json",
-            "yaml"
-          ]
-        },
-        "target": {
-          "type": "string"
-        },
-        "componentId": {
-          "type": "string"
-        }
-      }
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "https://github.com/tokensafe-dev/oumv/schemas/oumv-observe.json",
+ "title": "oumv/observe",
+ "x-oumv-spec-version": "1.2.0",
+ "$defs": {
+  "Request": {
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "level"
+   ],
+   "properties": {
+    "level": {
+     "enum": [
+      "L0",
+      "L1",
+      "L2",
+      "L3",
+      "L4"
+     ]
     },
-    "L0": {
-      "type": "object",
-      "properties": {
-        "status": {
-          "enum": [
-            "HEALTHY",
-            "DEGRADED",
-            "ERROR"
-          ]
-        },
-        "uptimeSeconds": {
-          "type": "integer"
-        },
-        "activeRoutes": {
-          "type": "integer"
-        },
-        "errorCount1m": {
-          "type": "integer"
-        },
-        "route": {
-          "type": "string"
-        }
-      },
-      "anyOf": [
-        {
-          "required": [
-            "status",
-            "activeRoutes"
-          ]
-        },
-        {
-          "required": [
-            "route"
-          ]
-        }
-      ]
+    "format": {
+     "enum": [
+      "json",
+      "yaml"
+     ]
     },
-    "L1": {
-      "type": "object",
-      "anyOf": [
-        {
-          "required": [
-            "endpoints"
-          ],
-          "properties": {
-            "endpoints": {
-              "type": "array",
-              "items": {
-                "type": "object",
-                "required": [
-                  "method",
-                  "path"
-                ],
-                "properties": {
-                  "method": {
-                    "type": "string"
-                  },
-                  "path": {
-                    "type": "string"
-                  },
-                  "handlerName": {
-                    "type": "string"
-                  },
-                  "middlewares": {
-                    "type": "array",
-                    "items": {
-                      "type": "string"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        {
-          "required": [
-            "elements"
-          ],
-          "properties": {
-            "elements": {
-              "type": "array",
-              "items": {
-                "type": "object",
-                "required": [
-                  "id"
-                ],
-                "properties": {
-                  "id": {
-                    "type": "string"
-                  }
-                }
-              }
-            }
-          }
-        }
-      ]
+    "target": {
+     "type": "string"
     },
-    "L2": {
-      "type": "object",
-      "required": [
-        "target"
-      ],
-      "properties": {
-        "target": {
-          "type": "string"
-        },
-        "componentId": {
-          "type": "string"
-        },
-        "actions": {
-          "type": "array"
-        },
-        "effects": {
-          "type": "array"
-        },
-        "contracts": {
-          "type": "array"
-        },
-        "requestDTO": {
-          "type": "object"
-        },
-        "responseDTO": {
-          "type": "object"
-        },
-        "note": {
-          "type": "string"
-        }
-      }
+    "componentId": {
+     "type": "string"
     },
-    "L3": {
-      "type": "object",
-      "required": [
-        "path",
-        "source",
-        "version"
-      ],
-      "properties": {
-        "path": {
-          "type": "string"
-        },
-        "symbol": {
-          "type": "string"
-        },
-        "source": {
-          "type": "string"
-        },
-        "version": {
-          "type": "string",
-          "pattern": "^sha256:[a-f0-9]{64}$"
-        },
-        "startLine": {
-          "type": "integer",
-          "minimum": 1
-        },
-        "endLine": {
-          "type": "integer",
-          "minimum": 1
-        }
-      }
+    "limit": {
+     "type": "integer",
+     "minimum": 1,
+     "description": "max items for L1/L4"
     },
-    "L4": {
-      "type": "object",
-      "anyOf": [
-        {
-          "required": [
-            "traces"
-          ],
-          "properties": {
-            "traces": {
-              "type": "array"
-            },
-            "traceCount": {
-              "type": "integer"
-            }
-          }
-        },
-        {
-          "required": [
-            "events"
-          ],
-          "properties": {
-            "events": {
-              "type": "array"
-            }
-          }
-        }
-      ]
-    },
-    "Response": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "level",
-        "format",
-        "data"
-      ],
-      "properties": {
-        "level": {
-          "enum": [
-            "L0",
-            "L1",
-            "L2",
-            "L3",
-            "L4"
-          ]
-        },
-        "format": {
-          "enum": [
-            "json",
-            "yaml"
-          ]
-        },
-        "tokenEstimate": {
-          "type": "integer",
-          "minimum": 0
-        },
-        "evidence": {
-          "type": "object",
-          "required": [
-            "provenance",
-            "sourceAdapter",
-            "confidence"
-          ],
-          "additionalProperties": false,
-          "properties": {
-            "provenance": {
-              "enum": [
-                "runtime",
-                "static",
-                "contract",
-                "inferred",
-                "external"
-              ]
-            },
-            "sourceAdapter": {
-              "type": "string"
-            },
-            "confidence": {
-              "enum": [
-                "confirmed",
-                "probable",
-                "unknown"
-              ]
-            },
-            "filePath": {
-              "type": "string"
-            },
-            "lineRange": {
-              "type": "array",
-              "items": {
-                "type": "integer"
-              },
-              "minItems": 2,
-              "maxItems": 2
-            }
-          }
-        },
-        "data": {
-          "oneOf": [
-            {
-              "$ref": "#/$defs/L0"
-            },
-            {
-              "$ref": "#/$defs/L1"
-            },
-            {
-              "$ref": "#/$defs/L2"
-            },
-            {
-              "$ref": "#/$defs/L3"
-            },
-            {
-              "$ref": "#/$defs/L4"
-            }
-          ]
-        },
-        "payload": {
-          "type": "string",
-          "description": "Rendered form of `data` when `format` is \"yaml\" (token-efficient transport of the same information); additive, MINOR-compatible."
-        }
-      }
+    "cursor": {
+     "type": "string",
+     "description": "opaque nextCursor from a previous page"
     }
+   }
   },
-  "anyOf": [
+  "L0": {
+   "type": "object",
+   "properties": {
+    "status": {
+     "enum": [
+      "HEALTHY",
+      "DEGRADED",
+      "ERROR"
+     ]
+    },
+    "uptimeSeconds": {
+     "type": "integer"
+    },
+    "activeRoutes": {
+     "type": "integer"
+    },
+    "errorCount1m": {
+     "type": "integer"
+    },
+    "route": {
+     "type": "string"
+    }
+   },
+   "anyOf": [
     {
-      "$ref": "#/$defs/Request"
+     "required": [
+      "status",
+      "activeRoutes"
+     ]
     },
     {
-      "$ref": "#/$defs/Response"
+     "required": [
+      "route"
+     ]
     }
-  ]
+   ]
+  },
+  "L1": {
+   "type": "object",
+   "anyOf": [
+    {
+     "required": [
+      "endpoints"
+     ],
+     "properties": {
+      "endpoints": {
+       "type": "array",
+       "items": {
+        "type": "object",
+        "required": [
+         "method",
+         "path"
+        ],
+        "properties": {
+         "method": {
+          "type": "string"
+         },
+         "path": {
+          "type": "string"
+         },
+         "handlerName": {
+          "type": "string"
+         },
+         "middlewares": {
+          "type": "array",
+          "items": {
+           "type": "string"
+          }
+         }
+        }
+       }
+      },
+      "hasMore": {
+       "type": "boolean"
+      },
+      "nextCursor": {
+       "type": "string"
+      }
+     }
+    },
+    {
+     "required": [
+      "elements"
+     ],
+     "properties": {
+      "elements": {
+       "type": "array",
+       "items": {
+        "type": "object",
+        "required": [
+         "id"
+        ],
+        "properties": {
+         "id": {
+          "type": "string"
+         }
+        }
+       }
+      },
+      "hasMore": {
+       "type": "boolean"
+      },
+      "nextCursor": {
+       "type": "string"
+      }
+     }
+    }
+   ]
+  },
+  "L2": {
+   "type": "object",
+   "required": [
+    "target"
+   ],
+   "properties": {
+    "target": {
+     "type": "string"
+    },
+    "componentId": {
+     "type": "string"
+    },
+    "actions": {
+     "type": "array"
+    },
+    "effects": {
+     "type": "array"
+    },
+    "contracts": {
+     "type": "array"
+    },
+    "requestDTO": {
+     "type": "object"
+    },
+    "responseDTO": {
+     "type": "object"
+    },
+    "note": {
+     "type": "string"
+    }
+   }
+  },
+  "L3": {
+   "type": "object",
+   "required": [
+    "path",
+    "source",
+    "version"
+   ],
+   "properties": {
+    "path": {
+     "type": "string"
+    },
+    "symbol": {
+     "type": "string"
+    },
+    "source": {
+     "type": "string"
+    },
+    "version": {
+     "type": "string",
+     "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "startLine": {
+     "type": "integer",
+     "minimum": 1
+    },
+    "endLine": {
+     "type": "integer",
+     "minimum": 1
+    }
+   }
+  },
+  "L4": {
+   "type": "object",
+   "anyOf": [
+    {
+     "required": [
+      "traces"
+     ],
+     "properties": {
+      "traces": {
+       "type": "array"
+      },
+      "traceCount": {
+       "type": "integer"
+      },
+      "hasMore": {
+       "type": "boolean"
+      },
+      "nextCursor": {
+       "type": "string"
+      }
+     }
+    },
+    {
+     "required": [
+      "events"
+     ],
+     "properties": {
+      "events": {
+       "type": "array"
+      },
+      "hasMore": {
+       "type": "boolean"
+      },
+      "nextCursor": {
+       "type": "string"
+      }
+     }
+    }
+   ]
+  },
+  "Response": {
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "level",
+    "format",
+    "data"
+   ],
+   "properties": {
+    "level": {
+     "enum": [
+      "L0",
+      "L1",
+      "L2",
+      "L3",
+      "L4"
+     ]
+    },
+    "format": {
+     "enum": [
+      "json",
+      "yaml"
+     ]
+    },
+    "tokenEstimate": {
+     "type": "integer",
+     "minimum": 0
+    },
+    "evidence": {
+     "type": "object",
+     "required": [
+      "provenance",
+      "sourceAdapter",
+      "confidence"
+     ],
+     "additionalProperties": false,
+     "properties": {
+      "provenance": {
+       "enum": [
+        "runtime",
+        "static",
+        "contract",
+        "inferred",
+        "external"
+       ]
+      },
+      "sourceAdapter": {
+       "type": "string"
+      },
+      "confidence": {
+       "enum": [
+        "confirmed",
+        "probable",
+        "unknown"
+       ]
+      },
+      "filePath": {
+       "type": "string"
+      },
+      "lineRange": {
+       "type": "array",
+       "items": {
+        "type": "integer"
+       },
+       "minItems": 2,
+       "maxItems": 2
+      }
+     }
+    },
+    "data": {
+     "oneOf": [
+      {
+       "$ref": "#/$defs/L0"
+      },
+      {
+       "$ref": "#/$defs/L1"
+      },
+      {
+       "$ref": "#/$defs/L2"
+      },
+      {
+       "$ref": "#/$defs/L3"
+      },
+      {
+       "$ref": "#/$defs/L4"
+      }
+     ]
+    },
+    "payload": {
+     "type": "string",
+     "description": "Rendered form of `data` when `format` is \"yaml\" (token-efficient transport of the same information); additive, MINOR-compatible."
+    }
+   }
+  }
+ },
+ "anyOf": [
+  {
+   "$ref": "#/$defs/Request"
+  },
+  {
+   "$ref": "#/$defs/Response"
+  }
+ ]
 }

@@ -1,7 +1,30 @@
 # Changelog
 
-The wire contract is versioned by `protocolVersion` (currently **1.1.0**); this
+The wire contract is versioned by `protocolVersion` (currently **1.2.0**); this
 changelog tracks the OUMV specification and its reference tooling.
+
+## v1.1.0 — 2026-11-26 (wire 1.2.0, fixtures v6)
+
+Minor, additive release: every v1.0 adapter stays valid for the capabilities it declares.
+
+- **`applyEdit` modes `symbol`, `delete`, `rename`** (§4.3): `symbol` replaces one function,
+  method or class without re-emitting the file (OCC + syntax pre-flight on the result);
+  `delete`/`rename` are jail-checked and OCC-guarded, `renameTo` names the destination, and
+  the result carries `deleted`/`newPath`; `replacement` is forbidden for both.
+- **`verify.steps`** (§4.4): ordered requests against **one application instance**, one
+  `steps[]` entry each — the duplicate-idempotency repro single-request verify could not
+  express. A runtime that cannot share state answers `-32006 reason=multi_step_unsupported`.
+- **Observe pagination** (§4.1): `limit`/`cursor` for L1/L4, `hasMore`/`nextCursor` when a
+  page is truncated; an absent limit still returns the whole collection.
+- **§12 security & rate-limit policy** (auth headers, fail-closed production, jail incl.
+  `renameTo`, 429/`Retry-After`) and the informative **§13 cross-stack graph**
+  (`oumv/graph`, optional, no certification claim in v1.1).
+- **Fixtures v6 (25 cases)**: multi-step verify, symbol edit, delete, rename, L1 pagination;
+  new declarative assertion `expectValues` (JSON-path equality). All reports re-run at
+  **Level 3, 25/25**: go-gin/go-chi/go-stdhttp/python-fastapi/node-express/node-fastify,
+  React in headless Chrome, and Node/Python over stdio (offline React 21/25 Level 1, the
+  four browser-only cases named).
+- Implemented in Go, Python, Node and the React controller; `protocolVersion` is **1.2.0**.
 
 ## v1.0.1 — 2026-11-26 (reference tooling patch)
 

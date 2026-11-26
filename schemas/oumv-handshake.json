@@ -1,196 +1,196 @@
 {
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/tokensafe-dev/oumv/schemas/oumv-handshake.json",
-  "title": "oumv/handshake",
-  "x-oumv-spec-version": "1.1.0",
-  "$defs": {
-    "Request": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "protocolVersion"
-      ],
-      "properties": {
-        "protocolVersion": {
-          "type": "string"
-        },
-        "clientInfo": {
-          "type": "object",
-          "additionalProperties": false,
-          "required": [
-            "name",
-            "version"
-          ],
-          "properties": {
-            "name": {
-              "type": "string"
-            },
-            "version": {
-              "type": "string"
-            }
-          }
-        },
-        "supportedTransports": {
-          "type": "array",
-          "items": {
-            "enum": [
-              "http",
-              "sse",
-              "ws",
-              "stdio",
-              "memory"
-            ]
-          }
-        },
-        "requestedCapabilities": {
-          "type": "object"
-        }
-      }
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "https://github.com/tokensafe-dev/oumv/schemas/oumv-handshake.json",
+ "title": "oumv/handshake",
+ "x-oumv-spec-version": "1.2.0",
+ "$defs": {
+  "Request": {
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "protocolVersion"
+   ],
+   "properties": {
+    "protocolVersion": {
+     "type": "string"
     },
-    "CapabilitySet": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "observe": {
-          "type": "object",
-          "additionalProperties": false,
-          "required": [
-            "levels",
-            "formats"
-          ],
-          "properties": {
-            "levels": {
-              "type": "array",
-              "items": {
-                "enum": [
-                  "L0",
-                  "L1",
-                  "L2",
-                  "L3",
-                  "L4"
-                ]
-              }
-            },
-            "formats": {
-              "type": "array",
-              "items": {
-                "enum": [
-                  "json",
-                  "yaml"
-                ]
-              }
-            }
-          }
-        },
-        "understand": {
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "causality": {
-              "type": "boolean"
-            },
-            "signalsGraph": {
-              "type": "boolean"
-            },
-            "impactAnalysis": {
-              "type": "boolean"
-            },
-            "typeGraph": {
-              "type": "boolean"
-            }
-          }
-        },
-        "mutate": {
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "occ": {
-              "type": "boolean"
-            },
-            "syntaxGuard": {
-              "type": "boolean"
-            },
-            "ephemeralDispatch": {
-              "type": "boolean"
-            }
-          }
-        },
-        "verify": {
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "multiMetric": {
-              "type": "boolean"
-            },
-            "surfaceDiff": {
-              "type": "boolean"
-            },
-            "sandboxRollback": {
-              "type": "boolean"
-            }
-          }
-        }
+    "clientInfo": {
+     "type": "object",
+     "additionalProperties": false,
+     "required": [
+      "name",
+      "version"
+     ],
+     "properties": {
+      "name": {
+       "type": "string"
+      },
+      "version": {
+       "type": "string"
       }
+     }
     },
-    "Response": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "protocolVersion",
-        "profile",
-        "runtimeInfo",
-        "capabilities",
-        "sessionId"
-      ],
-      "properties": {
-        "protocolVersion": {
-          "type": "string"
-        },
-        "profile": {
-          "enum": [
-            "frontend",
-            "backend"
-          ]
-        },
-        "sessionId": {
-          "type": "string",
-          "minLength": 1
-        },
-        "ttlSeconds": {
-          "type": "integer",
-          "minimum": 1
-        },
-        "runtimeInfo": {
-          "type": "object",
-          "additionalProperties": false,
-          "required": [
-            "name",
-            "version"
-          ],
-          "properties": {
-            "name": {
-              "type": "string"
-            },
-            "version": {
-              "type": "string"
-            },
-            "framework": {
-              "type": "string"
-            }
-          }
-        },
-        "capabilities": {
-          "$ref": "#/$defs/CapabilitySet"
-        }
-      }
+    "supportedTransports": {
+     "type": "array",
+     "items": {
+      "enum": [
+       "http",
+       "sse",
+       "ws",
+       "stdio",
+       "memory"
+      ]
+     }
+    },
+    "requestedCapabilities": {
+     "type": "object"
     }
+   }
   },
-  "anyOf": [
-    {
-      "$ref": "#/$defs/Request"
+  "CapabilitySet": {
+   "type": "object",
+   "additionalProperties": false,
+   "properties": {
+    "observe": {
+     "type": "object",
+     "additionalProperties": false,
+     "required": [
+      "levels",
+      "formats"
+     ],
+     "properties": {
+      "levels": {
+       "type": "array",
+       "items": {
+        "enum": [
+         "L0",
+         "L1",
+         "L2",
+         "L3",
+         "L4"
+        ]
+       }
+      },
+      "formats": {
+       "type": "array",
+       "items": {
+        "enum": [
+         "json",
+         "yaml"
+        ]
+       }
+      }
+     }
     },
-    {
-      "$ref": "#/$defs/Response"
+    "understand": {
+     "type": "object",
+     "additionalProperties": false,
+     "properties": {
+      "causality": {
+       "type": "boolean"
+      },
+      "signalsGraph": {
+       "type": "boolean"
+      },
+      "impactAnalysis": {
+       "type": "boolean"
+      },
+      "typeGraph": {
+       "type": "boolean"
+      }
+     }
+    },
+    "mutate": {
+     "type": "object",
+     "additionalProperties": false,
+     "properties": {
+      "occ": {
+       "type": "boolean"
+      },
+      "syntaxGuard": {
+       "type": "boolean"
+      },
+      "ephemeralDispatch": {
+       "type": "boolean"
+      }
+     }
+    },
+    "verify": {
+     "type": "object",
+     "additionalProperties": false,
+     "properties": {
+      "multiMetric": {
+       "type": "boolean"
+      },
+      "surfaceDiff": {
+       "type": "boolean"
+      },
+      "sandboxRollback": {
+       "type": "boolean"
+      }
+     }
     }
-  ]
+   }
+  },
+  "Response": {
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "protocolVersion",
+    "profile",
+    "runtimeInfo",
+    "capabilities",
+    "sessionId"
+   ],
+   "properties": {
+    "protocolVersion": {
+     "type": "string"
+    },
+    "profile": {
+     "enum": [
+      "frontend",
+      "backend"
+     ]
+    },
+    "sessionId": {
+     "type": "string",
+     "minLength": 1
+    },
+    "ttlSeconds": {
+     "type": "integer",
+     "minimum": 1
+    },
+    "runtimeInfo": {
+     "type": "object",
+     "additionalProperties": false,
+     "required": [
+      "name",
+      "version"
+     ],
+     "properties": {
+      "name": {
+       "type": "string"
+      },
+      "version": {
+       "type": "string"
+      },
+      "framework": {
+       "type": "string"
+      }
+     }
+    },
+    "capabilities": {
+     "$ref": "#/$defs/CapabilitySet"
+    }
+   }
+  }
+ },
+ "anyOf": [
+  {
+   "$ref": "#/$defs/Request"
+  },
+  {
+   "$ref": "#/$defs/Response"
+  }
+ ]
 }

@@ -1,214 +1,282 @@
 {
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/tokensafe-dev/oumv/schemas/oumv-verify.json",
-  "title": "oumv/verify",
-  "x-oumv-spec-version": "1.1.0",
-  "$defs": {
-    "Request": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "target"
-      ],
-      "properties": {
-        "target": {
-          "type": "string"
-        },
-        "method": {
-          "type": "string"
-        },
-        "action": {
-          "type": "string"
-        },
-        "payload": {},
-        "headers": {
-          "type": "object",
-          "additionalProperties": {
-            "type": "string"
-          }
-        }
-      }
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "https://github.com/tokensafe-dev/oumv/schemas/oumv-verify.json",
+ "title": "oumv/verify",
+ "x-oumv-spec-version": "1.2.0",
+ "$defs": {
+  "Request": {
+   "type": "object",
+   "additionalProperties": false,
+   "required": [],
+   "properties": {
+    "target": {
+     "type": "string"
     },
-    "Timings": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "t_action_ms",
-        "t_schema_ms",
-        "t_propagation_ms",
-        "t_dom_ms",
-        "t_total_ms"
-      ],
-      "properties": {
-        "t_action_ms": {
-          "type": "number",
-          "minimum": 0
-        },
-        "t_schema_ms": {
-          "type": "number",
-          "minimum": 0
-        },
-        "t_propagation_ms": {
-          "type": "number",
-          "minimum": 0
-        },
-        "t_dom_ms": {
-          "type": "number",
-          "minimum": 0
-        },
-        "t_total_ms": {
-          "type": "number",
-          "minimum": 0
-        }
-      }
+    "method": {
+     "type": "string"
     },
-    "Scope": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "checked",
-        "notExecuted",
-        "notSupported"
-      ],
-      "properties": {
-        "checked": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "notExecuted": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "notSupported": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        }
-      }
+    "action": {
+     "type": "string"
     },
-    "SurfaceDiff": {
-      "type": "object",
-      "required": [
-        "op",
-        "target"
-      ],
-      "properties": {
-        "op": {
-          "enum": [
-            "attr",
-            "text",
-            "visibility"
-          ]
-        },
-        "target": {
-          "type": "string"
-        },
-        "attr": {
-          "type": "string"
-        },
-        "before": {},
-        "after": {}
-      }
+    "payload": {},
+    "headers": {
+     "type": "object",
+     "additionalProperties": {
+      "type": "string"
+     }
     },
-    "Response": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "status",
-        "diff",
-        "timings",
-        "durationMs",
-        "scope"
-      ],
-      "properties": {
-        "status": {
-          "enum": [
-            "passed",
-            "failed"
-          ]
-        },
-        "target": {
-          "type": "string"
-        },
-        "statusCode": {
-          "type": "integer"
-        },
-        "diff": {
-          "type": "object"
-        },
-        "surfaceDiff": {
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/SurfaceDiff"
-          }
-        },
-        "timings": {
-          "$ref": "#/$defs/Timings"
-        },
-        "durationMs": {
-          "type": "number",
-          "minimum": 0
-        },
-        "scope": {
-          "$ref": "#/$defs/Scope"
-        },
-        "rolledBack": {
-          "type": "boolean"
-        },
-        "rollbackStatus": {
-          "enum": [
-            "verified",
-            "unverified",
-            "not_applicable"
-          ]
-        },
-        "evidence": {
-          "type": "object",
-          "required": [
-            "provenance",
-            "sourceAdapter",
-            "confidence"
-          ],
-          "additionalProperties": false,
-          "properties": {
-            "provenance": {
-              "enum": [
-                "runtime",
-                "static",
-                "contract",
-                "inferred",
-                "external"
-              ]
-            },
-            "sourceAdapter": {
-              "type": "string"
-            },
-            "confidence": {
-              "enum": [
-                "confirmed",
-                "probable",
-                "unknown"
-              ]
-            }
-          }
-        },
-        "error": {
-          "type": "string"
-        }
-      }
+    "steps": {
+     "type": "array",
+     "items": {
+      "$ref": "#/$defs/Step"
+     }
     }
+   },
+   "anyOf": [
+    {
+     "required": [
+      "target"
+     ]
+    },
+    {
+     "required": [
+      "steps"
+     ]
+    }
+   ]
   },
-  "anyOf": [
-    {
-      "$ref": "#/$defs/Request"
+  "Timings": {
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "t_action_ms",
+    "t_schema_ms",
+    "t_propagation_ms",
+    "t_dom_ms",
+    "t_total_ms"
+   ],
+   "properties": {
+    "t_action_ms": {
+     "type": "number",
+     "minimum": 0
     },
-    {
-      "$ref": "#/$defs/Response"
+    "t_schema_ms": {
+     "type": "number",
+     "minimum": 0
+    },
+    "t_propagation_ms": {
+     "type": "number",
+     "minimum": 0
+    },
+    "t_dom_ms": {
+     "type": "number",
+     "minimum": 0
+    },
+    "t_total_ms": {
+     "type": "number",
+     "minimum": 0
     }
-  ]
+   }
+  },
+  "Scope": {
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "checked",
+    "notExecuted",
+    "notSupported"
+   ],
+   "properties": {
+    "checked": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "notExecuted": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    },
+    "notSupported": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     }
+    }
+   }
+  },
+  "SurfaceDiff": {
+   "type": "object",
+   "required": [
+    "op",
+    "target"
+   ],
+   "properties": {
+    "op": {
+     "enum": [
+      "attr",
+      "text",
+      "visibility"
+     ]
+    },
+    "target": {
+     "type": "string"
+    },
+    "attr": {
+     "type": "string"
+    },
+    "before": {},
+    "after": {}
+   }
+  },
+  "Response": {
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "status",
+    "diff",
+    "timings",
+    "durationMs",
+    "scope"
+   ],
+   "properties": {
+    "status": {
+     "enum": [
+      "passed",
+      "failed"
+     ]
+    },
+    "target": {
+     "type": "string"
+    },
+    "statusCode": {
+     "type": "integer"
+    },
+    "diff": {
+     "type": "object"
+    },
+    "surfaceDiff": {
+     "type": "array",
+     "items": {
+      "$ref": "#/$defs/SurfaceDiff"
+     }
+    },
+    "timings": {
+     "$ref": "#/$defs/Timings"
+    },
+    "durationMs": {
+     "type": "number",
+     "minimum": 0
+    },
+    "scope": {
+     "$ref": "#/$defs/Scope"
+    },
+    "rolledBack": {
+     "type": "boolean"
+    },
+    "rollbackStatus": {
+     "enum": [
+      "verified",
+      "unverified",
+      "not_applicable"
+     ]
+    },
+    "evidence": {
+     "type": "object",
+     "required": [
+      "provenance",
+      "sourceAdapter",
+      "confidence"
+     ],
+     "additionalProperties": false,
+     "properties": {
+      "provenance": {
+       "enum": [
+        "runtime",
+        "static",
+        "contract",
+        "inferred",
+        "external"
+       ]
+      },
+      "sourceAdapter": {
+       "type": "string"
+      },
+      "confidence": {
+       "enum": [
+        "confirmed",
+        "probable",
+        "unknown"
+       ]
+      }
+     }
+    },
+    "error": {
+     "type": "string"
+    },
+    "steps": {
+     "type": "array",
+     "items": {
+      "$ref": "#/$defs/StepResult"
+     }
+    }
+   }
+  },
+  "Step": {
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "target"
+   ],
+   "properties": {
+    "target": {
+     "type": "string"
+    },
+    "action": {
+     "type": "string"
+    },
+    "payload": {},
+    "headers": {
+     "type": "object",
+     "additionalProperties": {
+      "type": "string"
+     }
+    }
+   }
+  },
+  "StepResult": {
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "target",
+    "statusCode",
+    "status"
+   ],
+   "properties": {
+    "target": {
+     "type": "string"
+    },
+    "statusCode": {
+     "type": "integer"
+    },
+    "status": {
+     "enum": [
+      "passed",
+      "failed"
+     ]
+    },
+    "responseBody": {}
+   }
+  }
+ },
+ "anyOf": [
+  {
+   "$ref": "#/$defs/Request"
+  },
+  {
+   "$ref": "#/$defs/Response"
+  }
+ ]
 }

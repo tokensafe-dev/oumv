@@ -1,159 +1,277 @@
 {
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/tokensafe-dev/oumv/schemas/oumv-mutate.json",
-  "title": "oumv/getSource + oumv/applyEdit",
-  "x-oumv-spec-version": "1.1.0",
-  "$defs": {
-    "GetSourceRequest": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "path"
-      ],
-      "properties": {
-        "path": {
-          "type": "string"
-        },
-        "symbol": {
-          "type": "string"
-        }
-      }
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "https://github.com/tokensafe-dev/oumv/schemas/oumv-mutate.json",
+ "title": "oumv/getSource + oumv/applyEdit",
+ "x-oumv-spec-version": "1.2.0",
+ "$defs": {
+  "GetSourceRequest": {
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "path"
+   ],
+   "properties": {
+    "path": {
+     "type": "string"
     },
-    "GetSourceResponse": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "path",
-        "source",
-        "version"
-      ],
-      "properties": {
-        "path": {
-          "type": "string"
-        },
-        "symbol": {
-          "type": "string"
-        },
-        "source": {
-          "type": "string"
-        },
-        "version": {
-          "type": "string",
-          "pattern": "^sha256:[a-f0-9]{64}$"
-        },
-        "startLine": {
-          "type": "integer",
-          "minimum": 1
-        },
-        "endLine": {
-          "type": "integer",
-          "minimum": 1
-        }
-      }
-    },
-    "ApplyEditRequest": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "path",
-        "replacement",
-        "expectedVersion"
-      ],
-      "properties": {
-        "path": {
-          "type": "string"
-        },
-        "symbol": {
-          "type": "string"
-        },
-        "replacement": {
-          "type": "string"
-        },
-        "expectedVersion": {
-          "type": "string",
-          "pattern": "^sha256:[a-f0-9]{64}$"
-        },
-        "mode": {
-          "enum": [
-            "replace",
-            "create"
-          ],
-          "description": "replace (default) edits an existing file; create writes a new one and forbids expectedVersion"
-        }
-      }
-    },
-    "ApplyEditResponse": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "status",
-        "path",
-        "newVersion"
-      ],
-      "properties": {
-        "status": {
-          "enum": [
-            "APPLIED",
-            "CURRENT"
-          ]
-        },
-        "path": {
-          "type": "string"
-        },
-        "symbol": {
-          "type": "string"
-        },
-        "newVersion": {
-          "type": "string",
-          "pattern": "^sha256:[a-f0-9]{64}$"
-        },
-        "syntaxCheck": {
-          "type": "object",
-          "required": [
-            "status"
-          ],
-          "additionalProperties": false,
-          "properties": {
-            "status": {
-              "enum": [
-                "passed",
-                "skipped",
-                "failed"
-              ]
-            },
-            "tool": {
-              "type": "string"
-            },
-            "error": {
-              "type": "string"
-            }
-          }
-        },
-        "backupPath": {
-          "type": "string"
-        },
-        "rollbackHint": {
-          "type": "string"
-        },
-        "created": {
-          "type": "boolean",
-          "description": "true when mode=create created the file"
-        }
-      }
+    "symbol": {
+     "type": "string"
     }
+   }
   },
-  "anyOf": [
-    {
-      "$ref": "#/$defs/GetSourceRequest"
+  "GetSourceResponse": {
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "path",
+    "source",
+    "version"
+   ],
+   "properties": {
+    "path": {
+     "type": "string"
     },
-    {
-      "$ref": "#/$defs/GetSourceResponse"
+    "symbol": {
+     "type": "string"
     },
-    {
-      "$ref": "#/$defs/ApplyEditRequest"
+    "source": {
+     "type": "string"
     },
-    {
-      "$ref": "#/$defs/ApplyEditResponse"
+    "version": {
+     "type": "string",
+     "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "startLine": {
+     "type": "integer",
+     "minimum": 1
+    },
+    "endLine": {
+     "type": "integer",
+     "minimum": 1
     }
-  ]
+   }
+  },
+  "ApplyEditRequest": {
+   "oneOf": [
+    {
+     "$ref": "#/$defs/ApplyEditReplaceRequest"
+    },
+    {
+     "$ref": "#/$defs/ApplyEditCreateRequest"
+    },
+    {
+     "$ref": "#/$defs/ApplyEditSymbolRequest"
+    },
+    {
+     "$ref": "#/$defs/ApplyEditDeleteRequest"
+    },
+    {
+     "$ref": "#/$defs/ApplyEditRenameRequest"
+    }
+   ]
+  },
+  "ApplyEditResponse": {
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "status",
+    "path"
+   ],
+   "properties": {
+    "status": {
+     "enum": [
+      "APPLIED",
+      "CURRENT"
+     ]
+    },
+    "path": {
+     "type": "string"
+    },
+    "symbol": {
+     "type": "string"
+    },
+    "newVersion": {
+     "type": "string",
+     "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "syntaxCheck": {
+     "type": "object",
+     "required": [
+      "status"
+     ],
+     "additionalProperties": false,
+     "properties": {
+      "status": {
+       "enum": [
+        "passed",
+        "skipped",
+        "failed"
+       ]
+      },
+      "tool": {
+       "type": "string"
+      },
+      "error": {
+       "type": "string"
+      }
+     }
+    },
+    "backupPath": {
+     "type": "string"
+    },
+    "rollbackHint": {
+     "type": "string"
+    },
+    "created": {
+     "type": "boolean",
+     "description": "true when mode=create created the file"
+    },
+    "newPath": {
+     "type": "string"
+    },
+    "deleted": {
+     "type": "boolean",
+     "description": "true when mode=delete removed the file"
+    }
+   }
+  },
+  "ApplyEditReplaceRequest": {
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "path",
+    "replacement",
+    "expectedVersion"
+   ],
+   "properties": {
+    "path": {
+     "type": "string"
+    },
+    "symbol": {
+     "type": "string"
+    },
+    "replacement": {
+     "type": "string"
+    },
+    "expectedVersion": {
+     "type": "string",
+     "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "mode": {
+     "enum": [
+      "replace"
+     ]
+    }
+   }
+  },
+  "ApplyEditCreateRequest": {
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "path",
+    "replacement",
+    "mode"
+   ],
+   "properties": {
+    "path": {
+     "type": "string"
+    },
+    "replacement": {
+     "type": "string"
+    },
+    "mode": {
+     "const": "create"
+    }
+   }
+  },
+  "ApplyEditSymbolRequest": {
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "path",
+    "symbol",
+    "replacement",
+    "expectedVersion",
+    "mode"
+   ],
+   "properties": {
+    "path": {
+     "type": "string"
+    },
+    "symbol": {
+     "type": "string"
+    },
+    "replacement": {
+     "type": "string"
+    },
+    "expectedVersion": {
+     "type": "string",
+     "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "mode": {
+     "const": "symbol"
+    }
+   }
+  },
+  "ApplyEditDeleteRequest": {
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "path",
+    "expectedVersion",
+    "mode"
+   ],
+   "properties": {
+    "path": {
+     "type": "string"
+    },
+    "expectedVersion": {
+     "type": "string",
+     "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "mode": {
+     "const": "delete"
+    }
+   }
+  },
+  "ApplyEditRenameRequest": {
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "path",
+    "renameTo",
+    "expectedVersion",
+    "mode"
+   ],
+   "properties": {
+    "path": {
+     "type": "string"
+    },
+    "renameTo": {
+     "type": "string"
+    },
+    "expectedVersion": {
+     "type": "string",
+     "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "mode": {
+     "const": "rename"
+    }
+   }
+  }
+ },
+ "anyOf": [
+  {
+   "$ref": "#/$defs/GetSourceRequest"
+  },
+  {
+   "$ref": "#/$defs/GetSourceResponse"
+  },
+  {
+   "$ref": "#/$defs/ApplyEditRequest"
+  },
+  {
+   "$ref": "#/$defs/ApplyEditResponse"
+  }
+ ]
 }

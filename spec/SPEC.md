@@ -1,8 +1,8 @@
-# The OUMV Protocol Specification (v1.4-canonical)
+# The OUMV Protocol Specification (v1.5-canonical)
 **The Universal Agent-Runtime Protocol (UARP)**
 
-- **Date**: 2026-11-22 (v1.0 draft) · 2026-11-26 (v1.0.0 frozen; document revision v1.4-canonical)  
-- **Status**: Stable — v1.0.0, frozen 2026-11-26  
+- **Date**: 2026-11-22 (v1.0 draft) · 2026-11-26 (v1.0.0 frozen; document revision v1.4-canonical) · 2026-11-26 (v1.1.0; revision v1.5-canonical, wire `protocolVersion` 1.2.0)  
+- **Status**: Stable — v1.1.0  
 - **Author**: Oleg Savelev  
 - **Repository**: [github.com/tokensafe-dev/oumv](https://github.com/tokensafe-dev/oumv)
 
@@ -12,7 +12,7 @@
 
 The **OUMV Protocol** (Observe, Understand, Mutate, Verify) defines an open, transport-agnostic standard for autonomous AI coding agents to inspect, reason about, modify, and verify running software systems (user interfaces, backend services, APIs) in real time.
 
-Much like the **Language Server Protocol (LSP)** decouples code intelligence from editor implementations, and the **Model Context Protocol (MCP)** standardizes tool calling for LLMs, **OUMV (The Universal Agent-Runtime Protocol)** decouples agent runtime interaction from technology stacks (tokensafe-ui, React, Vue; tokensafe-backend, Go, Python — Node.js adapters are planned, not shipped).
+Much like the **Language Server Protocol (LSP)** decouples code intelligence from editor implementations, and the **Model Context Protocol (MCP)** standardizes tool calling for LLMs, **OUMV (The Universal Agent-Runtime Protocol)** decouples agent runtime interaction from technology stacks (tokensafe-ui, React; tokensafe-backend, Go, Node, Python). Vue and Solid adapters are planned; the protocol is not UI-only and both profiles share one wire contract.
 
 ```text
        AI Coding Agent (Claude Code / Codex / Antigravity)
@@ -174,7 +174,7 @@ but MUST be ignored. A runtime MUST NOT emit the deprecated aliases listed in §
 
 ### 4.1 OBSERVE (`oumv/observe`)
 
-Request: `{ "level": "L0"|"L1"|"L2"|"L3"|"L4", "format": "json" (default), "target": string? }`
+Request: `{ "level": "L0"|"L1"|"L2"|"L3"|"L4", "format": "json" (default), "target": string?, "limit": integer?, "cursor": string? }`
 
 Response envelope (all levels):
 ```json
@@ -186,12 +186,17 @@ Response envelope (all levels):
 | Level | Backend profile | Frontend profile |
 | :--- | :--- | :--- |
 | L0 | `{status: "HEALTHY"\|"DEGRADED"\|"ERROR", uptimeSeconds, goroutines?, memoryAllocMB?, activeRoutes, errorCount1m}` | `{route, mountedRoots[], errorCount, loading}` |
-| L1 | `{endpoints: [{method, path, handlerName, middlewares?}]}` | `{elements: [{id, tag, role?, label?, action?}]}` |
+| L1 | `{endpoints: [{method, path, handlerName, middlewares?}], hasMore?, nextCursor?}` | `{elements: [{id, tag, role?, label?, action?}], hasMore?, nextCursor?}` |
 | L2 | `{target, method?, path?, handlerName?, requestDTO?, responseDTO?, middlewares?, note?}` | `{target, componentId, propsSchema?, actions[], effects[], contracts[]}` |
 | L3 | `{path, symbol?, source, version: "sha256:…", startLine, endLine}` | same, `path` = component file |
-| L4 | `{target?, traces: [{method, path, route?, handler?, statusCode, durationMs, timestamp}], traceCount, note?}` | `{target?, events: [{type, signal?, value?, timestamp}], count}` |
+| L4 | `{target?, traces: [{method, path, route?, handler?, statusCode, durationMs, timestamp}], traceCount, note?, hasMore?, nextCursor?}` | `{target?, events: [{type, signal?, value?, timestamp}], count, hasMore?, nextCursor?}` |
 
 Rules: `target` is required for L2/L3; a target that cannot be resolved is `-32009`.
+`limit` and `cursor` page L1/L4 collections: `limit` is the maximum number of items
+returned (the adapter may cap it), `cursor` is the opaque `nextCursor` from a previous
+response. When a page is truncated the response MUST carry `hasMore: true` and a
+`nextCursor` string; the last page carries `hasMore: false` and no cursor. Adapters that
+return a collection in one response MAY omit both fields (that means "complete").
 `tokenEstimate` is the number of tokens in the returned `payload`/`data` under the
 adapter's documented tokenizer — never an estimate of the whole conversation. It is
 advisory (agents use it to budget an observation before making it) and MUST be omitted
@@ -225,52 +230,64 @@ never observed an execution MUST NOT return a root cause.
 
 `getSource`: request `{path, symbol?}` → `{path, symbol?, source, version, startLine, endLine}`.
 
-`applyEdit`: request `{path, symbol?, replacement, expectedVersion?, mode?}` → 
+`applyEdit`: request `{path, symbol?, replacement?, expectedVersion?, mode?: "replace"|"create"|"symbol"|"delete"|"rename", renameTo?}` → 
 ```json
 { "status": "APPLIED"|"CURRENT", "path": "src/api/orders.go", "symbol": "CreateOrder",
-  "newVersion": "sha256:…", "created": true,
+  "newPath": "src/api/orders_v2.go", "newVersion": "sha256:…", "created": true, "deleted": true,
   "syntaxCheck": { "status": "passed"|"skipped"|"failed", "tool": "go/parser", "error": "…" },
   "backupPath": "/…/.tokensafe/backups/…", "rollbackHint": "…" }
 ```
 
-`mode` selects the mutation (default `"replace"`; `"delete"` and `"rename"` are reserved
-for a later MINOR and MUST be rejected with `-32006` until specified):
+`mode` selects the mutation (default `"replace"`); every mode keeps OCC and the
+workspace jail:
 
-* **`replace`** — rewrite an existing file. `expectedVersion` is mandatory.
+* **`replace`** — rewrite an existing file. `replacement` and `expectedVersion` are mandatory.
 * **`create`** — write a file that must not exist yet. `expectedVersion` MUST be absent
   (a caller that sends it is asking to replace, not create) and `created: true` is
   returned. Creating a file that already exists is a conflict, never a silent overwrite.
+* **`symbol`** — replace only the source range of `symbol` (a function, method or class)
+  with `replacement`; the rest of the file is preserved byte for byte. `symbol` and
+  `expectedVersion` are mandatory; an unknown symbol is `-32009`. The syntax pre-flight
+  runs on the resulting file, not on the fragment alone. This is the mode an agent uses to
+  avoid re-emitting a whole file for a one-line change.
+* **`delete`** — remove an existing file. `replacement` MUST be absent
+  (`-32011`, `data.reason="replacement_forbidden"`), `expectedVersion` is mandatory, and
+  the result carries `deleted: true`. The syntax check is `skipped`; the backup is optional.
+* **`rename`** — move `path` to `renameTo`. `renameTo` is mandatory and MUST stay inside
+  the workspace (both paths are jail-checked); the target MUST NOT exist (`-32001`,
+  `data.reason="target_exists"`); `replacement` MUST be absent; `expectedVersion` is
+  mandatory on the source. The result carries `newPath`; a rename never rewrites bytes, so
+  the syntax check is `skipped`.
 
-Why create is a mode and not a separate method: an agent that can only edit existing
-files falls back to shell redirects for new files, which bypasses the workspace jail, the
-syntax pre-flight and the mutation policy — the four pillars would have a hole exactly
-where new code enters the repository.
+Why `create`/`delete`/`rename` are modes and not separate methods: an agent that cannot
+express them through the protocol falls back to shell redirects or `mv`, which bypasses
+the workspace jail, the syntax pre-flight and the mutation policy — the four pillars would
+have a hole exactly where files enter, leave or move in the repository.
 
-Normative guards for `replace`, in this order (first failure wins):
+Normative guards, in this order (first failure wins):
 
 | # | Guard | Error |
 | :--- | :--- | :--- |
-| 1 | workspace boundary / sensitive path | `-32003 SECURITY_VIOLATION` |
-| 2 | resource exists | `-32009 RESOURCE_NOT_FOUND` |
-| 3 | syntax pre-flight of the replacement | `-32002 SYNTAX_ERROR` |
-| 4 | `expectedVersion` present | `-32011 VALIDATION_FAILED` (`data.reason="expected_version_required"`) |
+| 1 | workspace boundary / sensitive path (source and `renameTo`) | `-32003 SECURITY_VIOLATION` |
+| 2 | resource exists (`-32009`), or target must not exist for `create`/`rename` (`-32001`, `data.reason="file_exists"` / `"target_exists"`) | `-32009` / `-32001` |
+| 3 | syntax pre-flight of the resulting file (`replace`/`create`/`symbol`; `skipped` for `delete`/`rename`) | `-32002 SYNTAX_ERROR` |
+| 4 | `expectedVersion` rules: present for `replace`/`symbol`/`delete`/`rename`, absent for `create`; forbidden `replacement`/`renameTo` fields | `-32011 VALIDATION_FAILED` |
 | 5 | `expectedVersion` matches current bytes | `-32001 CONFLICT_DETECTED` |
 | 6 | policy allows mutation | `-32007 PERMISSION_DENIED` |
 
-For `create` the same order applies with two substitutions: guard 2 becomes
-"target does **not** exist" (`-32001 CONFLICT_DETECTED`, `data.reason="file_exists"`), and
-guard 4 becomes "`expectedVersion` is absent" (`-32011`,
-`data.reason="create_forbids_version"`).
-
-`expectedVersion` is **mandatory** for an existing file; a write without it is never
-accepted. Backups are the previous bytes; the path is reported in `backupPath` when the
-runtime keeps one (`create` has no previous bytes, so no backup).
+`expectedVersion` is **mandatory** for every mutation of an existing file; a write without
+it is never accepted. Backups are the previous bytes; the path is reported in `backupPath`
+when the runtime keeps one (`create` has no previous bytes, so no backup). A `symbol` edit
+without `symbol` is `-32011` (`data.reason="symbol_required"`); a `rename` without
+`renameTo` is `-32011` (`data.reason="rename_to_required"`).
 
 ### 4.4 VERIFY (`oumv/verify`)
 
-Request: `{target, method?, action?, payload?, headers?}` → 
+Request: `{target, method?, action?, payload?, headers?, steps?}` → 
 ```json
 { "status": "passed"|"failed", "target": "POST /api/orders", "statusCode": 409,
+  "steps": [{ "target": "POST /api/orders", "statusCode": 201, "status": "passed", "responseBody": "…" },
+            { "target": "POST /api/orders", "statusCode": 409, "status": "failed", "responseBody": "…" }],
   "diff": { "…": { "before": …, "after": … } }, "surfaceDiff": [{ "op": "attr"|"text"|"visibility", "target": "…", "before": "…", "after": "…" }],
   "timings": { "t_action_ms": 0.1, "t_schema_ms": 0, "t_propagation_ms": 0.2, "t_dom_ms": 0, "t_total_ms": 0.3 },
   "durationMs": 0.3,
@@ -283,6 +300,17 @@ rollback was observed; otherwise `rollbackStatus` says `unverified` or `not_appl
 No v1.x runtime implements rollback yet, so both fields are normally **omitted** — an
 adapter must not emit `rolledBack: false` to imply a rollback happened and was verified.
 `scope` is mandatory: a verifier MUST state what it did not execute.
+
+**Multi-step verify.** `steps` is an ordered array of request targets
+(`{target, action?, payload?, headers?}`) executed in order **against one application
+instance**, so state created by an earlier step is visible to later ones. This is how an
+agent reproduces a bug that needs two calls (create, then repeat the idempotency key). When
+`steps` is present the top-level `target`/`action`/`payload` describe the scenario, not an
+extra dispatch. The response carries one `steps[]` entry per request with its own
+`statusCode`, `status` and `responseBody`; the top-level `status` is `passed` when every
+step was dispatched (a `4xx` inside a scenario is an observation, not a protocol failure).
+A runtime that cannot share state across steps MUST reject `steps` with `-32006`
+(`data.reason="multi_step_unsupported"`) instead of silently running them isolated.
 
 ### 4.5 Target grammar
 
@@ -507,9 +535,9 @@ Conformance is **per adapter and per profile**, and it is a claim that MUST be b
 
 ### 10.2 Language-neutral fixtures
 
-Cases live in `fixtures/conformance-cases.json` (`fixtureVersion` 5). Every case declares the `level` it certifies and may declare `preconditions` such as `verify` (which establishes the runtime evidence that L4/causality cases assert on). Each runtime executes the same file with its native toolchain — no TypeScript required for Go or Python certification.
+Cases live in `fixtures/conformance-cases.json` (`fixtureVersion` 6). Every case declares the `level` it certifies and may declare `preconditions` such as `verify` (which establishes the runtime evidence that L4/causality cases assert on). Each runtime executes the same file with its native toolchain — no TypeScript required for Go or Python certification.
 
-A case declares its expectations declaratively: `expectResultFields`, `expectError.code` (with optional `expectError.data`), `expectLevelEquals`, `expectSha256Field`, `expectArrayField`, `expectEvidence`, `expectVersionMatchesContent`. The reference runners are the Go/Python packages in `tokensafe-backend` and `@oumv/conformance` (CLI `oumv-certify`); a certification claim is reproduced in CI by re-running one of them.
+A case declares its expectations declaratively: `expectResultFields`, `expectValues` (JSON-path equality on the result), `expectError.code` (with optional `expectError.data`), `expectLevelEquals`, `expectSha256Field`, `expectArrayField`, `expectEvidence`, `expectVersionMatchesContent`. The reference runners are the Go/Python packages in `tokensafe-backend` and `@oumv/conformance` (CLI `oumv-certify`); a certification claim is reproduced in CI by re-running one of them.
 
 **OCC is mandatory.** Exactly one case (`apply-edit-without-version-rejected`) omits `expectedVersion`, and it asserts `-32011 VALIDATION_FAILED`. A runtime that accepts an unversioned edit of an existing file cannot pass Level 2.
 
@@ -521,9 +549,9 @@ A level claim MUST be accompanied by a report (schema: `schemas/conformance-repo
 {
   "adapterName": "go-gin",
   "framework": "gin",
-  "specVersion": "1.1.0",
-  "fixtureVersion": 5,
-  "total": 15, "passed": 15, "failed": 0,
+  "specVersion": "1.2.0",
+  "fixtureVersion": 6,
+  "total": 25, "passed": 25, "failed": 0,
   "attainedLevel": 3,
   "levels": { "1": "passed", "2": "passed", "3": "passed" },
   "cases": [{ "id": "handshake-negotiates-capabilities", "level": 1, "status": "passed" }],
@@ -550,10 +578,59 @@ Reports are committed per adapter (e.g. `tokensafe-backend/certification/*.json`
   only comparable with the same `fixtureVersion`.
 * Conformance claims are per `specVersion`; a runtime re-certifies when MAJOR changes and
   SHOULD re-certify on MINOR.
+* **v1.1 (wire 1.2.0)** adds the `applyEdit` modes `symbol`/`delete`/`rename`, `verify.steps`
+  and observe `limit`/`cursor` pagination. All are additive: a v1.0 adapter stays valid for
+  the capabilities it declares, and an adapter that does not implement a mode MUST answer
+  `-32006` for it — never silently fall back to `replace`.
+
+---
+
+## 12. Security & Rate Limits
+
+The runtime is an attack surface: it reads and writes source and dispatches requests. The
+baseline rules:
+
+* **Authentication.** The RPC endpoint accepts `X-OUMV-Session-Token` or
+  `Authorization: Bearer <token>` (§2.2). Loopback development MAY run without a token;
+  every non-loopback binding MUST require one and answer `401`/`403` before dispatch.
+  Adapters MUST fail closed in production: disabled unless explicitly enabled, no
+  descriptor, no source reads, no mutations.
+* **Path jail.** Every path is resolved (symlinks included) and must stay inside the
+  workspace root; credential files (`.env*`, keys, `credentials.json`, VCS internals) are
+  refused with `-32003` even inside the workspace. `renameTo` is jail-checked like `path`.
+* **Secrets.** The descriptor may carry the session token (`0600`, outside the repo) and
+  MUST NOT carry credentials, connection strings or environment dumps. Tool results are
+  redacted by the client, not trusted from the runtime.
+* **Rate limits.** An adapter MAY enforce a per-session request limit. When it does, a
+  throttled call answers `-32005 RATE_LIMITED` (or HTTP `429` before dispatch) with a
+  `Retry-After` header or `data.retryAfterMs`. Limits are advisory for local development
+  and MUST NOT be the only protection for a non-loopback binding.
+* **No execution beyond the declared scope.** `verify` runs the application's own handler
+  in-process; it MUST NOT spawn shells, reach the network outside the handler, or persist
+  state it did not create. `scope.notExecuted` states the boundary.
+
+## 13. Cross-Stack Graph (informative extension)
+
+`oumv/graph` is an **optional** read-only extension for agents that work across a mixed
+frontend/backend workspace. It is informative in v1.1: no adapter certification claim is
+made for it, and a runtime that does not implement it answers `-32601` like any unknown
+method.
+
+Request: `{ "workspace"?: string, "depth"?: integer }` →
+```json
+{ "nodes": [{ "id": "backend.endpoint:GET /api/orders", "type": "backend.endpoint", "stack": "go", "file": "internal/api/orders.go" }],
+  "edges": [{ "from": "frontend.component:OrdersPage", "to": "backend.endpoint:GET /api/orders", "kind": "fetch|ws|graphql|event" }],
+  "truncated": false }
+```
+Nodes use the §6.1 resource namespace; ids are stable across runs. Edges are derived from
+real call sites when available and MUST carry `kind` plus an evidence object when the
+provenance is inferred rather than observed.
 
 ---
 
 ## Changelog
+
+- **v1.1.0 release (2026-11-26)**: wire `protocolVersion` **1.2.0**, document revision `v1.5-canonical`, `fixtureVersion` **6** (25 cases). New: `applyEdit` modes `symbol` (replace one function/method/class without re-emitting the file), `delete` and `rename` (jail-checked, OCC, `renameTo`); `verify.steps` for ordered multi-request scenarios that share state (the duplicate-idempotency repro); observe `limit`/`cursor` with `hasMore`/`nextCursor` for L1/L4. New §12 security/rate-limit policy and the informative §13 cross-stack graph. Certification: all six backend adapters + React re-run on fixtures v6.
 
 - **v1.0.0 release (2026-11-26)**: first stable release. Freezes document revision `v1.4-canonical`, wire `protocolVersion` **1.1.0** and `fixtureVersion` **4**. Certification: go-gin/go-chi/go-stdhttp/python-fastapi level 3 (18/18), React/Vite level 1 offline (15/18; L2–L3 need a browser tab). Tooling: `oumv-certify`, `oumv-lint-adapter`, adapter manifests with a capability gate.
 - **v1.4-canonical (2026-11-26)**: normative transport bindings (§2.2 HTTP/batch, §2.3 SSE, §2.4 WebSocket, §2.5 stdio), §3 gains a session-lifecycle body (sessionId/TTL/disconnect, `session_expired`), §4 replaces prose with normative per-level/per-profile payloads, target grammar, mandatory-OCC guard order and the deprecated-alias table, §5 adds the full code table (JSON-RPC codes included, `-32010` reserved) plus method→code mapping and `error.data.reason`.

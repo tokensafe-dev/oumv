@@ -206,7 +206,7 @@ Two rules that keep reports trustworthy:
 
 The stdio claim is backed by the same fixtures run over §2.5:
 `tokensafe-backend/certification/transports/node-stdio.json` and
-`python-stdio.json` (both Level 3, 20/20), regenerated in CI next to the HTTP
+`python-stdio.json` (both Level 3, 25/25), regenerated in CI next to the HTTP
 reports. A transport claim without a report is not made.
 
 Django/Flask, Next and Angular adapters follow.
