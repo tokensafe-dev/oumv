@@ -65,5 +65,12 @@
     "@oumv/schema": "workspace:*",
     "tsup": "^8.3.5",
     "typescript": "^5.7.2"
+  },
+  "bin": {
+    "oumv-certify": "./dist/cli/certify.js",
+    "oumv-lint-adapter": "./dist/cli/lint-adapter.js"
+  },
+  "dependencies": {
+    "ajv": "^8.20.0"
   }
 }

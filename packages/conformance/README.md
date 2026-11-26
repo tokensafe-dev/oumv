@@ -1,4 +1,8 @@
-# @oumv/conformance
+# @oumv/conformance (workspace)
+
+> Published entry point: both CLIs ship inside **`tokensafe-oumv`** (they are bundled
+> into its `dist/cli/`), because `@oumv/*` is an internal workspace scope without an
+> npm scope of its own. `npx -p tokensafe-oumv oumv-certify …` runs exactly this code.
 
 Language-neutral OUMV conformance runner plus the two CLIs that make a level claim
 reproducible (spec §10).

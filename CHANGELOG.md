@@ -47,7 +47,8 @@ claim is backed by a fixture run, and certification is reproducible.
 
 - `oumv-certify` (HTTP, WebSocket, stdio): derives the OCC version via
   `oumv/getSource` instead of guessing it, writes the certification report, exits
-  non-zero below `--min-level`.
+  non-zero below `--min-level`. It and `oumv-lint-adapter` ship as bins of
+  `tokensafe-oumv@1.0.0` (`npx -p tokensafe-oumv oumv-certify …`).
 - `oumv-lint-adapter`: validates adapter manifests against `schemas/adapter.json`.
 - `adapters/*.json` for gin, chi, net/http, FastAPI and React/Vite, with a CI gate
   that fails any capability claiming a level above its fixture case.

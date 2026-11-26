@@ -39,23 +39,6 @@ jobs:
       - name: Run test suite
         run: pnpm test
 
-      # Publish order matters: @oumv/conformance depends on @oumv/protocol and
-      # @oumv/schema, so the leaves go first.
-      - name: Publish @oumv/protocol
-        run: pnpm --filter @oumv/protocol publish --access public --no-git-checks
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-      - name: Publish @oumv/schema
-        run: pnpm --filter @oumv/schema publish --access public --no-git-checks
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-      - name: Publish @oumv/conformance
-        run: pnpm --filter @oumv/conformance publish --access public --no-git-checks
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-
       - name: Publish tokensafe-oumv
         run: pnpm --filter tokensafe-oumv publish --access public --no-git-checks
         env:

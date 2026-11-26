@@ -84,8 +84,8 @@ Browser-only capabilities (`observe.traces`, `verify.behavior`) degrade explicit
 
 ```bash
 # 1. build / start your app so the runtime is reachable
-# 2. run the language-neutral fixtures
-npx @oumv/conformance oumv-certify \
+# 2. run the language-neutral fixtures (the CLIs ship inside tokensafe-oumv)
+npx -p tokensafe-oumv oumv-certify \
   --adapter backend/gin --framework gin --profile backend \
   --url http://127.0.0.1:8080/__oumv/rpc --token "$OUMV_TOKEN" \
   --markers @markers.json --report certification/go-gin.json
@@ -103,7 +103,7 @@ Validate an adapter manifest (identity, profiles, capability constraints) agains
 `schemas/adapter.json`:
 
 ```bash
-npx @oumv/conformance oumv-lint-adapter adapters/react-vite.json
+npx -p tokensafe-oumv oumv-lint-adapter adapters/react-vite.json
 ```
 
 Committed reports are re-generated in CI and diffed (`scripts/check_certification.py`
