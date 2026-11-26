@@ -57,9 +57,9 @@ instead of inflating it (spec §10.1).
 | :--- | :--- | :--- | :--- |
 | Frontend | React 18/19 + Vite | `tokensafe-ui/vite` (zero-footprint bridge) | Level 3 (in-process conformance) |
 | Frontend | Vue 3 + Vite | — | planned: the Vite plugin serves no OUMV endpoints for Vue yet |
-| Backend | Go (Gin / Chi / net/http) | `tokensafe-backend/go/pkg/adapters/*` | Level 3, 20/20 over HTTP (fixtures v5) |
-| Backend | Python / FastAPI | `tokensafe-backend-python` (`mount_tokensafe`) | Level 3, 20/20 over ASGI (fixtures v5) |
-| Backend | Node.js / Express, Fastify | `tokensafe-backend/node` | Level 3, 20/20 over HTTP (fixtures v5) |
+| Backend | Go (Gin / Chi / net/http) | `tokensafe-backend/go/pkg/adapters/*` | Level 3 (all cases) |
+| Backend | Python / FastAPI | `tokensafe-backend-python` (`mount_tokensafe`) | Level 3 (all cases) |
+| Backend | Node.js / Express, Fastify | `tokensafe-backend/node` | Level 3 (all cases) |
 
 The native SolidJS runtime in `tokensafe-ui` and the `tokensafe.New()` Go framework remain
 in the trees as reference implementations for tests; they are not the recommended path.
@@ -111,7 +111,7 @@ Every failure is a typed JSON-RPC error. The normative table is [spec §5.1](spe
 ## Reference Implementations
 
 - [**tokensafe-ui**](https://github.com/tokensafe-dev/tokensafe-ui) — Frontend Profile accumulator: React adapter (`tokensafe-ui/react` — Zustand, Redux, Context, useReducer), Vue adapter (`tokensafe-ui/vue`), and the zero-footprint Vite bridge (`tokensafe-ui/vite`). The native SolidJS runtime remains in the package as a legacy reference implementation, not the recommended path.
-- [**tokensafe-backend**](https://github.com/tokensafe-dev/tokensafe-backend) — Backend Profile accumulator: Go adapters (`go/` — Gin, Chi, net/http) and the Python runtime (`python/` — FastAPI, SQLAlchemy rollback sandbox), published as `tokensafe-backend-python`. All six adapters are certified Level 3, 20/20 (fixtures v5, spec §10).
+- [**tokensafe-backend**](https://github.com/tokensafe-dev/tokensafe-backend) — Backend Profile accumulator: Go adapters (`go/` — Gin, Chi, net/http) and the Python runtime (`python/` — FastAPI, SQLAlchemy rollback sandbox), published as `tokensafe-backend-python`. All six adapters are certified Level 3. Exact case counts and fixture revisions are generated from the committed reports in [`tokensafe-backend/certification/`](https://github.com/tokensafe-dev/tokensafe-backend/tree/main/certification), so this page cannot drift from them.
 - [**tokensafe**](https://github.com/tokensafe-dev/tokensafe) — Main engine containing the Retrofit CLI (`tokensafe integrate`), out-of-the-box stack detection, and the MCP OUMV Gateway with Level 1 static fallback.
 
 ---
@@ -125,7 +125,7 @@ Three independent numbers, often mistaken for a mismatch:
 | Standard release | `v1.0.0` (2026-11-26) | The frozen standard. `tokensafe-oumv` and the monorepo are at 1.0.0. |
 | Document revision | `v1.4-canonical` | The revision of `spec/SPEC.md` that v1.0.0 freezes; see the changelog in that file. |
 | Wire `protocolVersion` | `1.1.0` | Sent in `oumv/handshake`. A runtime MUST echo the version it actually serves; clients accept a matching MAJOR. |
-| Fixtures | `fixtureVersion` 5 | 20 language-neutral cases; all six certified backend adapters re-ran against v5. |
+| Fixtures | `fixtures/conformance-cases.json` | `fixtureVersion` and the case count live in the file itself; every backend report records the revision it ran. |
 
 These axes move independently by design: v1.0.0 freezes a document revision (v1.4-canonical),
 a wire version (1.1.0) and a fixture set (v4). Implementations negotiate the **wire** version,
