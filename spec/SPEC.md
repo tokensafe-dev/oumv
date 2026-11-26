@@ -479,7 +479,7 @@ Conformance is **per adapter and per profile**, and it is a claim that MUST be b
 
 ### 10.2 Language-neutral fixtures
 
-Cases live in `fixtures/conformance-cases.json` (`fixtureVersion` 3). Every case declares the `level` it certifies and may declare `preconditions` such as `verify` (which establishes the runtime evidence that L4/causality cases assert on). Each runtime executes the same file with its native toolchain — no TypeScript required for Go or Python certification.
+Cases live in `fixtures/conformance-cases.json` (`fixtureVersion` 4). Every case declares the `level` it certifies and may declare `preconditions` such as `verify` (which establishes the runtime evidence that L4/causality cases assert on). Each runtime executes the same file with its native toolchain — no TypeScript required for Go or Python certification.
 
 A case declares its expectations declaratively: `expectResultFields`, `expectError.code` (with optional `expectError.data`), `expectLevelEquals`, `expectSha256Field`, `expectArrayField`, `expectEvidence`, `expectVersionMatchesContent`. The reference runners are the Go/Python packages in `tokensafe-backend` and `@oumv/conformance` (CLI `oumv-certify`); a certification claim is reproduced in CI by re-running one of them.
 
@@ -494,7 +494,7 @@ A level claim MUST be accompanied by a report (schema: `schemas/conformance-repo
   "adapterName": "go-gin",
   "framework": "gin",
   "specVersion": "1.1.0",
-  "fixtureVersion": 3,
+  "fixtureVersion": 4,
   "total": 15, "passed": 15, "failed": 0,
   "attainedLevel": 3,
   "levels": { "1": "passed", "2": "passed", "3": "passed" },

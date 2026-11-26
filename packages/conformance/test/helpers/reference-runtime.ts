@@ -45,12 +45,13 @@ export function referenceRuntime(request: JsonRpcRequest): JsonRpcResponse {
         return fail(-32011, 'VALIDATION_FAILED: unknown sessionId', { reason: 'session_expired' });
       }
       const level = String(params.level);
-      if (level === 'L0') return ok({ level, data: { route: '/', mountedComponents: 3 } });
-      if (level === 'L1') return ok({ level, data: { target: params.target ?? '/', elements: [] } });
+      if (level === 'L0') return ok({ level, format: 'json', data: { route: '/', mountedComponents: 3 } });
+      if (level === 'L1') return ok({ level, format: 'json', data: { target: params.target ?? '/', elements: [] } });
       if (level === 'L2') {
         if (!params.target) return fail(-32602, 'INVALID_PARAMS: target is required');
         return ok({
           level,
+          format: 'json',
           data: {
             target: params.target,
             components: [],
@@ -62,12 +63,14 @@ export function referenceRuntime(request: JsonRpcRequest): JsonRpcResponse {
         if (!params.target) return fail(-32602, 'INVALID_PARAMS: target is required');
         return ok({
           level,
+          format: 'json',
           data: { target: params.target, source: REFERENCE_SOURCE, version: occToken(REFERENCE_SOURCE) },
         });
       }
       if (level === 'L4') {
         return ok({
           level,
+          format: 'json',
           data: {
             traces: [
               {
