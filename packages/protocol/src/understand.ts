@@ -3,11 +3,17 @@ export type UnderstandQuery =
   | 'dependencies'
   | 'causality'
   | 'why_state'
-  | 'signals';
+  | 'signals'
+  /** Static L2 flow (§4.2): handler → callees → literal client routes. */
+  | 'flow';
 
 export interface UnderstandParams {
+  sessionId?: string;
+  requestId?: string;
+  timeoutMs?: number;
   query: UnderstandQuery;
   target?: string;
+  componentId?: string;
 }
 
 export interface ImpactResult {

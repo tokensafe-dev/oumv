@@ -22,17 +22,46 @@ export interface GetSourceResult {
   evidence?: EvidenceMetadata;
 }
 
-export interface ApplyEditParams {
-  filePath: string;
-  source: string;
-  expectedVersion: string;
+export interface ApplyEditHunk {
+  target: string;
+  replacement: string;
+  startLine?: number;
+  endLine?: number;
+  replaceAll?: boolean;
 }
 
+/**
+ * `applyEdit` params in the wire 1.5.0 shape (§4.3). The v1.0
+ * `filePath`/`source` spellings are deprecated aliases (§4.7) accepted on
+ * input, never emitted, and are not modelled here.
+ */
+export interface ApplyEditParams {
+  sessionId?: string;
+  requestId?: string;
+  timeoutMs?: number;
+  /** Idempotency (§3, wire 1.6.0): a retry with the same key replays the first result. */
+  idempotencyKey?: string;
+  path: string;
+  mode?: 'replace' | 'create' | 'patch' | 'symbol' | 'delete' | 'rename';
+  symbol?: string;
+  renameTo?: string;
+  replacement?: string;
+  hunks?: ApplyEditHunk[];
+  expectedVersion?: string;
+}
+
+/** `applyEdit` result in the wire 1.5.0 shape (§4.3). */
 export interface ApplyEditResult {
-  success: boolean;
-  filePath: string;
-  version: string;
-  message?: string;
+  status: 'CURRENT' | 'APPLIED';
+  path: string;
+  mode?: ApplyEditParams['mode'];
+  newVersion: string;
+  created?: boolean;
+  hunksApplied?: number;
+  syntaxCheck?: { status: 'passed' | 'failed' | 'skipped'; tool?: string; error?: string };
+  backupPath?: string;
+  rollbackHint?: string;
+  evidence?: EvidenceMetadata;
 }
 
 /** One item of a multi-file atomic mutation (wire 1.5.0). */
@@ -42,13 +71,7 @@ export interface ApplyEditBatchItem {
   mode?: 'replace' | 'create' | 'patch';
   expectedVersion?: string;
   replacement?: string;
-  hunks?: Array<{
-    target: string;
-    replacement: string;
-    startLine?: number;
-    endLine?: number;
-    replaceAll?: boolean;
-  }>;
+  hunks?: ApplyEditHunk[];
 }
 
 export interface ApplyEditBatchParams {

@@ -15,19 +15,40 @@ export interface OumvMutateCapabilities {
   ephemeralDispatch: boolean;
   /** Atomic multi-file `applyEdit` (`edits: [...]`, wire 1.5.0). */
   multiFile?: boolean;
+  /** `oumv/previewEdit` with the full §4.4 guard order (wire 1.6.0). */
+  preview?: boolean;
 }
 
 /** §3 session negotiation (wire 1.5.0). */
 export interface OumvSessionCapabilities {
   /** Honours a client-requested handshake `sessionTtlSeconds`. */
   ttlSeconds?: boolean;
+  /** Accepts `oumv/cancel` for in-flight requests (wire 1.6.0). */
+  cancel?: boolean;
 }
 
 export interface OumvVerifyCapabilities {
   multiMetric: boolean;
   surfaceDiff: boolean;
-  /** Transactional rollback with observed evidence (spec §4 verify `sandbox`). */
+  /** Transactional rollback with observed evidence (spec §4.5 verify `sandbox`). */
   sandboxRollback?: boolean;
+  /** `oumv/build` — structured build/test diagnostics (§14.3, wire 1.6.0). */
+  build?: boolean;
+}
+
+/** §14.1 optional extension (wire 1.6.0). */
+export interface OumvIndexCapabilities {
+  symbols: boolean;
+}
+
+/** §14.2 optional extension (wire 1.6.0). */
+export interface OumvObserveQueryCapabilities {
+  readOnly: boolean;
+}
+
+/** §2.6 push diagnostics (wire 1.6.0). */
+export interface OumvEventsCapabilities {
+  diagnostic: boolean;
 }
 
 export interface OumvCapabilities {
@@ -39,6 +60,10 @@ export interface OumvCapabilities {
   sessions?: OumvSessionCapabilities;
   /** Bindings this runtime actually mounted (spec §2.3/§2.4). */
   transports?: ('http' | 'sse' | 'ws' | 'stdio' | 'memory' | 'batch')[];
+  /** §14 optional extensions + push diagnostics (wire 1.6.0). */
+  index?: OumvIndexCapabilities;
+  observeQuery?: OumvObserveQueryCapabilities;
+  events?: OumvEventsCapabilities;
 }
 
 export interface OumvClientInfo {
