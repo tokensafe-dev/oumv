@@ -3,6 +3,16 @@
 The wire contract is versioned by `protocolVersion` (currently **1.6.0**); this
 changelog tracks the OUMV specification and its reference tooling.
 
+## v1.5.1 — 2026-11-27 (wire 1.6.0, fixtures v11)
+
+Patch follow-up to v1.5.0, no wire changes: the golden wire corpus now covers
+all eleven methods from live runtimes (backend from the net/http adapter —
+including the honest `-32001`/`-32006` refusals; frontend from the React
+controller — including the §14 `-32601` answers for index/query/build),
+METHOD_SCHEMAS pins the full surface, `oumv-cancel.json` schema added, the
+preview capability case clears `${NEW_FILE}` before running, and §4.1 gains
+the §8 result-versioning note (`workspaceVersion`/`ifVersion`, `-32010`).
+
 ## v1.5.0 — 2026-11-27 (wire 1.6.0, fixtures v11)
 
 Agent-UX MINOR: the protocol closes the loop an agent actually runs — find what to read,
