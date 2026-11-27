@@ -154,6 +154,10 @@
       "cancel": {
        "type": "boolean",
        "description": "accepts oumv/cancel for in-flight requests (wire 1.6.0)"
+      },
+      "idempotency": {
+       "type": "boolean",
+       "description": "applyEdit/previewEdit honour params.idempotencyKey with first-result-wins replay (\u00a73, wire 1.6.0)"
       }
      }
     },

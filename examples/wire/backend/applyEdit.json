@@ -1,7 +1,7 @@
 {
   "method": "oumv/applyEdit",
   "profile": "backend",
-  "specVersion": "1.5.0",
+  "specVersion": "1.6.0",
   "adapter": "backend/stdhttp",
   "note": "captured from the net/http adapter against a temp workspace; paths are relative to it",
   "cases": [

@@ -66,6 +66,7 @@ export const OumvHandshakeResultSchema = z.object({
       .object({
         ttlSeconds: z.boolean().optional(),
         cancel: z.boolean().optional(),
+        idempotency: z.boolean().optional(),
       })
       .optional(),
     index: z

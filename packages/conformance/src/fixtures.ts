@@ -11,7 +11,7 @@ import { createHash } from 'node:crypto';
 import { determineConformanceLevel, summarizeLevels } from './levels.js';
 import type { ConformanceLevel, LevelStatus } from './levels.js';
 
-export const SPEC_VERSION = '1.5.0';
+export const SPEC_VERSION = '1.6.0';
 
 export interface ConformanceCaseError {
   code: number;

@@ -25,6 +25,8 @@ export interface OumvSessionCapabilities {
   ttlSeconds?: boolean;
   /** Accepts `oumv/cancel` for in-flight requests (wire 1.6.0). */
   cancel?: boolean;
+  /** applyEdit/previewEdit honour `idempotencyKey` with first-result-wins replay (§3). */
+  idempotency?: boolean;
 }
 
 export interface OumvVerifyCapabilities {

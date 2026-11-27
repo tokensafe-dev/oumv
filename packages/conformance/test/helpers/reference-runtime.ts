@@ -22,6 +22,8 @@ export const ZERO_VERSION = `sha256:${'0'.repeat(64)}`;
 
 /** Live handshake sessions; the reference TTL is honoured on read (spec §3). */
 const sessions = new Map<string, number>();
+/** Per-session idempotency map (§3, wire 1.6.0): key -> first final result. */
+const idempotency = new Map<string, unknown>();
 
 function createSession(requestedTtl: unknown): { id: string; ttl: number } {
   const requested = Number(requestedTtl);
@@ -41,6 +43,14 @@ export function occToken(content: string): string {
   return `sha256:${crypto.createHash('sha256').update(content, 'utf-8').digest('hex')}`;
 }
 
+/** Store-and-replay for idempotent mutations (§3): returns the result unchanged. */
+function cls_store_idempotent(params: Record<string, any>, result: Record<string, unknown>): Record<string, unknown> {
+  if (params.idempotencyKey) {
+    idempotency.set(`${String(params.sessionId ?? 'default')}:${String(params.idempotencyKey)}`, result);
+  }
+  return result;
+}
+
 export function referenceRuntime(request: JsonRpcRequest): JsonRpcResponse {
   const ok = (result: unknown): JsonRpcResponse => ({ jsonrpc: '2.0', id: request.id, result });
   const fail = (code: number, message: string, data?: Record<string, unknown>): JsonRpcResponse => ({
@@ -54,7 +64,7 @@ export function referenceRuntime(request: JsonRpcRequest): JsonRpcResponse {
     case 'oumv/handshake':
       if (params.protocolVersion) {
         const [maj, min] = String(params.protocolVersion).split('.').map(Number);
-        if (maj !== 1 || min > 5) {
+        if (maj !== 1 || min > 6) {
           return fail(-32006, `UNSUPPORTED_CAPABILITY: protocol version ${params.protocolVersion}`, {
             reason: 'unsupported_version',
           });
@@ -63,7 +73,7 @@ export function referenceRuntime(request: JsonRpcRequest): JsonRpcResponse {
       {
         const session = createSession(params.sessionTtlSeconds);
         return ok({
-          protocolVersion: '1.5.0',
+          protocolVersion: '1.6.0',
           profile: 'backend',
           sessionId: session.id,
           ttlSeconds: session.ttl,
@@ -71,9 +81,12 @@ export function referenceRuntime(request: JsonRpcRequest): JsonRpcResponse {
           capabilities: {
             observe: { levels: ['L0', 'L1', 'L2', 'L3', 'L4'] },
             understand: { impactAnalysis: true, causality: true },
-            mutate: { occ: true, multiFile: true },
-            verify: {},
-            sessions: { ttlSeconds: true },
+            mutate: { occ: true, multiFile: true, preview: true },
+            verify: { build: true },
+            index: { symbols: true },
+            observeQuery: { readOnly: true },
+            events: { diagnostic: false },
+            sessions: { ttlSeconds: true, cancel: true, idempotency: true },
           },
         });
       }
@@ -217,6 +230,106 @@ export function referenceRuntime(request: JsonRpcRequest): JsonRpcResponse {
         scope: { checked: ['status'], notExecuted: [], notSupported: [] },
       });
 
+    case 'oumv/previewEdit': {
+      // §4.4 dry-run: the applyEdit guard order without any write.
+      if (sessionExpired(params.sessionId)) {
+        return fail(-32011, 'VALIDATION_FAILED: unknown or expired sessionId — re-run oumv/handshake', {
+          reason: 'session_expired',
+        });
+      }
+      const items: Array<Record<string, any>> = Array.isArray(params.edits) ? params.edits : [params];
+      if (!items.length || items.length > 16) {
+        return fail(-32011, 'VALIDATION_FAILED: batch must hold 1..16 items', { reason: 'batch_size' });
+      }
+      const previews: Array<Record<string, unknown>> = [];
+      for (const item of items) {
+        const path = String(item.path ?? '');
+        const mode = String(item.mode ?? 'replace');
+        if (!['replace', 'create', 'patch', 'symbol', 'delete', 'rename'].includes(mode)) {
+          return fail(-32006, `UNSUPPORTED_CAPABILITY: unknown preview mode ${mode}`, { reason: 'unknown_mode', path });
+        }
+        if (mode === 'create') {
+          if (item.expectedVersion) {
+            return fail(-32011, 'VALIDATION_FAILED: expectedVersion must be omitted for mode=create', {
+              reason: 'create_forbids_version',
+              path,
+            });
+          }
+          if (pathExists(path)) {
+            return fail(-32001, 'CONFLICT_DETECTED: file already exists', { reason: 'file_exists', path });
+          }
+        } else if (!item.expectedVersion) {
+          return fail(-32011, 'VALIDATION_FAILED: expectedVersion is required', {
+            reason: 'expected_version_required',
+            path,
+          });
+        }
+        if (String(item.replacement).includes('def broken(:')) {
+          return fail(-32002, 'SYNTAX_ERROR: invalid syntax', { path });
+        }
+        const currentVersion = pathExists(path) ? occToken(REFERENCE_SOURCE) : ZERO_VERSION;
+        const newVersion = occToken(String(item.replacement));
+        previews.push({
+          path,
+          mode,
+          unchanged: pathExists(path) && newVersion === currentVersion,
+          currentVersion,
+          newVersion,
+          wouldApply: true,
+        });
+      }
+      return ok({ status: 'PREVIEW', applied: false, previews });
+    }
+
+    case 'oumv/cancel': {
+      // §3: best-effort — unknown ids and finished requests are results, never errors.
+      if (params.target === 'last') return ok({ cancelled: false, finished: true });
+      return ok({ cancelled: false, requestId: params.requestId });
+    }
+
+    case 'oumv/index': {
+      if (!String(params.query ?? '').trim()) {
+        return fail(-32602, 'INVALID_PARAMS: query is required');
+      }
+      const symbols = [
+        {
+          resourceId: 'variable:value@reference.ts',
+          name: 'value',
+          kind: 'variable',
+          file: 'reference.ts',
+          lines: [1, 1],
+          signature: 'value = 1',
+          match: 'exact',
+        },
+      ];
+      return ok({ matches: symbols, truncated: false, totalMatches: symbols.length });
+    }
+
+    case 'oumv/query': {
+      if (sessionExpired(params.sessionId)) {
+        return fail(-32011, 'VALIDATION_FAILED: unknown or expired sessionId — re-run oumv/handshake', {
+          reason: 'session_expired',
+        });
+      }
+      const sql = String(params.sql ?? '').trim();
+      if (/^(select|explain)\b/i.test(sql)) {
+        return ok({ columns: ['1'], rows: [[1]], rowCount: 1, truncated: false });
+      }
+      return fail(-32003, 'SECURITY_VIOLATION: only SELECT/EXPLAIN statements are accepted', {
+        reason: 'query_forbidden',
+      });
+    }
+
+    case 'oumv/build': {
+      // Honest skip: the reference runtime executes no shell commands.
+      return ok({
+        status: 'skipped',
+        command: String(params.command ?? 'none'),
+        diagnostics: [],
+        skipReason: 'reference runtime executes no shell commands',
+      });
+    }
+
     case 'oumv/applyEdit': {
       // Wire 1.5.0 batch envelope: pre-flight every item, then answer per item.
       if (Array.isArray(params.edits)) {
@@ -312,6 +425,10 @@ export function referenceRuntime(request: JsonRpcRequest): JsonRpcResponse {
         return ok({ status: 'APPLIED', edits: staged });
       }
 
+      if (params.idempotencyKey) {
+        const key = `${String(params.sessionId ?? 'default')}:${String(params.idempotencyKey)}`;
+        if (idempotency.has(key)) return ok(idempotency.get(key));
+      }
       const editMode = String(params.mode ?? 'replace');
       if (!['replace', 'create', 'symbol', 'delete', 'rename', 'patch'].includes(editMode)) {
         return fail(-32006, `UNSUPPORTED_CAPABILITY: unknown applyEdit mode ${editMode}`, { reason: 'unknown_mode' });
@@ -325,13 +442,13 @@ export function referenceRuntime(request: JsonRpcRequest): JsonRpcResponse {
         if (pathExists(String(params.path))) {
           return fail(-32001, 'CONFLICT_DETECTED: file already exists', { reason: 'file_exists' });
         }
-        return ok({
+        return ok(cls_store_idempotent(params, {
           status: 'APPLIED',
           path: params.path,
           newVersion: occToken(String(params.replacement)),
           syntaxCheck: { status: 'passed', tool: 'reference' },
           created: true,
-        });
+        }));
       }
       if (params.mode === 'patch') {
         if (!params.expectedVersion) {

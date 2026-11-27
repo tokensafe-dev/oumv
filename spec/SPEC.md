@@ -189,7 +189,8 @@ A session begins with `oumv/handshake` and ends with `oumv/disconnect` or a TTL 
   per-session map key → final result: a retry with the same key returns the FIRST
   result verbatim (same `status`, same `newVersion`) instead of re-applying the edit
   or answering `-32001` because the bytes already changed. Keys MUST be scoped to the
-  session and MAY be pruned after the TTL. Without a key, retries keep the plain OCC
+  session and MAY be pruned after the TTL; advertising the behaviour is
+  `capabilities.sessions.idempotency`. Without a key, retries keep the plain OCC
   semantics.
 
 ### 3.1 Handshake (`oumv/handshake`)
@@ -864,7 +865,7 @@ Three extensions follow the `oumv/graph` pattern (§13): a runtime that does not
 implement them answers `-32601` like any unknown method, no certification claim is
 made, and an adopting agent MUST fall back to its own tools instead of assuming a
 static runtime can serve them. Each advertises a capability (`index.symbols`,
-`observe.query`, `verify.build`) in the handshake when implemented.
+`observeQuery.readOnly`, `verify.build`) in the handshake when implemented.
 
 ### 14.1 `oumv/index` — repo-wide symbol search
 
@@ -893,7 +894,7 @@ Request: `{ "query": string, "kinds"?: string[], "scope"?: string, "limit"?: int
   symbols (registered routes, mounted components) and MUST mark such entries with
   `evidence` provenance.
 
-### 14.2 `observe.query` — read-only data access
+### 14.2 `oumv/query` — read-only data access
 
 Answering "what is actually in the table/session" without handing the agent a shell.
 

@@ -27,7 +27,13 @@ const CAPABILITY_CASES = {
   'mutate.multiFile': 'apply-edit-batch-applies-all',
   'verify.behavior': 'verify-returns-status-timings-and-scope',
   'verify.sandboxRollback': 'verify-sandbox-rolls-back',
+  'verify.build': 'build-returns-status-and-diagnostics',
   'sessions.ttlSeconds': 'expired-session-is-rejected',
+  'sessions.cancel': 'cancel-unknown-request-id-is-not-an-error',
+  'sessions.idempotency': 'apply-edit-idempotency-key-replays',
+  'mutate.preview': 'preview-edit-does-not-write',
+  'index.symbols': 'index-returns-ranked-matches',
+  'observeQuery.readOnly': 'query-read-only-select-answers-columns-rows',
 };
 
 const fixtures = JSON.parse(readFileSync(FIXTURES, 'utf-8'));
