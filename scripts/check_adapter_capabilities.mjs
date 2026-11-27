@@ -25,10 +25,13 @@ const CAPABILITY_CASES = {
   'understand.causality': 'understand-causality-after-execution',
   'mutate.source': 'apply-edit-returns-real-occ-version',
   'verify.behavior': 'verify-returns-status-timings-and-scope',
+  'verify.sandboxRollback': 'verify-sandbox-rolls-back',
 };
 
 const fixtures = JSON.parse(readFileSync(FIXTURES, 'utf-8'));
-const casesById = new Map(fixtures.cases.map((c) => [c.id, c]));
+const casesById = new Map(
+  [...fixtures.cases, ...(fixtures.capabilityCases ?? [])].map((c) => [c.id, c])
+);
 
 const problems = [];
 let checked = 0;

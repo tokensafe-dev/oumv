@@ -1,8 +1,8 @@
-# The OUMV Protocol Specification (v1.6-canonical)
+# The OUMV Protocol Specification (v1.7-canonical)
 **The Universal Agent-Runtime Protocol (UARP)**
 
-- **Date**: 2026-11-22 (v1.0 draft) · 2026-11-26 (v1.0.0 frozen; document revision v1.4-canonical) · 2026-11-26 (v1.1.0; revision v1.5-canonical, wire `protocolVersion` 1.2.0) · 2026-11-27 (v1.2.0; revision v1.6-canonical, wire `protocolVersion` 1.3.0)  
-- **Status**: Stable — v1.2.0  
+- **Date**: 2026-11-22 (v1.0 draft) · 2026-11-26 (v1.0.0 frozen; document revision v1.4-canonical) · 2026-11-26 (v1.1.0; revision v1.5-canonical, wire `protocolVersion` 1.2.0) · 2026-11-27 (v1.2.0; revision v1.6-canonical, wire `protocolVersion` 1.3.0) · 2026-11-27 (v1.3.0; revision v1.7-canonical, wire `protocolVersion` 1.4.0)  
+- **Status**: Stable — v1.3.0  
 - **Author**: Oleg Savelev  
 - **Repository**: [github.com/tokensafe-dev/oumv](https://github.com/tokensafe-dev/oumv)
 
@@ -306,7 +306,7 @@ not rejected, and a hunk that changes nothing is reported in `hunksApplied` all 
 
 ### 4.4 VERIFY (`oumv/verify`)
 
-Request: `{target, method?, action?, payload?, headers?, steps?}` → 
+Request: `{target, method?, action?, payload?, headers?, steps?, sandbox?}` → 
 ```json
 { "status": "passed"|"failed", "target": "POST /api/orders", "statusCode": 409,
   "steps": [{ "target": "POST /api/orders", "statusCode": 201, "status": "passed", "responseBody": "…" },
@@ -315,13 +315,25 @@ Request: `{target, method?, action?, payload?, headers?, steps?}` →
   "timings": { "t_action_ms": 0.1, "t_schema_ms": 0, "t_propagation_ms": 0.2, "t_dom_ms": 0, "t_total_ms": 0.3 },
   "durationMs": 0.3,
   "scope": { "checked": ["in-memory dispatch"], "notExecuted": ["real network"], "notSupported": ["browser DOM"] },
-  "rolledBack": true, "rollbackStatus": "verified"|"unverified"|"not_applicable" }
+  "rolledBack": true, "rollbackStatus": "verified"|"unverified"|"not_applicable",
+  "dbDiff": { "rollback": true, "queries": 4, "driver": "sqlalchemy" } }
 ```
 `status` is `passed` iff the dispatched action satisfied the request (HTTP status < 400 for
 request targets). `surfaceDiff` is frontend-only. `rolledBack` MUST only be `true` when a
 rollback was observed; otherwise `rollbackStatus` says `unverified` or `not_applicable`.
-No v1.x runtime implements rollback yet, so both fields are normally **omitted** — an
-adapter must not emit `rolledBack: false` to imply a rollback happened and was verified.
+An adapter must not emit `rolledBack: false` to imply a rollback happened and was verified.
+
+**Transactional sandbox (v1.3.0, wire 1.4.0).** `sandbox: {mode: "rollback"}` asks the
+runtime to execute the whole verify — every `step` of a multi-step request — inside one
+transaction and roll it back before answering. It is advertised as
+`capabilities.verify.sandboxRollback`; a runtime that does not advertise it MUST answer
+`-32006` and clients MUST NOT send the parameter. Evidence rules: `rollbackStatus` is
+`verified` only when the runtime observed the rollback (Python/Node also report
+`dbDiff.queries`, the number of statements executed — never SQL text or parameters);
+`unverified` when an engine exists but no rollback was observed; `not_applicable` when
+the runtime has no database layer wired. `scope.notExecuted` MUST omit
+`"persistent database state"` only when the status is `verified`.
+
 `scope` is mandatory: a verifier MUST state what it did not execute.
 
 **Multi-step verify.** `steps` is an ordered array of request targets
@@ -657,6 +669,8 @@ provenance is inferred rather than observed.
 ---
 
 ## Changelog
+
+- **v1.3.0 release (2026-11-27)**: wire `protocolVersion` **1.4.0**, document revision `v1.7-canonical`, `fixtureVersion` **9**. New: `verify.sandbox: {mode: "rollback"}` — one transaction for the whole request, evidence-gated `rolledBack`/`rollbackStatus`, `dbDiff {rollback, queries?, driver?}`, advertised as `capabilities.verify.sandboxRollback` and proven by the `verify-sandbox-rolls-back` capability case. Handshake capabilities now carry `transports` (the bindings a runtime actually mounted, §2.3/§2.4). `mutate.ephemeralDispatch` is documented here (it was already in the schema). Behavioural alignment: SSE ids are monotonic integers on every runtime, `Last-Event-ID` replays `trace` and `state`, WS `notifications/oumv.state` is bound to the handshake session, and the fixture v8 push cases certify those bindings. Certification: Go/Node/Python adapters at Level 3, Spring/PHP at Level 2 with the named L4 gap; Node Express/Fastify carry SSE and WS transport certificates.
 
 - **v1.2.0 release (2026-11-27)**: wire `protocolVersion` **1.3.0**, document revision `v1.6-canonical`, `fixtureVersion` **7**. New: `applyEdit mode=patch` — `hunks: [{target, replacement, startLine?, endLine?, replaceAll?}]` spliced in order under OCC, literal match, exactly-one-unless-scoped, first failure aborting with no bytes written (`-32009 target_not_found` / `-32011 target_not_unique`), `hunksApplied` in the result. `getSource` gains `startLine`/`endLine` windows and the `ifVersion` dedup pointer (`{unchanged: true}` with no source). Clarified: `version` is the sha256 of the whole file even when the read returns a slice, so OCC never depends on the window. This release also aligns the shipped runtimes with §4/§5 (Python observe L0/L1/L4 shapes and deprecated `version`/`mode` fields, Go `getSource` unknown-symbol and `verify` unavailable-sandbox codes, `protocolVersion` validation on handshake, `understand` unresolvable target) and adds conformance cases for those conditions. Certification: all six backend adapters + React re-run on fixtures v7.
 
