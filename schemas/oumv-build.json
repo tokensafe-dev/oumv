@@ -1,0 +1,49 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "https://oumv.org/schemas/oumv-build.json",
+ "title": "oumv/build",
+ "x-oumv-spec-version": "1.6.0",
+ "description": "Run the build/test command and return structured diagnostics (spec §14.3, optional extension; capability verify.build).",
+ "$defs": {
+  "diagnostic": {
+   "type": "object",
+   "required": ["severity", "source", "message"],
+   "properties": {
+    "severity": { "enum": ["error", "warning", "info"] },
+    "source": { "enum": ["build", "test", "hmr", "tool"] },
+    "file": { "type": "string" },
+    "line": { "type": "integer" },
+    "message": { "type": "string" },
+    "tool": { "type": "string" },
+    "reason": { "type": "string" },
+    "ts": { "type": "integer" }
+   }
+  },
+  "Request": {
+   "type": "object",
+   "properties": {
+    "sessionId": { "type": "string" },
+    "requestId": { "type": "string" },
+    "timeoutMs": { "type": "integer", "exclusiveMinimum": 0 },
+    "command": { "type": "string" },
+    "target": { "type": "string" }
+   }
+  },
+  "Response": {
+   "type": "object",
+   "required": ["status", "command", "diagnostics"],
+   "properties": {
+    "status": { "enum": ["passed", "failed", "skipped"] },
+    "command": { "type": "string" },
+    "diagnostics": { "type": "array", "items": { "$ref": "#/$defs/diagnostic" } },
+    "durationMs": { "type": "integer", "minimum": 0 },
+    "truncated": { "type": "boolean" },
+    "skipReason": { "type": "string", "description": "Required when status is skipped." }
+   }
+  }
+ },
+ "anyOf": [
+  { "$ref": "#/$defs/Request" },
+  { "$ref": "#/$defs/Response" }
+ ]
+}

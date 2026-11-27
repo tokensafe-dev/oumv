@@ -1,0 +1,93 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "https://oumv.org/schemas/oumv-preview.json",
+ "title": "oumv/previewEdit",
+ "x-oumv-spec-version": "1.6.0",
+ "description": "Dry-run of applyEdit (spec §4.4): identical guard order, no bytes written.",
+ "$defs": {
+  "syntaxCheck": {
+   "type": "object",
+   "required": ["status"],
+   "properties": {
+    "status": { "enum": ["passed", "failed", "skipped"] },
+    "tool": { "type": "string" },
+    "error": { "type": "string" }
+   }
+  },
+  "previewItem": {
+   "type": "object",
+   "required": ["path", "mode", "wouldApply"],
+   "properties": {
+    "path": { "type": "string" },
+    "mode": { "enum": ["replace", "create", "patch", "symbol", "delete", "rename"] },
+    "unchanged": { "type": "boolean" },
+    "currentVersion": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+    "newVersion": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+    "diff": { "type": "string" },
+    "syntaxCheck": { "$ref": "#/$defs/syntaxCheck" },
+    "wouldApply": { "type": "boolean" }
+   }
+  },
+  "Request": {
+   "type": "object",
+   "properties": {
+    "sessionId": { "type": "string" },
+    "requestId": { "type": "string" },
+    "timeoutMs": { "type": "integer", "exclusiveMinimum": 0 },
+    "idempotencyKey": { "type": "string" },
+    "path": { "type": "string" },
+    "filePath": { "type": "string" },
+    "symbol": { "type": "string" },
+    "renameTo": { "type": "string" },
+    "replacement": { "type": "string" },
+    "source": { "type": "string" },
+    "hunks": {
+     "type": "array",
+     "items": {
+      "type": "object",
+      "required": ["target", "replacement"],
+      "properties": {
+       "target": { "type": "string" },
+       "replacement": { "type": "string" },
+       "startLine": { "type": "integer" },
+       "endLine": { "type": "integer" },
+       "replaceAll": { "type": "boolean" }
+      }
+     }
+    },
+    "expectedVersion": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+    "mode": { "enum": ["replace", "create", "patch", "symbol", "delete", "rename"] },
+    "edits": {
+     "type": "array",
+     "minItems": 1,
+     "maxItems": 16,
+     "description": "Batch envelope (wire 1.5.0); single-edit fields MUST be absent when present.",
+     "items": {
+      "type": "object",
+      "required": ["path"],
+      "properties": {
+       "path": { "type": "string" },
+       "mode": { "enum": ["replace", "create", "patch"] },
+       "expectedVersion": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+       "replacement": { "type": "string" },
+       "hunks": { "type": "array", "items": { "type": "object" } }
+      }
+     }
+    }
+   }
+  },
+  "Response": {
+   "type": "object",
+   "required": ["status", "previews", "applied"],
+   "properties": {
+    "status": { "const": "PREVIEW" },
+    "applied": { "const": false },
+    "previews": { "type": "array", "items": { "$ref": "#/$defs/previewItem" } }
+   }
+  }
+ },
+ "anyOf": [
+  { "$ref": "#/$defs/Request" },
+  { "$ref": "#/$defs/Response" }
+ ]
+}

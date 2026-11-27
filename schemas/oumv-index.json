@@ -1,0 +1,50 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "https://oumv.org/schemas/oumv-index.json",
+ "title": "oumv/index",
+ "x-oumv-spec-version": "1.6.0",
+ "description": "Repo-wide symbol search (spec §14.1, optional extension; capability index.symbols).",
+ "$defs": {
+  "Request": {
+   "type": "object",
+   "required": ["query"],
+   "properties": {
+    "sessionId": { "type": "string" },
+    "requestId": { "type": "string" },
+    "timeoutMs": { "type": "integer", "exclusiveMinimum": 0 },
+    "query": { "type": "string", "minLength": 1 },
+    "kinds": { "type": "array", "items": { "type": "string" } },
+    "scope": { "type": "string" },
+    "limit": { "type": "integer", "minimum": 1, "maximum": 200 }
+   }
+  },
+  "matchItem": {
+   "type": "object",
+   "required": ["resourceId", "name", "kind", "file", "lines", "match"],
+   "properties": {
+    "resourceId": { "type": "string" },
+    "name": { "type": "string" },
+    "kind": { "type": "string" },
+    "file": { "type": "string" },
+    "lines": { "type": "array", "minItems": 2, "maxItems": 2, "items": { "type": "integer" } },
+    "signature": { "type": "string" },
+    "refs": { "type": "integer", "minimum": 0 },
+    "match": { "enum": ["exact", "prefix", "qualified-suffix", "substring"] },
+    "evidence": { "type": "object" }
+   }
+  },
+  "Response": {
+   "type": "object",
+   "required": ["matches", "truncated"],
+   "properties": {
+    "matches": { "type": "array", "items": { "$ref": "#/$defs/matchItem" } },
+    "truncated": { "type": "boolean" },
+    "totalMatches": { "type": "integer", "minimum": 0 }
+   }
+  }
+ },
+ "anyOf": [
+  { "$ref": "#/$defs/Request" },
+  { "$ref": "#/$defs/Response" }
+ ]
+}

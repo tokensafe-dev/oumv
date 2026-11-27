@@ -2,7 +2,7 @@
  "$schema": "https://json-schema.org/draft/2020-12/schema",
  "$id": "https://github.com/tokensafe-dev/oumv/schemas/oumv-handshake.json",
  "title": "oumv/handshake",
- "x-oumv-spec-version": "1.5.0",
+ "x-oumv-spec-version": "1.6.0",
  "$defs": {
   "Request": {
    "type": "object",
@@ -59,7 +59,7 @@
    "properties": {
     "transports": {
      "type": "array",
-     "description": "bindings this runtime actually mounted (spec §2.3/§2.4 advertise what exists)",
+     "description": "bindings this runtime actually mounted (spec \u00a72.3/\u00a72.4 advertise what exists)",
      "items": {
       "enum": [
        "http",
@@ -136,6 +136,10 @@
       "multiFile": {
        "type": "boolean",
        "description": "atomic multi-file applyEdit (wire 1.5.0)"
+      },
+      "preview": {
+       "type": "boolean",
+       "description": "implements oumv/previewEdit with the full \u00a74.4 guard order (wire 1.6.0)"
       }
      }
     },
@@ -146,6 +150,10 @@
       "ttlSeconds": {
        "type": "boolean",
        "description": "honours a client-requested handshake `sessionTtlSeconds` (wire 1.5.0)"
+      },
+      "cancel": {
+       "type": "boolean",
+       "description": "accepts oumv/cancel for in-flight requests (wire 1.6.0)"
       }
      }
     },
@@ -161,6 +169,40 @@
       },
       "sandboxRollback": {
        "type": "boolean"
+      },
+      "build": {
+       "type": "boolean",
+       "description": "implements oumv/build \u2014 run the configured build/test command and return structured diagnostics (wire 1.6.0)"
+      }
+     }
+    },
+    "index": {
+     "type": "object",
+     "additionalProperties": false,
+     "properties": {
+      "symbols": {
+       "type": "boolean",
+       "description": "implements oumv/index repo-wide symbol search (\u00a714.1, wire 1.6.0)"
+      }
+     }
+    },
+    "observeQuery": {
+     "type": "object",
+     "additionalProperties": false,
+     "properties": {
+      "readOnly": {
+       "type": "boolean",
+       "description": "implements oumv/query runtime-enforced read-only data access (\u00a714.2, wire 1.6.0)"
+      }
+     }
+    },
+    "events": {
+     "type": "object",
+     "additionalProperties": false,
+     "properties": {
+      "diagnostic": {
+       "type": "boolean",
+       "description": "publishes diagnostic events on the push transports (\u00a72.6, wire 1.6.0)"
       }
      }
     }
