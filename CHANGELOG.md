@@ -1,7 +1,46 @@
 # Changelog
 
-The wire contract is versioned by `protocolVersion` (currently **1.5.0**); this
+The wire contract is versioned by `protocolVersion` (currently **1.6.0**); this
 changelog tracks the OUMV specification and its reference tooling.
+
+## v1.5.0 — 2026-11-27 (wire 1.6.0, fixtures v11)
+
+Agent-UX MINOR: the protocol closes the loop an agent actually runs — find what to read,
+preview before writing, get the compiler's verdict, interrupt what hangs.
+
+- **`oumv/previewEdit` (§4.4, capability `mutate.preview`).** applyEdit's guard order
+  (boundary → existence → syntax → version → OCC → policy) as a dry-run: per-file
+  `{wouldApply, currentVersion, newVersion, diff, syntaxCheck}` and `applied: false`.
+  Never writes, never consumes the OCC token.
+- **Correlation, timeouts, cancellation, idempotency (§3).** `params.requestId` is echoed
+  in replies; per-method `timeoutMs` answers `-32008 reason="timeout"` with the partial
+  write rolled back; `oumv/cancel` is best-effort (unknown id answers `{cancelled: false}`,
+  never an error); `idempotencyKey` on applyEdit/previewEdit replays the FIRST result —
+  a retry of a successful create no longer answers `-32001 file_exists`
+  (capability `sessions.idempotency`, proven by `apply-edit-idempotency-key-replays`).
+- **§14 optional extensions** (the §13 `oumv/graph` pattern: `-32601` when absent,
+  capability-gated): `oumv/index` (§14.1, `index.symbols`) — repo-wide symbol search
+  ranked exact > prefix > qualified-suffix > substring with reverse-edge counts;
+  `oumv/query` (§14.2, `observeQuery.readOnly`) — runtime-enforced read-only SQL
+  (SELECT/EXPLAIN only, `-32003 query_forbidden` otherwise, opt-in, policy-disableable);
+  `oumv/build` (§14.3, `verify.build`) — run the build/test command and return structured
+  `diagnostics` with an honest `skipped` + `skipReason` path.
+- **Diagnostics events (§2.6, capability `events.diagnostic`).** The `diagnostic`
+  event (SSE) / `notifications/oumv.diagnostic` (WS) carries
+  `{severity, source, file?, line?, message, tool?, ts}` for build/test/HMR failures the
+  runtime already observes.
+- **Error registry.** `schemas/errors.json` is the canonical code set;
+  `packages/protocol/src/errors.ts` is generated (`scripts/gen-errors.mjs`, CI-checked);
+  spec §5.1 and README tables are rendered 1:1 from it (conformance-checked). Reconciled:
+  `-32004` = TARGET_NOT_FOUND, `-32010` is active as `STALE_RESOURCE_VERSION`, rate
+  limiting gets its own `-32012 RATE_LIMITED` (was overloading `-32005`).
+- **Versioning & security.** §11 adds `compatibility.json` (generated cross-repo matrix)
+  and a deprecation-notice field (`data.deprecated`/`data.since`/`data.useInstead`).
+  §12 formalizes non-loopback bindings: token REQUIRED, TLS/tunnel, discovery by
+  explicit URL, the local registry stays loopback-only.
+- **Fixtures v11.** Capability cases for every new surface, gated on the handshake claim
+  (a runtime that does not advertise stays absent from the report); the reference runtime
+  serves wire 1.6.0 and implements all new methods, including the idempotency map.
 
 ## v1.4.0 — 2026-11-27 (wire 1.5.0, fixtures v10)
 

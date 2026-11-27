@@ -18,7 +18,7 @@ conformance fixtures are language-neutral.
 | Handshake | `oumv/handshake` → `protocolVersion`, `profile`, `runtimeInfo{name,version}`, `capabilities`, `sessionId` (§3.1) |
 | Pillars | `oumv/observe` (L0–L4 available per profile), `oumv/understand` (impact, causality), `oumv/getSource` + `oumv/applyEdit` (mandatory OCC), `oumv/verify` |
 | Sessions | `sessionId` validated when supplied; unknown/expired → `-32011` with `data.reason="session_expired"`; `oumv/disconnect` closes it |
-| Guards | normative order `-32003 → -32009 → -32002 → -32011 → -32001 → -32007` (§4.6) |
+| Guards | normative order `-32003 → -32009 → -32002 → -32011 → -32001 → -32007` (§4.3) |
 | Transports | HTTP POST is mandatory (§2.2); SSE (§2.3), WebSocket (§2.4) and stdio (§2.5) are optional but must be advertised where implemented |
 | Discovery | `~/.tokensafe/runtimes/<sha256(realpath(workspace))[:16]>.json`, mode `0600`, shape of `schemas/descriptor.schema.json` (§9.2) |
 
@@ -306,8 +306,16 @@ Closed in wire 1.5.0: multi-file atomic `applyEdit` (`mutate.multiFile`,
 
 ## 7. Versioning
 
-* The wire contract is versioned by `protocolVersion` (`1.5.0` today). Adapters
+* The wire contract is versioned by `protocolVersion` (`1.6.0` today). Adapters
   answer with the version they implement; agents negotiate from the handshake.
+  [`compatibility.json`](../compatibility.json) maps every standard release to its
+  wire version and fixture set (spec §11).
+* Wire 1.6.0 adds the optional surface — `oumv/previewEdit` (`mutate.preview`),
+  `oumv/cancel` + `sessions.idempotency` (§3), `oumv/index` (`index.symbols`),
+  `oumv/query` (`observeQuery.readOnly`), `oumv/build` (`verify.build`) and the
+  `diagnostic` push event (`events.diagnostic`). All are capability-gated: a runtime
+  that does not advertise stays absent from the report for those cases and answers
+  `-32601` when called directly.
 * Fixtures carry `fixtureVersion`; a report records both, so a level always maps
   to a concrete suite.
 * Deprecated field names are accepted for one minor release and never emitted

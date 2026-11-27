@@ -45,8 +45,10 @@ jobs:
       - name: Check adapter capabilities against fixtures
         run: node scripts/check_adapter_capabilities.mjs
 
-      - name: Check generated error registry artifacts
-        run: node scripts/gen-errors.mjs --check
+      - name: Check generated artifacts (errors registry, compatibility matrix)
+        run: |
+          node scripts/gen-errors.mjs --check
+          node scripts/gen-compat.mjs --check
 
       - name: Run test suite
         run: pnpm test
