@@ -661,10 +661,9 @@
       "requiresCapability": "mutate.preview",
       "method": "oumv/previewEdit",
       "params": {
-        "path": "${EDIT_TARGET_FILE}",
-        "mode": "replace",
-        "replacement": "${EDIT_CONTENT}",
-        "expectedVersion": "${EDIT_TARGET_VERSION}"
+        "path": "${NEW_FILE}",
+        "mode": "create",
+        "replacement": "${EDIT_CONTENT}"
       },
       "expectResultFields": [
         "status",
@@ -677,18 +676,15 @@
       "followUp": {
         "method": "oumv/getSource",
         "params": {
-          "path": "${EDIT_TARGET_FILE}",
-          "ifVersion": "${EDIT_TARGET_VERSION}"
+          "path": "${NEW_FILE}"
         },
-        "expectResultFields": [
-          "path",
-          "version",
-          "unchanged"
-        ],
-        "expectValues": {
-          "unchanged": true
+        "expectError": {
+          "code": -32009
         }
-      }
+      },
+      "cleanup": [
+        "${NEW_FILE}"
+      ]
     },
     {
       "id": "apply-edit-idempotency-key-replays",
