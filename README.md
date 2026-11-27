@@ -124,13 +124,13 @@ Three independent numbers, often mistaken for a mismatch:
 
 | Axis | Current | Meaning |
 | :--- | :--- | :--- |
-| Standard release | `v1.1.0` (2026-11-26) | Additive MINOR: multi-step verify, symbol/delete/rename mutations, pagination. `tokensafe-oumv` and the monorepo are at 1.1.0. |
-| Document revision | `v1.5-canonical` | The revision of `spec/SPEC.md`; see the changelog in that file. |
-| Wire `protocolVersion` | `1.2.0` | Sent in `oumv/handshake`. A runtime MUST echo the version it actually serves; clients accept a matching MAJOR. |
-| Fixtures | `fixtureVersion 6` (25 cases) | `fixtures/conformance-cases.json`; every report records the revision it ran. |
+| Standard release | `v1.2.0` (2026-11-27) | Additive MINOR: `applyEdit mode=patch`, `getSource` window/`ifVersion`, capability-aware handshake. |
+| Document revision | `v1.6-canonical` | The revision of `spec/SPEC.md`; see the changelog in that file. |
+| Wire `protocolVersion` | `1.3.0` | Sent in `oumv/handshake`. A runtime MUST echo the version it actually serves; clients accept a matching MAJOR. |
+| Fixtures | `fixtureVersion 7` (33 cases) | `fixtures/conformance-cases.json`; every report records the revision it ran. |
 
-These axes move independently by design: v1.1.0 ships document revision v1.5-canonical,
-wire version 1.2.0 and fixture set v6. A v1.0 adapter stays valid for the capabilities it
+These axes move independently by design: v1.2.0 ships document revision v1.6-canonical,
+wire version 1.3.0 and fixture set v7. A v1.0 adapter stays valid for the capabilities it
 declares — new modes answer `-32006` where unimplemented. Implementations negotiate the
 **wire** version, never the document revision.
 
