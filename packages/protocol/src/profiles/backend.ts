@@ -25,7 +25,8 @@ export interface BackendVerifyParams {
   method?: string;
   payload?: any;
   headers?: Record<string, string>;
-  sandboxDb?: boolean;
+  /** spec §4: mode=rollback runs the whole verify in one transaction and rolls it back. */
+  sandbox?: { mode: 'rollback' };
 }
 
 export interface BackendVerifyResult {
@@ -33,8 +34,10 @@ export interface BackendVerifyResult {
   target: string;
   statusCode?: number;
   responseBody?: any;
-  dbDiff?: Record<string, { inserted?: number; modified?: number; deleted?: number }>;
+  /** Sandbox evidence: rollback flag and number of statements, never SQL text. */
+  dbDiff?: { rollback: boolean; queries?: number; driver?: string };
   rolledBack?: boolean;
+  rollbackStatus?: 'verified' | 'unverified' | 'not_applicable';
   durationMs: number;
   evidence: EvidenceMetadata;
   error?: string;

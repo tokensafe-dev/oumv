@@ -12,7 +12,7 @@
     "package": {
       "manager": "go",
       "name": "github.com/tokensafe-dev/tokensafe-backend/go",
-      "install": "go get github.com/tokensafe-dev/tokensafe-backend/go@v0.4.3"
+      "install": "go get github.com/tokensafe-dev/tokensafe-backend/go@v0.6.0"
     }
   },
   "profiles": [

@@ -51,7 +51,11 @@ export const OumvHandshakeResultSchema = z.object({
     verify: z.object({
       multiMetric: z.boolean(),
       surfaceDiff: z.boolean(),
+      sandboxRollback: z.boolean().optional(),
     }),
+    transports: z
+      .array(z.enum(['http', 'sse', 'ws', 'stdio', 'memory', 'batch']))
+      .optional(),
   }),
 });
 
@@ -246,6 +250,22 @@ export const VerifyParamsSchema = z.object({
   componentId: z.string().optional(),
   action: z.string().optional(),
   payload: z.any().optional(),
+  method: z.string().optional(),
+  headers: z.record(z.string()).optional(),
+  steps: z
+    .array(
+      z.object({
+        target: z.string(),
+        action: z.string().optional(),
+        payload: z.any().optional(),
+      })
+    )
+    .optional(),
+  sandbox: z
+    .object({
+      mode: z.enum(['rollback']),
+    })
+    .optional(),
 });
 
 export const VerifyResultSchema = z
@@ -285,6 +305,15 @@ export const VerifyResultSchema = z
     .passthrough()
     .optional(),
   evidence: EvidenceMetadataSchema.passthrough().optional(),
+  rolledBack: z.boolean().optional(),
+  rollbackStatus: z.enum(['verified', 'unverified', 'not_applicable']).optional(),
+  dbDiff: z
+    .object({
+      rollback: z.boolean(),
+      queries: z.number().int().nonnegative().optional(),
+      driver: z.string().optional(),
+    })
+    .optional(),
   error: z.string().optional(),
   })
   .passthrough();

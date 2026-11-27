@@ -18,6 +18,8 @@ export interface OumvMutateCapabilities {
 export interface OumvVerifyCapabilities {
   multiMetric: boolean;
   surfaceDiff: boolean;
+  /** Transactional rollback with observed evidence (spec §4 verify `sandbox`). */
+  sandboxRollback?: boolean;
 }
 
 export interface OumvCapabilities {
@@ -25,6 +27,8 @@ export interface OumvCapabilities {
   understand: OumvUnderstandCapabilities;
   mutate: OumvMutateCapabilities;
   verify: OumvVerifyCapabilities;
+  /** Bindings this runtime actually mounted (spec §2.3/§2.4). */
+  transports?: ('http' | 'sse' | 'ws' | 'stdio' | 'memory' | 'batch')[];
 }
 
 export interface OumvClientInfo {

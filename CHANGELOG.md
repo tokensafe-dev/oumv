@@ -1,9 +1,9 @@
 # Changelog
 
-The wire contract is versioned by `protocolVersion` (currently **1.3.0**); this
+The wire contract is versioned by `protocolVersion` (currently **1.4.0**); this
 changelog tracks the OUMV specification and its reference tooling.
 
-## Unreleased (fixtures v8, transport certificates)
+## v1.3.0 — 2026-11-27 (wire 1.4.0, fixtures v9)
 
 No `protocolVersion` bump: the wire request/response shapes do not change. What changes
 is what a transport claim has to prove.

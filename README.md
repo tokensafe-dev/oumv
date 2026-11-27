@@ -3,8 +3,8 @@
 
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://github.com/tokensafe-dev/oumv/blob/main/LICENSE)
 [![Spec License: CC-BY-4.0](https://img.shields.io/badge/spec-CC--BY--4.0-lightgrey.svg)](https://github.com/tokensafe-dev/oumv/blob/main/spec/LICENSE)
-[![Protocol Version](https://img.shields.io/badge/OUMV-v1.2.0-blue)](https://github.com/tokensafe-dev/oumv/blob/main/spec/SPEC.md)
-[![Status: Stable](https://img.shields.io/badge/status-stable%20%2F%20wire%201.3.0-brightgreen)](https://github.com/tokensafe-dev/oumv/blob/main/spec/SPEC.md)
+[![Protocol Version](https://img.shields.io/badge/OUMV-v1.3.0-blue)](https://github.com/tokensafe-dev/oumv/blob/main/spec/SPEC.md)
+[![Status: Stable](https://img.shields.io/badge/status-stable%20%2F%20wire%201.4.0-brightgreen)](https://github.com/tokensafe-dev/oumv/blob/main/spec/SPEC.md)
 [![Specification](https://img.shields.io/badge/docs-RFC%20Specification-blue)](https://github.com/tokensafe-dev/oumv/blob/main/spec/SPEC.md)
 
 > **OUMV (Observe, Understand, Mutate, Verify) is the open, transport-agnostic standard that enables autonomous AI coding agents to inspect, reason about, safely edit, and verify software systems (user interfaces, backend services, APIs) with zero context waste.**
@@ -124,13 +124,13 @@ Three independent numbers, often mistaken for a mismatch:
 
 | Axis | Current | Meaning |
 | :--- | :--- | :--- |
-| Standard release | `v1.2.0` (2026-11-27) | Additive MINOR: `applyEdit mode=patch`, `getSource` window/`ifVersion`, capability-aware handshake. |
-| Document revision | `v1.6-canonical` | The revision of `spec/SPEC.md`; see the changelog in that file. |
-| Wire `protocolVersion` | `1.3.0` | Sent in `oumv/handshake`. A runtime MUST echo the version it actually serves; clients accept a matching MAJOR. |
-| Fixtures | `fixtureVersion 8` (33 cases + 2 push) | `fixtures/conformance-cases.json`; every report records the revision it ran. |
+| Standard release | `v1.3.0` (2026-11-27) | Additive MINOR: `verify.sandbox` transactional rollback with evidence, handshake `transports`, fixture v9 capability cases. |
+| Document revision | `v1.7-canonical` | The revision of `spec/SPEC.md`; see the changelog in that file. |
+| Wire `protocolVersion` | `1.4.0` | Sent in `oumv/handshake`. A runtime MUST echo the version it actually serves; clients accept a matching MAJOR. |
+| Fixtures | `fixtureVersion 9` (33 cases + 2 push + capability cases) | `fixtures/conformance-cases.json`; every report records the revision it ran. |
 
-These axes move independently by design: v1.2.1 ships document revision v1.6-canonical,
-wire version 1.3.0 and fixture set v8. A v1.0 adapter stays valid for the capabilities it
+These axes move independently by design: v1.3.0 ships document revision v1.7-canonical,
+wire version 1.4.0 and fixture set v9. A v1.0 adapter stays valid for the capabilities it
 declares — new modes answer `-32006` where unimplemented. Implementations negotiate the
 **wire** version, never the document revision.
 

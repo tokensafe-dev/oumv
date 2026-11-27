@@ -1,7 +1,7 @@
 {
   "method": "oumv/verify",
   "profile": "backend",
-  "specVersion": "1.3.0",
+  "specVersion": "1.4.0",
   "adapter": "backend/stdhttp",
   "note": "captured from the net/http adapter against a temp workspace; paths are relative to it",
   "cases": [
@@ -28,13 +28,13 @@
             "status": 200
           },
           "timings": {
-            "t_action_ms": 0.016,
+            "t_action_ms": 0.02,
             "t_schema_ms": 0,
             "t_propagation_ms": 0,
             "t_dom_ms": 0,
-            "t_total_ms": 0.016
+            "t_total_ms": 0.02
           },
-          "durationMs": 0.016,
+          "durationMs": 0.02,
           "scope": {
             "checked": [
               "in-memory dispatch against the live handler"

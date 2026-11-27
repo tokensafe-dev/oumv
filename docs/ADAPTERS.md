@@ -279,7 +279,7 @@ transaction envelope, then auth/expiry harness hooks.
 
 ## 7. Versioning
 
-* The wire contract is versioned by `protocolVersion` (`1.3.0` today). Adapters
+* The wire contract is versioned by `protocolVersion` (`1.4.0` today). Adapters
   answer with the version they implement; agents negotiate from the handshake.
 * Fixtures carry `fixtureVersion`; a report records both, so a level always maps
   to a concrete suite.

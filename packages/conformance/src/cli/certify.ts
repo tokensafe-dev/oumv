@@ -236,6 +236,26 @@ export async function certify(options: CertifyOptions): Promise<number> {
       console.log(`▸ ${options.adapter} · ${transport.name} · fixtures v${spec.fixtureVersion} (${fixturesPath})`);
     }
 
+    // Handshake first: capability cases run only for claims the runtime makes,
+    // and a claim without evidence is exactly what this tool exists to prevent.
+    const handshake = await transport.request({
+      jsonrpc: '2.0',
+      id: 'certify-handshake',
+      method: 'oumv/handshake',
+      params: {},
+    });
+    const capabilities = (handshake.result as Record<string, unknown> | undefined)?.capabilities as
+      | Record<string, unknown>
+      | undefined;
+    if (handshake.error || !capabilities) {
+      console.error(
+        `✗ handshake failed: ${
+          handshake.error ? `${handshake.error.code} ${handshake.error.message}` : 'no capabilities in result'
+        }`
+      );
+      return 2;
+    }
+
     const report = await runFixtureSuite(transport, spec, markers, {
       adapterName: options.adapter,
       framework: options.framework,
@@ -244,6 +264,7 @@ export async function certify(options: CertifyOptions): Promise<number> {
         ...(options.profile ? { profile: options.profile } : {}),
         node: process.version,
       },
+      capabilities,
       push,
       pushTimeoutMs: options.timeoutMs,
       onCase: options.quiet

@@ -8,7 +8,7 @@ import {
   type FixtureSpec,
   type PushCase,
 } from '../src/fixtures.js';
-import { httpTransport, sseEventSource } from '../src/transports.js';
+import { httpTransport, memoryTransport, sseEventSource } from '../src/transports.js';
 
 const PUSH_FILE = 'probe.ts';
 const PUSH_CONTENT = 'export const pushed = 3;\n';
@@ -206,5 +206,57 @@ describe('push cases (spec §2.3/§2.4)', () => {
       ]);
       expect(calls).toContainEqual({ method: 'oumv/applyEdit', mode: 'create' });
     });
+  });
+
+  it('runs capability cases only for an advertised claim', async () => {
+    let calls = 0;
+    const transport = memoryTransport(async (request) => {
+      calls += 1;
+      return {
+        jsonrpc: '2.0',
+        id: request.id,
+        result: {
+          status: 'passed',
+          diff: {},
+          timings: { t_action_ms: 0, t_schema_ms: 0, t_propagation_ms: 0, t_dom_ms: 0, t_total_ms: 0 },
+          durationMs: 0,
+          scope: { checked: [], notExecuted: [], notSupported: [] },
+          rolledBack: true,
+          rollbackStatus: 'verified',
+          dbDiff: { rollback: true, queries: 2 },
+        },
+      };
+    });
+    const spec: FixtureSpec = {
+      protocolVersion: '1.4.0',
+      fixtureVersion: 9,
+      cases: [],
+      capabilityCases: [
+        {
+          id: 'verify-sandbox-rolls-back',
+          level: 2,
+          requiresCapability: 'verify.sandboxRollback',
+          method: 'oumv/verify',
+          params: { target: 'probe' },
+          expectResultFields: ['rolledBack', 'rollbackStatus', 'dbDiff.rollback'],
+          expectValues: { rollbackStatus: 'verified', 'dbDiff.rollback': true },
+        },
+      ],
+    };
+
+    const off = await runFixtureSuite(transport, spec, defaultMarkers(), {
+      adapterName: 'x',
+      capabilities: { verify: { multiMetric: true, surfaceDiff: false, sandboxRollback: false } },
+    });
+    expect(off.total).toBe(0);
+    expect(calls).toBe(0);
+
+    const on = await runFixtureSuite(transport, spec, defaultMarkers(), {
+      adapterName: 'x',
+      capabilities: { verify: { multiMetric: true, surfaceDiff: false, sandboxRollback: true } },
+    });
+    expect(on.total).toBe(1);
+    expect(on.passed).toBe(1);
+    expect(calls).toBe(1);
   });
 });

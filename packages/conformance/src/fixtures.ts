@@ -11,7 +11,7 @@ import { createHash } from 'node:crypto';
 import { determineConformanceLevel, summarizeLevels } from './levels.js';
 import type { ConformanceLevel, LevelStatus } from './levels.js';
 
-export const SPEC_VERSION = '1.3.0';
+export const SPEC_VERSION = '1.4.0';
 
 export interface ConformanceCaseError {
   code: number;
@@ -43,6 +43,14 @@ export interface FixtureSpec {
   cases: ConformanceCase[];
   /** Server-push cases (spec §2.3/§2.4); run by `--sse`/`--ws` certificates only. */
   pushCases?: PushCase[];
+  /** Cases gated on an advertised handshake capability (e.g. verify.sandboxRollback). */
+  capabilityCases?: CapabilityCase[];
+}
+
+/** A case that only makes sense when the runtime advertises a capability. */
+export interface CapabilityCase extends ConformanceCase {
+  /** Dotted path in the handshake capabilities, e.g. `verify.sandboxRollback`. */
+  requiresCapability: string;
 }
 
 /** A pushed event: SSE `event:`/`id:`/`data:`, or a WS notification method/params. */
@@ -103,6 +111,8 @@ export interface CaseMarkers {
   // fixtures v8: the file a push case creates to prove `state`/notifications
   pushFile: string;
   pushContent: string;
+  // fixtures v9: the target a sandbox capability case dispatches against
+  sandboxTarget: string;
 }
 
 export interface CaseResult {
@@ -180,6 +190,7 @@ const MARKER_KEYS: Record<string, keyof CaseMarkers> = {
   '${RENAME_VERSION}': 'renameVersion',
   '${PUSH_FILE}': 'pushFile',
   '${PUSH_CONTENT}': 'pushContent',
+  '${SANDBOX_TARGET}': 'sandboxTarget',
 };
 
 /** Substitutes every `${MARKER}` in a string (params and expectations). */
@@ -217,6 +228,7 @@ export function defaultMarkers(overrides: Partial<CaseMarkers> = {}): CaseMarker
     renameVersion: occVersion('value = 2\n'),
     pushFile: '__oumv_conformance_push.py',
     pushContent: 'value = 3\n',
+    sandboxTarget: 'POST /__oumv_sandbox_probe',
     ...overrides,
   };
 }
@@ -368,6 +380,21 @@ export interface RunFixturesOptions {
   push?: PushEventSource;
   /** How long a push case waits for its event (default 5000 ms). */
   pushTimeoutMs?: number;
+  /** Handshake capabilities: capabilityCases run only when their claim is true. */
+  capabilities?: Record<string, unknown>;
+}
+
+/** True only when the dotted capability path resolves to literal `true`. */
+export function capabilityAdvertised(
+  capabilities: Record<string, unknown> | undefined,
+  path: string
+): boolean {
+  let current: unknown = capabilities;
+  for (const segment of path.split('.')) {
+    if (!current || typeof current !== 'object') return false;
+    current = (current as Record<string, unknown>)[segment];
+  }
+  return current === true;
 }
 
 /** Every expected key must equal the pushed payload (markers substituted). */
@@ -506,8 +533,7 @@ export async function runFixtureSuite(
 
   // Push cases run only for the transport this certificate is produced for: a
   // certificate names one transport, and a claim without a report is not made.
-  if (options.push) {
-    for (const pushCase of spec.pushCases ?? []) {
+  if (options.push) {    for (const pushCase of spec.pushCases ?? []) {
       if (pushCase.transport !== options.push.kind) continue;
       const result: CaseResult = { id: pushCase.id, level: pushCase.level, status: 'passed' };
       const failure = await runPushCase(
@@ -517,6 +543,29 @@ export async function runFixtureSuite(
         markers,
         options.pushTimeoutMs ?? 5_000
       );
+      if (failure) {
+        result.status = 'failed';
+        result.error = failure;
+      }
+      results.push(result);
+      options.onCase?.(result);
+    }
+  }
+
+  // Capability cases prove an advertised claim. A runtime that does not advertise
+  // it is not penalised: the case is not part of that report at all, so levels
+  // stay comparable and no claim is ever certified by a skipped case.
+  if (options.capabilities) {
+    for (const capabilityCase of spec.capabilityCases ?? []) {
+      if (!capabilityAdvertised(options.capabilities, capabilityCase.requiresCapability)) continue;
+      const result: CaseResult = { id: capabilityCase.id, level: capabilityCase.level, status: 'passed' };
+      const response = await transport.request({
+        jsonrpc: '2.0',
+        id: capabilityCase.id,
+        method: capabilityCase.method,
+        params: substituteMarkers(capabilityCase.params, markers),
+      });
+      const failure = evaluateCase(capabilityCase, response, markers);
       if (failure) {
         result.status = 'failed';
         result.error = failure;
