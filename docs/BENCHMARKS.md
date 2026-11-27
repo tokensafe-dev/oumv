@@ -7,7 +7,7 @@ The two are deliberately separate artifacts.
 
 | What | Where |
 | :--- | :--- |
-| Language-neutral fixture suite | `fixtures/conformance-cases.json` (v6, 25 cases) |
+| Language-neutral fixture suite | `fixtures/conformance-cases.json` (v7, 33 cases) |
 | Certification reports, 6 backend adapters | `tokensafe-backend/certification/*.json` |
 | Certification report, React/Vite (browser, Level 3) | `agent-dom/certification/react-vite-browser.json` |
 | Reproduction in CI | `tokensafe-backend/.github/workflows/ci.yml` → "Certification is reproducible" |
@@ -25,7 +25,8 @@ belong to the product repositories and are versioned there:
 | Tool-level token savings on 15 real repositories (measured BPE, zero-loss gates) | `tokensafe/docs/BENCHMARK_REAL.json` | measured 2026-11-14, **TokenSafe tools**, not OUMV |
 | Three-arm backend comparison (oracle 12/12) | `tokensafe-backend/go/benchmark/THREE_ARM_REPORT.md` | `oumv` arm measured in real JSON-RPC bytes; `baseline`/`tokensafe` arms **SIMULATED** |
 | Agent benchmark harness (DeepSeek tool loop, hard USD cap, real oracle) | `tokensafe/src/bench/` + `tokensafe bench-oumv` | harness ready; measured results live in the product repos below |
-| Agent matrix, Go backend (3 tasks × 5 runs × 3 arms incl. TokenSafe MCP, measured) | `tokensafe-backend/go/benchmark/OUMV_AGENT_MATRIX_V4.md` | measured 2026-11-27 (45 sessions, $0.14): all arms 15/15; TokenSafe −9.8% input / −53.1% output / −28.7% cost, OUMV −36.9% input / +8.5% output / −10.8% cost vs baseline. OUMV's output cost is whole-resource `applyEdit`; `mode=patch` is the open protocol item |
+| Agent matrix, Go backend (3 tasks × 5 runs × 3 arms incl. TokenSafe MCP, measured, 200-file target) | `tokensafe-backend/go/benchmark/OUMV_AGENT_MATRIX_V5.md` | measured 2026-11-27 (45 sessions, $0.11): all arms 15/15; TokenSafe −69.0% input / −75.2% output / −73.3% cost, OUMV −63.8% input / −68.8% output / −68.2% cost vs baseline. Both arms resolve `POST /api/products` to its handler in one call (`smart_read_file(endpoint=…)` / `observe L3`) and edit with a hunk (`apply_edits` / `applyEdit mode=patch`) |
+| Agent matrix, Go backend — previous run (69-file target) | `tokensafe-backend/go/benchmark/OUMV_AGENT_MATRIX_V4.md` | measured 2026-11-27 (45 sessions, $0.14): TokenSafe −9.8% input / −53.1% output / −28.7% cost, OUMV −36.9% input / +8.5% output / −10.8% cost vs baseline; the OUMV arm still rewrote whole files because `mode=patch` was not yet in the harness |
 | Agent matrix, React/Vite (3 tasks × 3 runs × 2 arms, measured) | `agent-dom/benchmarks/REACT_AGENT_MATRIX.md` | measured 2026-11-26; the TokenSafe arm is smoke-tested, not part of the published React matrix |
 
 Why the protocol repo does not host an "OUMV is N× faster" table:
