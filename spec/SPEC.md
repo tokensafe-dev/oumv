@@ -427,6 +427,11 @@ Aliases are accepted for one minor version after v1.0 and then removed.
 
 ### 5.1 Code table
 
+The canonical registry is [`schemas/errors.json`](../schemas/errors.json) — this
+table and the README copy render the same set, and
+`packages/protocol/src/errors.ts` is generated from it. Runtimes MUST NOT emit a
+code that is absent from the registry.
+
 | Code | Name | Meaning |
 | :--- | :--- | :--- |
 | **-32700** | `PARSE_ERROR` | Body is not valid JSON. |
@@ -442,10 +447,13 @@ Aliases are accepted for one minor version after v1.0 and then removed.
 | **-32007** | `PERMISSION_DENIED` | Policy forbids the operation. |
 | **-32008** | `RUNTIME_UNAVAILABLE` | Runtime or its sandbox is unreachable. |
 | **-32009** | `RESOURCE_NOT_FOUND` | File/resource does not exist. |
+| **-32010** | `STALE_RESOURCE_VERSION` | A version token carried by the caller no longer matches the versioned resource (static result or OCC token); refetch before retrying. |
 | **-32011** | `VALIDATION_FAILED` | Payload violated a contract (incl. missing `expectedVersion`, expired session). |
+| **-32012** | `RATE_LIMITED` | Per-session request limit exhausted (`data.retryAfterMs` hints when to retry; HTTP 429 may precede dispatch). |
 | **-32603** | `INTERNAL_ERROR` | Unexpected adapter failure. |
 
-`-32010` is reserved and MUST NOT be emitted in v1.0 (it duplicated `-32001`).
+`error.data.reason` values per code are enumerated in the registry; runtimes MAY
+add more but MUST keep the code's documented meaning.
 
 ### 5.2 Method → code mapping
 
@@ -572,7 +580,9 @@ OUMV follows an **enabled-by-default with mandatory guardrails** policy for deve
 
 1. **Out of the box**: on a newly integrated project, Observe and Mutate are immediately usable with zero configuration. Zero-config adoption is a core product requirement — safety comes from guardrails, not from opt-in settings.
 2. **Mandatory guardrails** (applied automatically by every runtime):
-   - Optimistic Concurrency Control (`expectedVersion`; `CONFLICT_DETECTED` / `STALE_RESOURCE_VERSION` on mismatch);
+   - Optimistic Concurrency Control (`expectedVersion`; `-32001 CONFLICT_DETECTED` on
+     byte mismatch; `-32010 STALE_RESOURCE_VERSION` when a versioned-resource token —
+     e.g. a static analysis result — no longer matches and the caller must refetch);
    - workspace path boundary (`SECURITY_VIOLATION` on traversal);
    - syntax pre-flight before persistence (`SYNTAX_ERROR` on failure; if a language cannot be checked, the result MUST state `syntaxCheck: "skipped"` rather than imply success);
    - automatic backup of previous file content before direct edits;
@@ -696,7 +706,7 @@ baseline rules:
   MUST NOT carry credentials, connection strings or environment dumps. Tool results are
   redacted by the client, not trusted from the runtime.
 * **Rate limits.** An adapter MAY enforce a per-session request limit. When it does, a
-  throttled call answers `-32005 RATE_LIMITED` (or HTTP `429` before dispatch) with a
+  throttled call answers `-32012 RATE_LIMITED` (or HTTP `429` before dispatch) with a
   `Retry-After` header or `data.retryAfterMs`. Limits are advisory for local development
   and MUST NOT be the only protection for a non-loopback binding.
 * **No execution beyond the declared scope.** `verify` runs the application's own handler

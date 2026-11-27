@@ -77,7 +77,10 @@ in the trees as reference implementations for tests; they are not the recommende
 
 ## Error model
 
-Every failure is a typed JSON-RPC error. The normative table is [spec §5.1](spec/SPEC.md); this is the same set, kept in sync by hand.
+Every failure is a typed JSON-RPC error. The canonical registry is
+[`schemas/errors.json`](schemas/errors.json) — the normative table is
+[spec §5.1](spec/SPEC.md), this copy and the generated
+`packages/protocol/src/errors.ts` render the same set.
 
 | Code | Name | Emitted when |
 | :--- | :--- | :--- |
@@ -94,10 +97,12 @@ Every failure is a typed JSON-RPC error. The normative table is [spec §5.1](spe
 | **-32007** | `PERMISSION_DENIED` | Policy forbids the operation. |
 | **-32008** | `RUNTIME_UNAVAILABLE` | Runtime or its sandbox is unreachable. |
 | **-32009** | `RESOURCE_NOT_FOUND` | File/resource does not exist. |
+| **-32010** | `STALE_RESOURCE_VERSION` | A version token no longer matches the versioned resource; refetch before retrying. |
 | **-32011** | `VALIDATION_FAILED` | Payload violated a contract (missing `expectedVersion`, expired session). |
+| **-32012** | `RATE_LIMITED` | Per-session request limit exhausted (`data.retryAfterMs`). |
 | **-32603** | `INTERNAL_ERROR` | Unexpected adapter failure. |
 
-`-32010` is reserved and MUST NOT be emitted. `applyEdit` has a fixed guard order: workspace boundary → resource exists → syntax pre-flight → `expectedVersion` present → OCC match → policy (spec §4.3).
+`applyEdit` has a fixed guard order: workspace boundary → resource exists → syntax pre-flight → `expectedVersion` present → OCC match → policy (spec §4.3).
 
 ---
 

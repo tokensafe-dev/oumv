@@ -29,7 +29,16 @@ interface ConformanceCase {
   expectVersionMatchesContent?: string;
 }
 
-const NORMATIVE_CODES = new Set([-32601, -32602, -32001, -32002, -32003, -32006, -32008, -32009, -32011]);
+// Fixture cases may only reference codes present in the canonical registry
+// (schemas/errors.json) — the single source of truth shared with the spec
+// table, the README and the generated enum (see errors.test.ts).
+const NORMATIVE_CODES = new Set<number>(
+  (
+    JSON.parse(
+      readFileSync(resolve(__dirname, '../../../schemas/errors.json'), 'utf-8'),
+    ) as { codes: { code: number }[] }
+  ).codes.map((c) => c.code),
+);
 
 const loadFixture = () => JSON.parse(readFileSync(FIXTURES_PATH, 'utf-8')) as {
   protocolVersion: string;

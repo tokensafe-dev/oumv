@@ -1,0 +1,25 @@
+{
+  "$comment": "OUMV Standard Error Code Registry — canonical. spec/SPEC.md §5.1 and README.md render this set; packages/protocol/src/errors.ts is GENERATED from it by scripts/gen-errors.mjs; the conformance suite validates emitted codes against it. registryVersion bumps when the code set changes.",
+  "registryVersion": 1,
+  "x-oumv-spec-version": "1.6.0",
+  "codes": [
+      { "code": -32700, "name": "PARSE_ERROR", "meaning": "Body is not valid JSON.", "reasons": ["malformed_json"] },
+      { "code": -32600, "name": "INVALID_REQUEST", "meaning": "Not a valid JSON-RPC 2.0 request.", "reasons": ["invalid_envelope"] },
+      { "code": -32601, "name": "METHOD_NOT_FOUND", "meaning": "Unknown oumv/* method.", "reasons": ["unknown_method"] },
+      { "code": -32602, "name": "INVALID_PARAMS", "meaning": "Params missing or of the wrong type.", "reasons": ["missing_target", "invalid_level", "invalid_params"] },
+      { "code": -32001, "name": "CONFLICT_DETECTED", "meaning": "expectedVersion does not match the current bytes.", "reasons": ["version_mismatch", "file_exists", "target_exists"] },
+      { "code": -32002, "name": "SYNTAX_ERROR", "meaning": "Replacement failed the syntax pre-flight.", "reasons": ["syntax_error"] },
+      { "code": -32003, "name": "SECURITY_VIOLATION", "meaning": "Path escapes the workspace or targets a sensitive file.", "reasons": ["path_traversal", "sensitive_path", "query_forbidden"] },
+      { "code": -32004, "name": "TARGET_NOT_FOUND", "meaning": "Endpoint/component/symbol target does not exist in the runtime.", "reasons": ["target_not_found"] },
+      { "code": -32005, "name": "ACTION_NOT_FOUND", "meaning": "Named action/effect is not defined on the target.", "reasons": ["unknown_action"] },
+      { "code": -32006, "name": "UNSUPPORTED_CAPABILITY", "meaning": "Method/level/query not implemented (never a silent no-op).", "reasons": ["unsupported_level", "unsupported_query", "unsupported_mode", "capability_not_advertised", "unsupported_protocol_version"] },
+      { "code": -32007, "name": "PERMISSION_DENIED", "meaning": "Policy forbids the operation.", "reasons": ["mutate_disabled", "policy_denied"] },
+      { "code": -32008, "name": "RUNTIME_UNAVAILABLE", "meaning": "Runtime or its sandbox is unreachable.", "reasons": ["sandbox_unavailable"] },
+      { "code": -32009, "name": "RESOURCE_NOT_FOUND", "meaning": "File/resource does not exist.", "reasons": ["resource_not_found", "file_not_found", "patch_target_not_found"] },
+      { "code": -32010, "name": "STALE_RESOURCE_VERSION", "meaning": "A version token carried by the caller no longer matches the versioned resource (static result or OCC token); refetch before retrying.", "reasons": ["stale_version"] },
+      { "code": -32011, "name": "VALIDATION_FAILED", "meaning": "Payload violated a contract (incl. missing expectedVersion, expired session).", "reasons": ["expected_version_required", "session_expired", "target_not_unique", "symbol_required", "rename_to_required", "hunks_required", "duplicate_path", "invalid_batch", "replacement_forbidden"] },
+      { "code": -32012, "name": "RATE_LIMITED", "meaning": "Per-session request limit exhausted (data.retryAfterMs hints when to retry; HTTP 429 may precede dispatch).", "reasons": ["rate_limited"] },
+      { "code": -32603, "name": "INTERNAL_ERROR", "meaning": "Unexpected adapter failure.", "reasons": ["store_failure"] }
+  ],
+  "reserved": []
+}
