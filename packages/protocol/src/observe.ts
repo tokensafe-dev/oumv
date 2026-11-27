@@ -7,6 +7,8 @@ export interface ObserveParams {
   sessionId?: string;
   requestId?: string;
   timeoutMs?: number;
+  /** §8 freshness handshake (wire 1.6.0): a previously returned workspaceVersion token. */
+  ifVersion?: string;
   level: ObserveLevel;
   format?: ObserveFormat;
   target?: string;
@@ -28,5 +30,9 @@ export interface ObserveResult {
   cursor?: string;
   hasMore?: boolean;
   nextCursor?: string;
+  /** §8 (wire 1.6.0): the freshness token over the workspace inventory. */
+  workspaceVersion?: string;
+  /** True only for the short ifVersion-match answer. */
+  unchanged?: boolean;
   evidence?: EvidenceMetadata;
 }

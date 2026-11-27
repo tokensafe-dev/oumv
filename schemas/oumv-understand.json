@@ -22,6 +22,11 @@
     },
     "target": {
      "type": "string"
+    },
+    "ifVersion": {
+     "type": "string",
+     "pattern": "^sha256:[a-f0-9]{64}$",
+     "description": "\u00a78 freshness handshake (wire 1.6.0), mirroring observe."
     }
    }
   },
@@ -194,6 +199,15 @@
     },
     "causality": {
      "$ref": "#/$defs/Causality"
+    },
+    "workspaceVersion": {
+     "type": "string",
+     "pattern": "^sha256:[a-f0-9]{64}$",
+     "description": "\u00a78 (wire 1.6.0): the freshness token over the workspace inventory."
+    },
+    "unchanged": {
+     "type": "boolean",
+     "description": "True only for the short ifVersion-match answer."
     }
    }
   }

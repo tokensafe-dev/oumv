@@ -89,6 +89,8 @@ export const ObserveParamsSchema = z.object({
   level: z.enum(['L0', 'L1', 'L2', 'L3', 'L4']),
   format: z.enum(['yaml', 'json', 'sexp']).default('yaml'),
   componentId: z.string().optional(),
+  // §8 freshness handshake (wire 1.6.0).
+  ifVersion: z.string().regex(/^sha256:[a-f0-9]{64}$/).optional(),
 });
 
 /**
@@ -122,6 +124,8 @@ export const ObserveResultSchema = z
 export const UnderstandParamsSchema = z.object({
   query: z.enum(['impact', 'dependencies', 'causality', 'why_state', 'signals', 'flow']),
   target: z.string().optional(),
+  // §8 freshness handshake (wire 1.6.0), mirroring observe.
+  ifVersion: z.string().regex(/^sha256:[a-f0-9]{64}$/).optional(),
 });
 
 export const ImpactResultSchema = z

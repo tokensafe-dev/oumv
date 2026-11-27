@@ -35,7 +35,8 @@
               "sourceAdapter": "tokensafe-backend-go",
               "confidence": "probable"
             }
-          }
+          },
+          "workspaceVersion": "sha256:69625151756b5b71e5d5088db7753fa64f60180d5fef1835e205db97a29019ff"
         }
       }
     },
@@ -65,13 +66,14 @@
             ],
             "observed": true,
             "traceCount": 2,
-            "latencyMs": 0.023,
+            "latencyMs": 0.019,
             "evidence": {
               "provenance": "runtime",
               "sourceAdapter": "tokensafe-backend-go",
               "confidence": "confirmed"
             }
-          }
+          },
+          "workspaceVersion": "sha256:69625151756b5b71e5d5088db7753fa64f60180d5fef1835e205db97a29019ff"
         }
       }
     }

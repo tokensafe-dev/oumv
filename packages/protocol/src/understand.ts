@@ -11,6 +11,8 @@ export interface UnderstandParams {
   sessionId?: string;
   requestId?: string;
   timeoutMs?: number;
+  /** §8 freshness handshake (wire 1.6.0), mirroring observe. */
+  ifVersion?: string;
   query: UnderstandQuery;
   target?: string;
   componentId?: string;

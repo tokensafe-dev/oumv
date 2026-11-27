@@ -288,6 +288,14 @@ returned slice: it is the OCC token, so a windowed or symbol-scoped read still g
 whole-file mutation. `startLine`/`endLine` describe the bytes actually returned. An empty
 collection MUST be returned as `[]` with a `note`, never as an error.
 
+* **Result versioning (wire 1.6.0).** Every observe answer carries
+  `workspaceVersion` — a digest over the workspace inventory. A caller MAY send
+  `params.ifVersion`: on match the runtime answers the short envelope
+  `{level, format, unchanged: true, workspaceVersion}` (the cached copy is still
+  fresh); on mismatch `-32010 STALE_RESOURCE_VERSION` with
+  `data.reason = "stale_version"` and `data.current` — the caller refetches
+  without `ifVersion`. `understand` honours the same handshake (§4.2).
+
 ### 4.2 UNDERSTAND (`oumv/understand`)
 
 Request: `{ "query": "impact"|"causality"|"why_state"|"dependencies"|"signals", "target": string }`

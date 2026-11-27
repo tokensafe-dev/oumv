@@ -40,6 +40,11 @@
     "cursor": {
      "type": "string",
      "description": "opaque nextCursor from a previous page"
+    },
+    "ifVersion": {
+     "type": "string",
+     "pattern": "^sha256:[a-f0-9]{64}$",
+     "description": "\u00a78 freshness handshake (wire 1.6.0): a previously returned workspaceVersion token. Match -> short {unchanged, workspaceVersion}; mismatch -> -32010 STALE_RESOURCE_VERSION with data.current."
     }
    }
   },
@@ -346,6 +351,15 @@
     "payload": {
      "type": "string",
      "description": "Rendered form of `data` when `format` is \"yaml\" (token-efficient transport of the same information); additive, MINOR-compatible."
+    },
+    "workspaceVersion": {
+     "type": "string",
+     "pattern": "^sha256:[a-f0-9]{64}$",
+     "description": "\u00a78 (wire 1.6.0): the freshness token over the workspace inventory; present on every full observe answer."
+    },
+    "unchanged": {
+     "type": "boolean",
+     "description": "True only for the short ifVersion-match answer."
     }
    }
   }

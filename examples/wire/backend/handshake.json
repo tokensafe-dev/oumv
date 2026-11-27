@@ -25,7 +25,7 @@
         "result": {
           "protocolVersion": "1.6.0",
           "profile": "backend",
-          "sessionId": "sess-b7cdc8645808cdd4",
+          "sessionId": "sess-6fcf0b7d2702f59f",
           "ttlSeconds": 3600,
           "runtimeInfo": {
             "name": "tokensafe-stdhttp",
@@ -100,7 +100,7 @@
         "result": {
           "protocolVersion": "1.6.0",
           "profile": "backend",
-          "sessionId": "sess-e1e00bdbbecd04d3",
+          "sessionId": "sess-465efc89e16e02be",
           "ttlSeconds": 3600,
           "runtimeInfo": {
             "name": "tokensafe-stdhttp",

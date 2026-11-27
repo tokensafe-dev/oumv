@@ -29,7 +29,8 @@
             "errorCount1m": 0,
             "status": "HEALTHY"
           },
-          "tokenEstimate": 30
+          "tokenEstimate": 30,
+          "workspaceVersion": "sha256:69625151756b5b71e5d5088db7753fa64f60180d5fef1835e205db97a29019ff"
         }
       }
     },
@@ -58,7 +59,8 @@
               }
             ]
           },
-          "tokenEstimate": 45
+          "tokenEstimate": 45,
+          "workspaceVersion": "sha256:69625151756b5b71e5d5088db7753fa64f60180d5fef1835e205db97a29019ff"
         }
       }
     },
@@ -91,7 +93,8 @@
               "confidence": "confirmed"
             }
           },
-          "tokenEstimate": 80
+          "tokenEstimate": 80,
+          "workspaceVersion": "sha256:69625151756b5b71e5d5088db7753fa64f60180d5fef1835e205db97a29019ff"
         }
       }
     },
@@ -120,7 +123,8 @@
             "startLine": 1,
             "endLine": 6
           },
-          "tokenEstimate": 300
+          "tokenEstimate": 300,
+          "workspaceVersion": "sha256:69625151756b5b71e5d5088db7753fa64f60180d5fef1835e205db97a29019ff"
         }
       }
     },
@@ -148,8 +152,8 @@
                 "route": "/__oumv/rpc",
                 "handler": "stdhttp.Handler",
                 "statusCode": 200,
-                "durationMs": 0.1,
-                "timestamp": "2026-11-27T20:39:43.258312Z"
+                "durationMs": 0.115,
+                "timestamp": "2026-11-27T20:50:25.930393Z"
               },
               {
                 "method": "GET",
@@ -157,8 +161,8 @@
                 "route": "/api/v1/orders",
                 "handler": "",
                 "statusCode": 200,
-                "durationMs": 0.023,
-                "timestamp": "2026-11-27T20:39:43.258265Z"
+                "durationMs": 0.019,
+                "timestamp": "2026-11-27T20:50:25.930341Z"
               },
               {
                 "method": "GET",
@@ -166,8 +170,8 @@
                 "route": "/api/v1/orders",
                 "handler": "stdhttp.Handler",
                 "statusCode": 200,
-                "durationMs": 0.007,
-                "timestamp": "2026-11-27T20:39:43.258263Z"
+                "durationMs": 0.004,
+                "timestamp": "2026-11-27T20:50:25.930338Z"
               },
               {
                 "method": "POST",
@@ -175,8 +179,8 @@
                 "route": "/__oumv/rpc",
                 "handler": "stdhttp.Handler",
                 "statusCode": 200,
-                "durationMs": 0.079,
-                "timestamp": "2026-11-27T20:39:43.25807Z"
+                "durationMs": 0.17,
+                "timestamp": "2026-11-27T20:50:25.930041Z"
               },
               {
                 "method": "POST",
@@ -184,8 +188,8 @@
                 "route": "/__oumv/rpc",
                 "handler": "stdhttp.Handler",
                 "statusCode": 200,
-                "durationMs": 0.035,
-                "timestamp": "2026-11-27T20:39:43.257779Z"
+                "durationMs": 0.097,
+                "timestamp": "2026-11-27T20:50:25.92964Z"
               },
               {
                 "method": "POST",
@@ -193,8 +197,8 @@
                 "route": "/__oumv/rpc",
                 "handler": "stdhttp.Handler",
                 "statusCode": 200,
-                "durationMs": 0.029,
-                "timestamp": "2026-11-27T20:39:43.257394Z"
+                "durationMs": 0.097,
+                "timestamp": "2026-11-27T20:50:25.929138Z"
               },
               {
                 "method": "POST",
@@ -202,8 +206,8 @@
                 "route": "/__oumv/rpc",
                 "handler": "stdhttp.Handler",
                 "statusCode": 200,
-                "durationMs": 0.306,
-                "timestamp": "2026-11-27T20:39:43.257028Z"
+                "durationMs": 0.446,
+                "timestamp": "2026-11-27T20:50:25.928868Z"
               },
               {
                 "method": "POST",
@@ -211,8 +215,8 @@
                 "route": "/__oumv/rpc",
                 "handler": "stdhttp.Handler",
                 "statusCode": 200,
-                "durationMs": 0.051,
-                "timestamp": "2026-11-27T20:39:43.256536Z"
+                "durationMs": 0.057,
+                "timestamp": "2026-11-27T20:50:25.928223Z"
               },
               {
                 "method": "POST",
@@ -220,8 +224,8 @@
                 "route": "/__oumv/rpc",
                 "handler": "stdhttp.Handler",
                 "statusCode": 200,
-                "durationMs": 4.326,
-                "timestamp": "2026-11-27T20:39:43.253018Z"
+                "durationMs": 4.343,
+                "timestamp": "2026-11-27T20:50:25.923761Z"
               }
             ],
             "traceCount": 9,
@@ -231,7 +235,8 @@
               "confidence": "confirmed"
             }
           },
-          "tokenEstimate": 175
+          "tokenEstimate": 175,
+          "workspaceVersion": "sha256:69625151756b5b71e5d5088db7753fa64f60180d5fef1835e205db97a29019ff"
         }
       }
     }
