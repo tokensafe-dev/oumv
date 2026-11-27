@@ -54,16 +54,28 @@ export const OumvHandshakeResultSchema = z.object({
       syntaxGuard: z.boolean(),
       ephemeralDispatch: z.boolean(),
       multiFile: z.boolean().optional(),
+      preview: z.boolean().optional(),
     }),
     verify: z.object({
       multiMetric: z.boolean(),
       surfaceDiff: z.boolean(),
       sandboxRollback: z.boolean().optional(),
+      build: z.boolean().optional(),
     }),
     sessions: z
       .object({
         ttlSeconds: z.boolean().optional(),
+        cancel: z.boolean().optional(),
       })
+      .optional(),
+    index: z
+      .object({ symbols: z.boolean() })
+      .optional(),
+    observeQuery: z
+      .object({ readOnly: z.boolean() })
+      .optional(),
+    events: z
+      .object({ diagnostic: z.boolean() })
       .optional(),
     transports: z
       .array(z.enum(['http', 'sse', 'ws', 'stdio', 'memory', 'batch']))
@@ -107,7 +119,7 @@ export const ObserveResultSchema = z
 
 // Understand Schemas
 export const UnderstandParamsSchema = z.object({
-  query: z.enum(['impact', 'dependencies', 'causality', 'why_state', 'signals']),
+  query: z.enum(['impact', 'dependencies', 'causality', 'why_state', 'signals', 'flow']),
   target: z.string().optional(),
 });
 
@@ -227,6 +239,11 @@ export const ApplyEditHunkSchema = z.object({
 });
 
 export const ApplyEditParamsSchema = z.object({
+  // Wire 1.6.0 correlation/idempotency fields (§2.1/§3) accepted on every method.
+  sessionId: z.string().optional(),
+  requestId: z.string().optional(),
+  timeoutMs: z.number().int().positive().optional(),
+  idempotencyKey: z.string().optional(),
   path: z.string(),
   symbol: z.string().optional(),
   // `replacement`/`expectedVersion` are conditional on the mode (create forbids the
@@ -357,5 +374,146 @@ export const VerifyResultSchema = z
     })
     .optional(),
   error: z.string().optional(),
+  })
+  .passthrough();
+
+// Wire 1.6.0 method schemas (spec §2.1/§3/§4.4/§14)
+const CorrelationFieldsSchema = {
+  sessionId: z.string().optional(),
+  requestId: z.string().optional(),
+  timeoutMs: z.number().int().positive().optional(),
+};
+
+export const PreviewEditParamsSchema = z
+  .object({
+    ...CorrelationFieldsSchema,
+    idempotencyKey: z.string().optional(),
+    path: z.string().optional(),
+    mode: z.enum(['replace', 'create', 'patch', 'symbol', 'delete', 'rename']).optional(),
+    symbol: z.string().optional(),
+    renameTo: z.string().optional(),
+    replacement: z.string().optional(),
+    hunks: z.array(ApplyEditHunkSchema).optional(),
+    expectedVersion: z.string().optional(),
+    edits: z.array(ApplyEditBatchItemSchema).min(1).max(16).optional(),
+  })
+  .refine((v) => !(v.edits && (v.path !== undefined || v.hunks !== undefined)), {
+    message: 'batch edits and single-edit fields are mutually exclusive (§4.4)',
+  });
+
+export const PreviewItemSchema = z
+  .object({
+    path: z.string(),
+    mode: z.enum(['replace', 'create', 'patch', 'symbol', 'delete', 'rename']),
+    unchanged: z.boolean().optional(),
+    currentVersion: z.string().regex(/^sha256:[a-f0-9]{64}$/).optional(),
+    newVersion: z.string().regex(/^sha256:[a-f0-9]{64}$/).optional(),
+    diff: z.string().optional(),
+    syntaxCheck: z
+      .object({
+        status: z.enum(['passed', 'failed', 'skipped']),
+        tool: z.string().optional(),
+        error: z.string().optional(),
+      })
+      .optional(),
+    wouldApply: z.boolean(),
+  })
+  .passthrough();
+
+export const PreviewEditResultSchema = z
+  .object({
+    status: z.literal('PREVIEW'),
+    applied: z.literal(false),
+    previews: z.array(PreviewItemSchema).min(1),
+  })
+  .passthrough();
+
+export const IndexParamsSchema = z.object({
+  ...CorrelationFieldsSchema,
+  query: z.string().min(1),
+  kinds: z.array(z.string()).optional(),
+  scope: z.string().optional(),
+  limit: z.number().int().min(1).max(200).optional(),
+});
+
+export const IndexMatchSchema = z.object({
+  resourceId: z.string(),
+  name: z.string(),
+  kind: z.string(),
+  file: z.string(),
+  lines: z.tuple([z.number(), z.number()]),
+  signature: z.string().optional(),
+  refs: z.number().int().min(0).optional(),
+  match: z.enum(['exact', 'prefix', 'qualified-suffix', 'substring']),
+  evidence: z.record(z.any()).optional(),
+});
+
+export const IndexResultSchema = z
+  .object({
+    matches: z.array(IndexMatchSchema),
+    truncated: z.boolean(),
+    totalMatches: z.number().int().min(0).optional(),
+  })
+  .passthrough();
+
+export const QueryParamsSchema = z.object({
+  ...CorrelationFieldsSchema,
+  sql: z.string().min(1),
+  params: z.array(z.any()).optional(),
+  limit: z.number().int().min(1).max(1000).optional(),
+});
+
+export const QueryResultSchema = z
+  .object({
+    columns: z.array(z.string()),
+    rows: z.array(z.array(z.any())),
+    rowCount: z.number().int().min(0),
+    truncated: z.boolean(),
+  })
+  .passthrough();
+
+export const BuildParamsSchema = z.object({
+  ...CorrelationFieldsSchema,
+  command: z.string().optional(),
+  target: z.string().optional(),
+});
+
+export const DiagnosticEventSchema = z.object({
+  severity: z.enum(['error', 'warning', 'info']),
+  source: z.enum(['build', 'test', 'hmr', 'tool']),
+  message: z.string(),
+  file: z.string().optional(),
+  line: z.number().int().min(1).optional(),
+  tool: z.string().optional(),
+  reason: z.string().optional(),
+  ts: z.number().optional(),
+});
+
+export const BuildResultSchema = z
+  .object({
+    status: z.enum(['passed', 'failed', 'skipped']),
+    command: z.string(),
+    diagnostics: z.array(DiagnosticEventSchema),
+    durationMs: z.number().optional(),
+    truncated: z.boolean().optional(),
+    skipReason: z.string().optional(),
+  })
+  .passthrough();
+
+export const CancelParamsSchema = z
+  .object({
+    sessionId: z.string().optional(),
+    requestId: z.string().optional(),
+    target: z.enum(['last']).optional(),
+  })
+  .refine((v) => Boolean(v.requestId) !== Boolean(v.target), {
+    message: 'cancel takes exactly one of requestId / target:"last"',
+  });
+
+export const CancelResultSchema = z
+  .object({
+    cancelled: z.boolean(),
+    requestId: z.string().optional(),
+    finished: z.boolean().optional(),
   })
   .passthrough();
