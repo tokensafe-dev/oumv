@@ -245,17 +245,17 @@ record no live request traces: `observe-l4-returns-recorded-traces` fails and Le
 claimed. Their reports name that single gap.
 
 The optional bindings are certified by reports, not by the matrix. Node Express and
-Fastify have SSE and WS certificates (`tokensafe-backend/certification/transports/*-sse.json`,
-`*-ws.json`) at Level 3, 34/34: the suite plus the fixture v8 push cases. `stdio` is
-certified by `node-stdio.json` and `python-stdio.json` (Level 3, 33/33). The Go adapters
-mount SSE and WS and their bindings are exercised by `go/pkg/transport/streams_test.go`
-(state event, `Last-Event-ID` replay, WS notification) and the Python runtime by
-`python/tests/test_streams.py`; their own transport certificates are not generated yet.
-A transport claim without a report is not made.
+Fastify, Go net/http and Python FastAPI each have SSE and WS certificates
+(`tokensafe-backend/certification/transports/*-sse.json`, `*-ws.json`) at Level 3,
+35/35: the 33-case suite plus the fixture v8 push case and the v9 sandbox capability
+case. `stdio` is certified by `node-stdio.json` and `python-stdio.json` (Level 3,
+33/33). A transport claim without a report is not made.
 
 The `sse`/`ws` certificates are produced by passing the push channel to the
 runner — `oumv-certify --url <rpc> --sse <events>` for SSE, `oumv-certify --ws <rpc>`
-for WebSocket — so any runtime that mounts the binding can be certified the same way.
+for WebSocket. Go and Python generate them from a live server:
+`go/certify-transports.sh` (cmd/certserver) and `python/certify-transports.sh`
+(uvicorn + cert_app), both wired into the backend certification job.
 
 Django/Flask, Next and Angular adapters follow.
 
@@ -268,12 +268,10 @@ listed so a third party can see what a certificate does **not** prove today.
 
 | Gap | What is missing | Why it is not a runtime bug |
 | :--- | :--- | :--- |
-| Go and Python have bindings but no transport certificates | Fixtures v8 define the push cases and `oumv-certify --sse/--ws` runs them; the Node adapters have reports at 34/34. The Go/Python SSE and WS semantics (`state` on mutation, monotonic ids, `Last-Event-ID` replay, WS notifications) are exercised by their native transport tests, not by a committed report. | Behaviour is implemented and tested; what is missing is a CI step that boots a live server per runtime and points the certifier at it — a harness gap, not a wire gap. |
 | No multi-file atomic `applyEdit` | §8 says a mutation is atomic, but `ApplyEditParams` is single-file. A cross-file change is several calls with no all-or-nothing rollback. | This is a wire addition (a transaction envelope), so it needs a `protocolVersion` minor, fixtures, and re-certification of every adapter — a coordinated release, not a runtime patch. |
 | Session expiry and auth rejection are not fixtures | `unknown-session-is-rejected` proves an unknown id fails; nothing proves an expired one fails, or that a missing token answers `401`/`-32007`. | Expiry needs an injectable clock (or a TTL of seconds) and auth needs per-case headers in the fixture schema; both are test-harness features, not adapter behaviour. |
 
-Fix them in that order: a live-server certifier step for Go and Python first, then the
-transaction envelope, then auth/expiry harness hooks.
+Fix them in that order: the transaction envelope first, then auth/expiry harness hooks.
 
 ---
 
