@@ -60,6 +60,7 @@ instead of inflating it (spec §10.1).
 | Backend | Go (Gin / Chi / net/http) | `tokensafe-backend/go/pkg/adapters/*` | Level 3 (all cases) |
 | Backend | Python / FastAPI | `tokensafe-backend-python` (`mount_tokensafe`) | Level 3 (all cases) |
 | Backend | Node.js / Express, Fastify | `tokensafe-backend/node` | Level 3 (all cases) |
+| Backend | ASP.NET Core (minimal APIs + MVC, EF Core) | `tokensafe-backend/dotnet` (`TokenSafe.Oumv.AspNetCore`) | Level 3 (all cases) |
 | Backend | Spring Boot (JDK-only sidecar) | `tokensafe-backend/java` | Level 2 (32/33: no live traces) |
 | Backend | Laravel / Symfony (PHP sidecar) | `tokensafe-backend/php` | Level 2 (32/33: no live traces) |
 

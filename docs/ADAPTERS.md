@@ -95,6 +95,32 @@ const ws = oumv.attachWebSocket();
 `oumv/verify` dispatches over loopback HTTP against the live handler, and `applyEdit`
 writes a backup under `.tokensafe/backups/` before an OCC-checked write.
 
+### ASP.NET Core (minimal APIs, MVC controllers, EF Core)
+
+```csharp
+var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddControllers();
+builder.Services.AddTokensafe();            // enables the EF Core rollback sandbox
+
+var app = builder.Build();
+app.UseWebSockets();
+app.UseTokensafe();                         // JSON-RPC /__oumv/rpc, SSE /__oumv/events
+app.MapGet("/api/v1/orders", (AppDbContext db) => Results.Json(db.Orders.ToList()));
+app.MapControllers();
+app.Run();
+```
+
+`AddTokensafe()` is optional without EF Core; `UseTokensafe()` alone mounts every
+transport. Both minimal APIs and controllers are reached through the app's
+`EndpointDataSource`, so L1/L2 and `verify` see one route table: verify dispatches the
+endpoint's real `RequestDelegate` on a synthetic `HttpContext` (model binding, filters,
+DI), with no network hop. Edits are OCC-checked and Roslyn-parsed before the first write.
+
+`verify.sandbox: {mode:"rollback"}` opens one transaction per DI-discovered `DbContext`,
+dispatches with `X-TokenSafe-Dry-Run: true`, rolls every transaction back, and reports
+`rollbackStatus: "verified"` only when it observed the rollback. `dbDiff.queries` is
+omitted: the adapter does not wrap the EF command pipeline.
+
 ### Java (Spring Boot, JDK-only sidecar)
 
 No build integration and no Spring jars: one source file scans the project and serves
@@ -234,6 +260,7 @@ Two rules that keep reports trustworthy:
 | `backend/fastapi` | backend | HTTP, SSE, WS, stdio | 3 | `tokensafe-backend/certification/python-fastapi.json` |
 | `backend/express` | backend | HTTP, batch, SSE, WS, stdio | 3 | `tokensafe-backend/certification/node-express.json` |
 | `backend/fastify` | backend | HTTP, batch, SSE, WS, stdio | 3 | `tokensafe-backend/certification/node-fastify.json` |
+| `backend/aspnetcore` | backend | HTTP, SSE, WS | 3 | `tokensafe-backend/certification/dotnet-aspnetcore.json` |
 | `backend/java-spring` | backend | HTTP, stdio | **2** | `tokensafe-backend/certification/java-spring.json` |
 | `backend/php-laravel` | backend | HTTP, stdio | **2** | `tokensafe-backend/certification/php-laravel.json` |
 | `frontend/react` | frontend | HTTP, batch, SSE, WS | **3 with a browser tab**, 1 offline | `agent-dom/certification/react-vite-browser.json` (L3), `react-vite.json` (L1 offline) |
@@ -245,7 +272,7 @@ record no live request traces: `observe-l4-returns-recorded-traces` fails and Le
 claimed. Their reports name that single gap.
 
 The optional bindings are certified by reports, not by the matrix. Node Express and
-Fastify, Go net/http and Python FastAPI each have SSE and WS certificates
+Fastify, Go net/http, Python FastAPI and ASP.NET Core each have SSE and WS certificates
 (`tokensafe-backend/certification/transports/*-sse.json`, `*-ws.json`) at Level 3,
 38/38: the 33-case suite plus the fixture v8 push case, the v9 sandbox capability case
 and the v10 batch and expired-session cases. `stdio` is certified by `node-stdio.json`
