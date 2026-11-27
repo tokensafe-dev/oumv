@@ -3,7 +3,7 @@
 The wire contract is versioned by `protocolVersion` (currently **1.3.0**); this
 changelog tracks the OUMV specification and its reference tooling.
 
-## Unreleased — adapters and scoped-edit diagnostics
+## v1.2.1 — 2026-11-27 (adapters and scoped-edit diagnostics)
 
 No `protocolVersion` bump: the wire request/response shapes do not change. The
 additions are two adapters, one frontend adapter brought to 1.3.0, and extra fields
