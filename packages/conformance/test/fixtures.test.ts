@@ -29,7 +29,7 @@ interface ConformanceCase {
   expectVersionMatchesContent?: string;
 }
 
-const NORMATIVE_CODES = new Set([-32601, -32001, -32002, -32003, -32009, -32011]);
+const NORMATIVE_CODES = new Set([-32601, -32602, -32001, -32002, -32003, -32006, -32008, -32009, -32011]);
 
 const loadFixture = () => JSON.parse(readFileSync(FIXTURES_PATH, 'utf-8')) as {
   protocolVersion: string;
@@ -49,8 +49,8 @@ describe('language-neutral conformance fixtures', () => {
 
   it('references the OUMV spec, protocol version and fixture version', () => {
     const data = loadFixture();
-    expect(data.protocolVersion).toBe('1.2.0');
-    expect(data.fixtureVersion).toBe(6);
+    expect(data.protocolVersion).toBe('1.3.0');
+    expect(data.fixtureVersion).toBe(7);
     expect(data.spec).toContain('SPEC.md');
   });
 

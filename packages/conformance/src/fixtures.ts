@@ -11,7 +11,7 @@ import { createHash } from 'node:crypto';
 import { determineConformanceLevel, summarizeLevels } from './levels.js';
 import type { ConformanceLevel, LevelStatus } from './levels.js';
 
-export const SPEC_VERSION = '1.1.0';
+export const SPEC_VERSION = '1.3.0';
 
 export interface ConformanceCaseError {
   code: number;
@@ -65,6 +65,10 @@ export interface CaseMarkers {
   renameSource: string;
   renameTarget: string;
   renameVersion: string;
+  // wire 1.3.0: the version of editContent once written, and the text a
+  // mode=patch hunk splices over it (the whole content, replaced)
+  editContentVersion: string;
+  patchReplacement: string;
 }
 
 export interface CaseResult {
@@ -124,6 +128,8 @@ const MARKER_KEYS: Record<string, keyof CaseMarkers> = {
   '${EDIT_TARGET_VERSION}': 'editVersion',
   '${NEW_FILE}': 'newFile',
   '${EDIT_CONTENT}': 'editContent',
+  '${EDIT_CONTENT_VERSION}': 'editContentVersion',
+  '${PATCH_REPLACEMENT}': 'patchReplacement',
   '${BROKEN_CONTENT}': 'brokenContent',
   '${L2_TARGET}': 'l2Target',
   '${L3_TARGET}': 'l3Target',
@@ -157,6 +163,8 @@ export function defaultMarkers(overrides: Partial<CaseMarkers> = {}): CaseMarker
     newFile: '__oumv_conformance_created.py',
     editVersion: '',
     editContent: 'value = 1\n',
+    editContentVersion: occVersion('value = 1\n'),
+    patchReplacement: '# patched by conformance\nvalue = 1\n',
     brokenContent: 'def broken(:\n  pass\n',
     l2Target: 'app.main:app',
     l3Target: 'app/main.py',

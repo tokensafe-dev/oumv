@@ -19,7 +19,6 @@
         "jsonrpc": "2.0",
         "id": "oumv/getSource:source with OCC token",
         "result": {
-          "symbol": "",
           "path": "cert_edit_target.go",
           "source": "package cert\n\nfunc Value() int {\n\treturn 41\n}\n",
           "version": "sha256:8b877082c7e07db686c4776a0944ae99490148df91758fcae8dce7387d39d100",

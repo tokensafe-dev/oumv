@@ -30,8 +30,16 @@ export function referenceRuntime(request: JsonRpcRequest): JsonRpcResponse {
 
   switch (request.method) {
     case 'oumv/handshake':
+      if (params.protocolVersion) {
+        const [maj, min] = String(params.protocolVersion).split('.').map(Number);
+        if (maj !== 1 || min > 3) {
+          return fail(-32006, `UNSUPPORTED_CAPABILITY: protocol version ${params.protocolVersion}`, {
+            reason: 'unsupported_version',
+          });
+        }
+      }
       return ok({
-        protocolVersion: '1.2.0',
+        protocolVersion: '1.3.0',
         profile: 'backend',
         sessionId: 'sess-reference',
         ttlSeconds: 3600,
@@ -49,6 +57,9 @@ export function referenceRuntime(request: JsonRpcRequest): JsonRpcResponse {
         return fail(-32011, 'VALIDATION_FAILED: unknown sessionId', { reason: 'session_expired' });
       }
       const level = String(params.level);
+      if (!['L0', 'L1', 'L2', 'L3', 'L4'].includes(level)) {
+        return fail(-32006, `UNSUPPORTED_CAPABILITY: unknown observe level ${level}`, { reason: 'unsupported_level' });
+      }
       if (level === 'L0') return ok({ level, format: 'json', data: { route: '/', mountedComponents: 3 } });
       if (level === 'L1') {
         const elements = [{ id: 'one' }, { id: 'two' }];
@@ -103,6 +114,12 @@ export function referenceRuntime(request: JsonRpcRequest): JsonRpcResponse {
     case 'oumv/getSource':
       if (String(params.path).includes('missing')) {
         return fail(-32009, 'RESOURCE_NOT_FOUND: no such file');
+      }
+      if (params.symbol && !REFERENCE_SOURCE.includes(String(params.symbol))) {
+        return fail(-32009, `RESOURCE_NOT_FOUND: symbol ${params.symbol} not found`);
+      }
+      if (params.ifVersion && String(params.ifVersion) === occToken(REFERENCE_SOURCE)) {
+        return ok({ path: params.path, version: occToken(REFERENCE_SOURCE), unchanged: true });
       }
       return ok({
         path: params.path,
@@ -169,6 +186,10 @@ export function referenceRuntime(request: JsonRpcRequest): JsonRpcResponse {
       });
 
     case 'oumv/applyEdit': {
+      const editMode = String(params.mode ?? 'replace');
+      if (!['replace', 'create', 'symbol', 'delete', 'rename', 'patch'].includes(editMode)) {
+        return fail(-32006, `UNSUPPORTED_CAPABILITY: unknown applyEdit mode ${editMode}`, { reason: 'unknown_mode' });
+      }
       if (params.mode === 'create') {
         if (params.expectedVersion) {
           return fail(-32011, 'VALIDATION_FAILED: expectedVersion must be omitted for mode=create', {
@@ -184,6 +205,38 @@ export function referenceRuntime(request: JsonRpcRequest): JsonRpcResponse {
           newVersion: occToken(String(params.replacement)),
           syntaxCheck: { status: 'passed', tool: 'reference' },
           created: true,
+        });
+      }
+      if (params.mode === 'patch') {
+        if (!params.expectedVersion) {
+          return fail(-32011, 'VALIDATION_FAILED: expectedVersion is required', { reason: 'expected_version_required' });
+        }
+        const hunks = Array.isArray(params.hunks) ? params.hunks : [];
+        if (!hunks.length) {
+          return fail(-32011, 'VALIDATION_FAILED: hunks is required for mode=patch', { reason: 'hunks_required' });
+        }
+        let text = REFERENCE_SOURCE;
+        for (const hunk of hunks) {
+          const target = String(hunk?.target ?? '');
+          if (!target) {
+            return fail(-32011, 'VALIDATION_FAILED: hunk target is required', { reason: 'target_required' });
+          }
+          const count = text.split(target).length - 1;
+          if (count === 0) {
+            return fail(-32009, 'RESOURCE_NOT_FOUND: target not found', { reason: 'target_not_found' });
+          }
+          if (count > 1 && !hunk.replaceAll) {
+            return fail(-32011, 'VALIDATION_FAILED: target not unique', { reason: 'target_not_unique', count });
+          }
+          const replacement = String(hunk?.replacement ?? '');
+          text = hunk.replaceAll ? text.split(target).join(replacement) : text.replace(target, replacement);
+        }
+        return ok({
+          status: 'APPLIED',
+          path: params.path,
+          newVersion: occToken(text),
+          syntaxCheck: { status: 'passed', tool: 'reference' },
+          hunksApplied: hunks.length,
         });
       }
       if (params.mode === 'delete') {

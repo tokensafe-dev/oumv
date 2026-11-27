@@ -28,13 +28,13 @@
             "status": 200
           },
           "timings": {
-            "t_action_ms": 0.016,
+            "t_action_ms": 0.034,
             "t_schema_ms": 0,
             "t_propagation_ms": 0,
             "t_dom_ms": 0,
-            "t_total_ms": 0.016
+            "t_total_ms": 0.034
           },
-          "durationMs": 0.016,
+          "durationMs": 0.034,
           "scope": {
             "checked": [
               "in-memory dispatch against the live handler"

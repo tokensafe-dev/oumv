@@ -65,7 +65,7 @@
             ],
             "observed": true,
             "traceCount": 2,
-            "latencyMs": 0.016,
+            "latencyMs": 0.034,
             "evidence": {
               "provenance": "runtime",
               "sourceAdapter": "tokensafe-backend-go",

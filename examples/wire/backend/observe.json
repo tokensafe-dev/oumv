@@ -84,7 +84,7 @@
             "method": "GET",
             "path": "/api/v1/orders",
             "handlerName": "stdhttp.Handler",
-            "note": "route contract from live router registration; request/response DTOs are not reflectable from a mounted router — use observe L3 for the handler source",
+            "note": "route contract from live router registration; request/response DTOs are not reflectable from a mounted router — observe L3 with this endpoint target for the handler source",
             "evidence": {
               "provenance": "runtime",
               "sourceAdapter": "tokensafe-stdhttp",
@@ -148,8 +148,8 @@
                 "route": "/__oumv/rpc",
                 "handler": "stdhttp.Handler",
                 "statusCode": 200,
-                "durationMs": 0.091,
-                "timestamp": "2026-11-26T15:23:43.037897Z"
+                "durationMs": 0.709,
+                "timestamp": "2026-11-27T00:08:09.889957Z"
               },
               {
                 "method": "GET",
@@ -157,8 +157,8 @@
                 "route": "/api/v1/orders",
                 "handler": "",
                 "statusCode": 200,
-                "durationMs": 0.016,
-                "timestamp": "2026-11-26T15:23:43.037843Z"
+                "durationMs": 0.034,
+                "timestamp": "2026-11-27T00:08:09.889366Z"
               },
               {
                 "method": "GET",
@@ -166,8 +166,8 @@
                 "route": "/api/v1/orders",
                 "handler": "stdhttp.Handler",
                 "statusCode": 200,
-                "durationMs": 0.002,
-                "timestamp": "2026-11-26T15:23:43.037842Z"
+                "durationMs": 0.017,
+                "timestamp": "2026-11-27T00:08:09.889366Z"
               },
               {
                 "method": "POST",
@@ -175,8 +175,8 @@
                 "route": "/__oumv/rpc",
                 "handler": "stdhttp.Handler",
                 "statusCode": 200,
-                "durationMs": 0.12,
-                "timestamp": "2026-11-26T15:23:43.037649Z"
+                "durationMs": 0.363,
+                "timestamp": "2026-11-27T00:08:09.888206Z"
               },
               {
                 "method": "POST",
@@ -184,8 +184,8 @@
                 "route": "/__oumv/rpc",
                 "handler": "stdhttp.Handler",
                 "statusCode": 200,
-                "durationMs": 0.054,
-                "timestamp": "2026-11-26T15:23:43.037121Z"
+                "durationMs": 0.338,
+                "timestamp": "2026-11-27T00:08:09.886896Z"
               },
               {
                 "method": "POST",
@@ -193,8 +193,8 @@
                 "route": "/__oumv/rpc",
                 "handler": "stdhttp.Handler",
                 "statusCode": 200,
-                "durationMs": 0.026,
-                "timestamp": "2026-11-26T15:23:43.036892Z"
+                "durationMs": 0.131,
+                "timestamp": "2026-11-27T00:08:09.885525Z"
               },
               {
                 "method": "POST",
@@ -202,8 +202,8 @@
                 "route": "/__oumv/rpc",
                 "handler": "stdhttp.Handler",
                 "statusCode": 200,
-                "durationMs": 0.359,
-                "timestamp": "2026-11-26T15:23:43.036694Z"
+                "durationMs": 0.472,
+                "timestamp": "2026-11-27T00:08:09.880573Z"
               },
               {
                 "method": "POST",
@@ -211,8 +211,8 @@
                 "route": "/__oumv/rpc",
                 "handler": "stdhttp.Handler",
                 "statusCode": 200,
-                "durationMs": 0.072,
-                "timestamp": "2026-11-26T15:23:43.036155Z"
+                "durationMs": 0.076,
+                "timestamp": "2026-11-27T00:08:09.879558Z"
               },
               {
                 "method": "POST",
@@ -220,8 +220,8 @@
                 "route": "/__oumv/rpc",
                 "handler": "stdhttp.Handler",
                 "statusCode": 200,
-                "durationMs": 4.445,
-                "timestamp": "2026-11-26T15:23:43.0336Z"
+                "durationMs": 4.372,
+                "timestamp": "2026-11-27T00:08:09.875342Z"
               }
             ],
             "traceCount": 9,

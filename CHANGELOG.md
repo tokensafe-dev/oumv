@@ -1,7 +1,38 @@
 # Changelog
 
-The wire contract is versioned by `protocolVersion` (currently **1.2.0**); this
+The wire contract is versioned by `protocolVersion` (currently **1.3.0**); this
 changelog tracks the OUMV specification and its reference tooling.
+
+## v1.2.0 — 2026-11-27 (wire 1.3.0, fixtures v7)
+
+Minor, additive release: every v1.1 adapter stays valid for the capabilities it
+declares, and an adapter without the new mode answers `-32006` rather than falling
+back to `replace`.
+
+- **`applyEdit mode=patch`** (§4.3): `hunks: [{target, replacement, startLine?, endLine?,
+  replaceAll?}]`, applied in order to the evolving text under OCC. `target` is a literal
+  snippet; it must occur exactly once unless scoped by lines or `replaceAll`. Zero matches
+  is `-32009 target_not_found`, several are `-32011 target_not_unique` with `count` and
+  `lines`, the first failing hunk aborts with **no bytes written**, and the result carries
+  `hunksApplied`. This is the mode that stops re-emitting a file to change one line: the
+  measured 3-arm matrix showed the whole-resource mutation unit costing 2.3× the output
+  tokens of a hunk-based editor.
+- **`getSource` windows and dedup** (§4.3): `startLine`/`endLine` return a 1-based
+  inclusive window (end clamped to EOF) while `version` stays the sha256 of the whole file,
+  so OCC never depends on the window; `ifVersion` answers `{unchanged: true}` with no
+  `source` when the file still matches, instead of resending bytes the agent already has.
+  An unknown `symbol` is `-32009`, never the whole file under a symbol label.
+- **Runtimes aligned with §4/§5** (behaviour fixes, no shape change): Python `observe`
+  L0/L1/L4 data now match the spec; Python stops emitting the deprecated `version` and the
+  non-spec `mode` in `applyEdit`, and reports `-32602` for a missing `target`; Go returns
+  `-32009` for an unknown `symbol` and `-32008` for verify without a runtime; `handshake`
+  validates `protocolVersion` in all three runtimes; an unknown `understand` query is
+  `-32006` everywhere (an unresolvable target stays an empty `observed:false` result, §5.2);
+  unknown `observe` levels are `-32006` everywhere.
+- **Fixtures v7**: patch (applied, not-found, not-unique), getSource window and `ifVersion`,
+  unknown symbol, delete/rename validation, unknown mode, observe unknown level, verify
+  missing target and unavailable sandbox, handshake version rejection. All reports re-run;
+  `fixtureVersion` is **7** and `protocolVersion` **1.3.0** in every schema and runtime.
 
 ## v1.1.0 — 2026-11-26 (wire 1.2.0, fixtures v6)
 

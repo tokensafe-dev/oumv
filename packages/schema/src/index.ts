@@ -173,6 +173,11 @@ export const GetSourceParamsSchema = z.object({
   target: z.string().optional(),
   componentId: z.string().optional(),
   filePath: z.string(),
+  // v1.2 (wire 1.3.0): windowed reads and the dedup pointer. `version` stays the
+  // sha256 of the whole file, so OCC never depends on the window.
+  startLine: z.number().int().min(1).optional(),
+  endLine: z.number().int().min(1).optional(),
+  ifVersion: z.string().regex(/^sha256:[a-f0-9]{64}$/).optional(),
 });
 
 export const GetSourceResultSchema = z
@@ -180,7 +185,8 @@ export const GetSourceResultSchema = z
     path: z.string(),
     symbol: z.string().optional(),
     version: z.string().regex(/^sha256:[a-f0-9]{64}$/),
-    source: z.string(),
+    source: z.string().optional(),
+    unchanged: z.boolean().optional(),
     startLine: z.number().optional(),
     endLine: z.number().optional(),
     contract: z
@@ -196,11 +202,24 @@ export const GetSourceResultSchema = z
   })
   .passthrough();
 
+export const ApplyEditHunkSchema = z.object({
+  target: z.string().min(1),
+  replacement: z.string(),
+  startLine: z.number().int().min(1).optional(),
+  endLine: z.number().int().min(1).optional(),
+  replaceAll: z.boolean().optional(),
+});
+
 export const ApplyEditParamsSchema = z.object({
   path: z.string(),
   symbol: z.string().optional(),
-  replacement: z.string(),
-  expectedVersion: z.string(),
+  // `replacement`/`expectedVersion` are conditional on the mode (create forbids the
+  // version; delete/rename forbid the replacement), so the schema cannot require both.
+  replacement: z.string().optional(),
+  expectedVersion: z.string().optional(),
+  mode: z.enum(['replace', 'create', 'symbol', 'delete', 'rename', 'patch']).optional(),
+  renameTo: z.string().optional(),
+  hunks: z.array(ApplyEditHunkSchema).optional(),
 });
 
 export const ApplyEditResultSchema = z

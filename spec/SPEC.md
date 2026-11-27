@@ -1,8 +1,8 @@
-# The OUMV Protocol Specification (v1.5-canonical)
+# The OUMV Protocol Specification (v1.6-canonical)
 **The Universal Agent-Runtime Protocol (UARP)**
 
-- **Date**: 2026-11-22 (v1.0 draft) · 2026-11-26 (v1.0.0 frozen; document revision v1.4-canonical) · 2026-11-26 (v1.1.0; revision v1.5-canonical, wire `protocolVersion` 1.2.0)  
-- **Status**: Stable — v1.1.0  
+- **Date**: 2026-11-22 (v1.0 draft) · 2026-11-26 (v1.0.0 frozen; document revision v1.4-canonical) · 2026-11-26 (v1.1.0; revision v1.5-canonical, wire `protocolVersion` 1.2.0) · 2026-11-27 (v1.2.0; revision v1.6-canonical, wire `protocolVersion` 1.3.0)  
+- **Status**: Stable — v1.2.0  
 - **Author**: Oleg Savelev  
 - **Repository**: [github.com/tokensafe-dev/oumv](https://github.com/tokensafe-dev/oumv)
 
@@ -204,7 +204,9 @@ rather than guessed when the adapter has no calibrated tokenizer.
 `format` is a rendering hint: an adapter MAY return an additional `payload` string when
 `format` is `"yaml"` — the same information as `data`, rendered for token efficiency.
 `data` stays structured in every format, so an agent never has to parse YAML to act.
-`version` at L3 MUST be `"sha256:" + sha256(bytes of the returned source)`. An empty
+`version` at L3 MUST be `"sha256:" + sha256(bytes of the whole file)`, independent of the
+returned slice: it is the OCC token, so a windowed or symbol-scoped read still guards a
+whole-file mutation. `startLine`/`endLine` describe the bytes actually returned. An empty
 collection MUST be returned as `[]` with a `note`, never as an error.
 
 ### 4.2 UNDERSTAND (`oumv/understand`)
@@ -228,12 +230,20 @@ never observed an execution MUST NOT return a root cause.
 
 ### 4.3 MUTATE — source (`oumv/getSource`, `oumv/applyEdit`)
 
-`getSource`: request `{path, symbol?}` → `{path, symbol?, source, version, startLine, endLine}`.
+`getSource`: request `{path, symbol?, startLine?, endLine?, ifVersion?}` →
+`{path, symbol?, source?, unchanged?, version, startLine, endLine}`.
+`startLine`/`endLine` return a 1-based inclusive window (an `endLine` past EOF is clamped);
+the `version` is still the sha256 of the whole file, so OCC never depends on the window.
+`ifVersion` is the dedup pointer: when the file still has that version the adapter MUST
+answer `{path, version, unchanged: true}` with **no** `source`, instead of resending bytes
+the agent already has. A `symbol` that does not exist in the file is `-32009`; it is never
+answered with the whole file under a symbol label.
 
-`applyEdit`: request `{path, symbol?, replacement?, expectedVersion?, mode?: "replace"|"create"|"symbol"|"delete"|"rename", renameTo?}` → 
+`applyEdit`: request `{path, symbol?, replacement?, expectedVersion?, mode?: "replace"|"create"|"symbol"|"delete"|"rename"|"patch", renameTo?, hunks?}` → 
 ```json
 { "status": "APPLIED"|"CURRENT", "path": "src/api/orders.go", "symbol": "CreateOrder",
   "newPath": "src/api/orders_v2.go", "newVersion": "sha256:…", "created": true, "deleted": true,
+  "hunksApplied": 1,
   "syntaxCheck": { "status": "passed"|"skipped"|"failed", "tool": "go/parser", "error": "…" },
   "backupPath": "/…/.tokensafe/backups/…", "rollbackHint": "…" }
 ```
@@ -250,6 +260,17 @@ workspace jail:
   `expectedVersion` are mandatory; an unknown symbol is `-32009`. The syntax pre-flight
   runs on the resulting file, not on the fragment alone. This is the mode an agent uses to
   avoid re-emitting a whole file for a one-line change.
+* **`patch`** — splice exact snippets into an existing file. `hunks` is an array of
+  `{target, replacement, startLine?, endLine?, replaceAll?}`, applied **in order to the
+  evolving text** so a later hunk matches what the earlier ones produced. `target` is
+  matched literally (not as a regex); it MUST occur exactly once in the search range
+  unless `replaceAll: true` or `startLine`/`endLine` narrow it to one occurrence. A
+  `target` that occurs zero times is `-32009` (`data.reason="target_not_found"`); more
+  than once is `-32011` (`data.reason="target_not_unique"` with `data.count` and
+  `data.lines`). The first failing hunk aborts the whole request with **no bytes
+  written** — a patch is atomic per file. `expectedVersion` is mandatory and the syntax
+  pre-flight runs on the resulting file. This is the mode for a local fix: the agent
+  sends the changed lines, not the file it already observed.
 * **`delete`** — remove an existing file. `replacement` MUST be absent
   (`-32011`, `data.reason="replacement_forbidden"`), `expectedVersion` is mandatory, and
   the result carries `deleted: true`. The syntax check is `skipped`; the backup is optional.
@@ -270,8 +291,8 @@ Normative guards, in this order (first failure wins):
 | :--- | :--- | :--- |
 | 1 | workspace boundary / sensitive path (source and `renameTo`) | `-32003 SECURITY_VIOLATION` |
 | 2 | resource exists (`-32009`), or target must not exist for `create`/`rename` (`-32001`, `data.reason="file_exists"` / `"target_exists"`) | `-32009` / `-32001` |
-| 3 | syntax pre-flight of the resulting file (`replace`/`create`/`symbol`; `skipped` for `delete`/`rename`) | `-32002 SYNTAX_ERROR` |
-| 4 | `expectedVersion` rules: present for `replace`/`symbol`/`delete`/`rename`, absent for `create`; forbidden `replacement`/`renameTo` fields | `-32011 VALIDATION_FAILED` |
+| 3 | syntax pre-flight of the resulting file (`replace`/`create`/`symbol`/`patch`; `skipped` for `delete`/`rename`) | `-32002 SYNTAX_ERROR` |
+| 4 | `expectedVersion` rules: present for `replace`/`symbol`/`delete`/`rename`/`patch`, absent for `create`; forbidden `replacement`/`renameTo` fields; `symbol`/`renameTo`/`hunks` required by their mode | `-32011 VALIDATION_FAILED` |
 | 5 | `expectedVersion` matches current bytes | `-32001 CONFLICT_DETECTED` |
 | 6 | policy allows mutation | `-32007 PERMISSION_DENIED` |
 
@@ -279,7 +300,9 @@ Normative guards, in this order (first failure wins):
 it is never accepted. Backups are the previous bytes; the path is reported in `backupPath`
 when the runtime keeps one (`create` has no previous bytes, so no backup). A `symbol` edit
 without `symbol` is `-32011` (`data.reason="symbol_required"`); a `rename` without
-`renameTo` is `-32011` (`data.reason="rename_to_required"`).
+`renameTo` is `-32011` (`data.reason="rename_to_required"`); a `patch` without `hunks` is
+`-32011` (`data.reason="hunks_required"`). A hunk whose `endLine` is past EOF is clamped,
+not rejected, and a hunk that changes nothing is reported in `hunksApplied` all the same.
 
 ### 4.4 VERIFY (`oumv/verify`)
 
@@ -366,10 +389,10 @@ Aliases are accepted for one minor version after v1.0 and then removed.
 | :--- | :--- |
 | `handshake` | invalid params `-32602`; unsupported protocol version `-32006` |
 | `observe` | unknown level `-32006`; unresolvable target `-32009`; missing target for L2/L3 `-32602` |
-| `getSource` | boundary `-32003`; missing file `-32009`; policy `-32007` |
-| `applyEdit` | §4.3 guard order |
+| `getSource` | boundary `-32003`; missing file or unknown `symbol` `-32009`; policy `-32007` |
+| `applyEdit` | §4.3 guard order; a `patch` hunk matching 0 times `-32009` (`target_not_found`), more than once `-32011` (`target_not_unique`) |
 | `verify` | missing target `-32602`; sandbox unavailable `-32008`; unknown action `-32005` |
-| `understand` | unknown query `-32006`; unresolvable target `-32009` |
+| `understand` | unknown query `-32006`; an unresolvable target returns an empty result with `observed: false` and a `note` (§4.2), because route/model registration is adapter-dependent and "no evidence yet" is a legitimate answer |
 | any | malformed body `-32700`; unknown method `-32601`; store failure `-32603` |
 
 ### 5.3 `error.data`
@@ -377,8 +400,8 @@ Aliases are accepted for one minor version after v1.0 and then removed.
 Error objects MAY carry `data`; when present it is an object with:
 `{ "reason": snake_case_string, ...details }`. `reason` is the machine-readable cause
 (`"path_traversal"`, `"expected_version_required"`, `"session_expired"`,
-`"unsupported_level"`, `"syntax_error"`, …). Human-readable details belong in `message`,
-never in `reason`.
+`"unsupported_level"`, `"syntax_error"`, `"target_not_found"`, `"target_not_unique"`,
+`"hunks_required"`, …). Human-readable details belong in `message`, never in `reason`.
 
 ---
 
@@ -582,6 +605,11 @@ Reports are committed per adapter (e.g. `tokensafe-backend/certification/*.json`
   and observe `limit`/`cursor` pagination. All are additive: a v1.0 adapter stays valid for
   the capabilities it declares, and an adapter that does not implement a mode MUST answer
   `-32006` for it — never silently fall back to `replace`.
+* **v1.2 (wire 1.3.0)** adds the `applyEdit` mode `patch` (hunks spliced under OCC) and the
+  `getSource` window/dedup parameters `startLine`/`endLine`/`ifVersion`. Both are additive:
+  a v1.1 adapter stays valid for its declared capabilities and answers `-32006` for
+  `mode=patch`. This release also states the OCC rule the runtimes already implemented —
+  `version` is the hash of the whole file even when the read returned a slice.
 
 ---
 
@@ -629,6 +657,8 @@ provenance is inferred rather than observed.
 ---
 
 ## Changelog
+
+- **v1.2.0 release (2026-11-27)**: wire `protocolVersion` **1.3.0**, document revision `v1.6-canonical`, `fixtureVersion` **7**. New: `applyEdit mode=patch` — `hunks: [{target, replacement, startLine?, endLine?, replaceAll?}]` spliced in order under OCC, literal match, exactly-one-unless-scoped, first failure aborting with no bytes written (`-32009 target_not_found` / `-32011 target_not_unique`), `hunksApplied` in the result. `getSource` gains `startLine`/`endLine` windows and the `ifVersion` dedup pointer (`{unchanged: true}` with no source). Clarified: `version` is the sha256 of the whole file even when the read returns a slice, so OCC never depends on the window. This release also aligns the shipped runtimes with §4/§5 (Python observe L0/L1/L4 shapes and deprecated `version`/`mode` fields, Go `getSource` unknown-symbol and `verify` unavailable-sandbox codes, `protocolVersion` validation on handshake, `understand` unresolvable target) and adds conformance cases for those conditions. Certification: all six backend adapters + React re-run on fixtures v7.
 
 - **v1.1.0 release (2026-11-26)**: wire `protocolVersion` **1.2.0**, document revision `v1.5-canonical`, `fixtureVersion` **6** (25 cases). New: `applyEdit` modes `symbol` (replace one function/method/class without re-emitting the file), `delete` and `rename` (jail-checked, OCC, `renameTo`); `verify.steps` for ordered multi-request scenarios that share state (the duplicate-idempotency repro); observe `limit`/`cursor` with `hasMore`/`nextCursor` for L1/L4. New §12 security/rate-limit policy and the informative §13 cross-stack graph. Certification: all six backend adapters + React re-run on fixtures v6.
 
