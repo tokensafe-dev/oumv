@@ -174,7 +174,7 @@ describe('push cases (spec §2.3/§2.4)', () => {
       // against the same workspace does not fail with CONFLICT_DETECTED.
       const recording = {
         name: 'http',
-        request: async (request: any) => {
+        request: async (request: any): Promise<import('../src/fixtures.js').JsonRpcResponse> => {
           calls.push({ method: request.method, mode: request.params?.mode });
           if (request.method === 'oumv/getSource') {
             return {
@@ -187,8 +187,8 @@ describe('push cases (spec §2.3/§2.4)', () => {
         },
       };
       const spec: FixtureSpec = {
-        protocolVersion: '1.3.0',
-        fixtureVersion: 8,
+        protocolVersion: '1.4.0',
+        fixtureVersion: 9,
         cases: [],
         pushCases: [pushCase({ replay: undefined })],
       };
