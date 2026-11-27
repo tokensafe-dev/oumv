@@ -1,8 +1,8 @@
-# The OUMV Protocol Specification (v1.8-canonical)
+# The OUMV Protocol Specification (v1.9-canonical)
 **The Universal Agent-Runtime Protocol (UARP)**
 
-- **Date**: 2026-11-22 (v1.0 draft) · 2026-11-26 (v1.0.0 frozen; document revision v1.4-canonical) · 2026-11-26 (v1.1.0; revision v1.5-canonical, wire `protocolVersion` 1.2.0) · 2026-11-27 (v1.2.0; revision v1.6-canonical, wire `protocolVersion` 1.3.0) · 2026-11-27 (v1.3.0; revision v1.7-canonical, wire `protocolVersion` 1.4.0) · 2026-11-27 (v1.4.0; revision v1.8-canonical, wire `protocolVersion` 1.5.0)  
-- **Status**: Stable — v1.4.0  
+- **Date**: 2026-11-22 (v1.0 draft) · 2026-11-26 (v1.0.0 frozen; document revision v1.4-canonical) · 2026-11-26 (v1.1.0; revision v1.5-canonical, wire `protocolVersion` 1.2.0) · 2026-11-27 (v1.2.0; revision v1.6-canonical, wire `protocolVersion` 1.3.0) · 2026-11-27 (v1.3.0; revision v1.7-canonical, wire `protocolVersion` 1.4.0) · 2026-11-27 (v1.4.0; revision v1.8-canonical, wire `protocolVersion` 1.5.0) · 2026-11-27 (v1.5.0; revision v1.9-canonical, wire `protocolVersion` 1.6.0)  
+- **Status**: Stable — v1.5.0  
 - **Author**: Oleg Savelev  
 - **Repository**: [github.com/tokensafe-dev/oumv](https://github.com/tokensafe-dev/oumv)
 
@@ -50,11 +50,18 @@ Every JSON-RPC message conforms to the standard envelope:
 }
 ```
 
+* **Request correlation (v1.5.0, wire 1.6.0).** A client MAY send
+  `params.requestId` (opaque string) on any method. A runtime that accepts it MUST
+  echo the value back in the response/error object as `requestId` (top level, next to
+  `result`/`error`), so an agent can correlate a late reply with the request it
+  cancelled or retried. Runtimes MUST NOT reject an unknown `requestId`.
+
 Success Response:
 ```json
 {
   "jsonrpc": "2.0",
   "id": "req-101",
+  "requestId": "op-42",
   "result": { ... }
 }
 ```
@@ -88,9 +95,10 @@ Error Response:
 ### 2.3 SSE binding (optional, MUST be advertised)
 
 * Endpoint: `GET <base>/__oumv/events` with `Accept: text/event-stream`.
-* Events: `trace` (`oumv/observe` L4 entries), `state` (resource changed), `heartbeat`
-  (every 15 s). Each event has an `id:`; reconnecting with `Last-Event-ID` replays from
-  that id. Server MAY filter by `?target=` / `?types=`.
+* Events: `trace` (`oumv/observe` L4 entries), `state` (resource changed),
+  `diagnostic` (build/test/tool diagnostics, §2.6), `heartbeat` (every 15 s). Each
+  event has an `id:`; reconnecting with `Last-Event-ID` replays from that id. Server
+  MAY filter by `?target=` / `?types=`.
 * SSE is one-way: requests still go over HTTP (§2.2).
 
 ### 2.4 WebSocket binding (optional, MUST be advertised)
@@ -98,7 +106,8 @@ Error Response:
 * Upgrade on `<base>/__oumv/rpc`; frames are JSON-RPC 2.0 objects (text frames), one
   message per frame; batch arrays allowed.
 * Server-initiated notifications use `"method": "notifications/oumv.trace"` /
-  `"notifications/oumv.state"` with `params.sessionId`.
+  `"notifications/oumv.state"` / `"notifications/oumv.diagnostic"` with
+  `params.sessionId`.
 * After `oumv/handshake` the connection is bound to that `sessionId`; closing the socket
   ends the session.
 
@@ -106,6 +115,30 @@ Error Response:
 
 Newline-delimited JSON-RPC, one object per line, stdout only for responses, diagnostics
 to stderr. Used by CLI/MCP bridges; no batching requirement.
+
+### 2.6 Diagnostics events (v1.5.0, wire 1.6.0)
+
+A runtime that compiles, transforms or hot-reloads code SHOULD publish structured
+diagnostics on the push transports (§2.3 event type `diagnostic`, §2.4 notification
+`notifications/oumv.diagnostic`) instead of leaving the agent to re-run a blind
+edit → run → parse loop. A `diagnostic` event payload is:
+
+```json
+{
+  "severity": "error" | "warning" | "info",
+  "source": "build" | "test" | "hmr" | "tool",
+  "file": "src/App.tsx",
+  "line": 12,
+  "message": "Cannot find name 'orders'.",
+  "tool": "vite",
+  "ts": 1764249600000
+}
+```
+
+* `file`/`line`/`tool` are optional; `severity`, `source` and `message` are required.
+* Advertising `capabilities.events.diagnostic: true` commits a runtime to forwarding
+  build/HMR failures it already observes; it does NOT require running a compiler.
+* Diagnostics are observations, not verification: they never substitute `oumv/verify`.
 
 ---
 
@@ -131,6 +164,33 @@ A session begins with `oumv/handshake` and ends with `oumv/disconnect` or a TTL 
   granted `ttlSeconds` is what a client may rely on, not the requested value: a client
   that needs a short session MUST verify the echo (the `expired-session-is-rejected`
   case does exactly that before waiting).
+* **Request correlation & timeouts (v1.5.0, wire 1.6.0).** `params.requestId` (§2.1)
+  correlates replies with requests. Any method MAY carry `params.timeoutMs` (integer
+  > 0); a runtime that cannot finish within the budget MUST answer
+  `-32008 RUNTIME_UNAVAILABLE` with `data.reason = "timeout"` (and echo `requestId`)
+  rather than leave the request open indefinitely — a partial write MUST be rolled
+  back per §4.3 before answering. Without `timeoutMs` the runtime applies its own
+  default; no transport may block a batch beyond `maxBodyBytes`-scale processing time.
+* **Cancellation (v1.5.0, wire 1.6.0).** A runtime that advertises
+  `capabilities.sessions.cancel` accepts `oumv/cancel`:
+
+  Request: `{ "requestId": string }` (or `{ "target": "last" }` for the most recent
+  in-flight request on this session) →
+  ```json
+  { "cancelled": true, "requestId": "op-42" }
+  ```
+  A request that already finished answers `{ "cancelled": false, "finished": true }`.
+  Cancellation is cooperative: a mutating request cancelled mid-write still honours
+  the §4.3 atomicity rules (rollback what was written, then answer the original
+  request with `-32008` `reason="cancelled"`). An unknown `requestId` is
+  `{ "cancelled": false }` — cancellation is best-effort by design, never an error.
+* **Idempotency (v1.5.0, wire 1.6.0).** `oumv/applyEdit` and `oumv/previewEdit` MAY
+  carry `params.idempotencyKey` (opaque string). A runtime that accepts it keeps a
+  per-session map key → final result: a retry with the same key returns the FIRST
+  result verbatim (same `status`, same `newVersion`) instead of re-applying the edit
+  or answering `-32001` because the bytes already changed. Keys MUST be scoped to the
+  session and MAY be pruned after the TTL. Without a key, retries keep the plain OCC
+  semantics.
 
 ### 3.1 Handshake (`oumv/handshake`)
 
@@ -139,15 +199,17 @@ Upon establishing a connection, the agent and runtime exchange capabilities:
 **Client Request:**
 ```json
 {
-  "protocolVersion": "1.5.0",
+  "protocolVersion": "1.6.0",
   "clientInfo": { "name": "Antigravity", "version": "2.0.0" },
   "supportedTransports": ["http", "memory"],
   "sessionTtlSeconds": 900,
   "requestedCapabilities": {
     "observe": { "levels": ["L0", "L1", "L2", "L3", "L4"], "formats": ["yaml", "json"] },
     "understand": { "causality": true, "signalsGraph": true },
-    "mutate": { "occ": true, "syntaxGuard": true, "multiFile": true },
-    "verify": { "multiMetric": true, "surfaceDiff": true }
+    "mutate": { "occ": true, "syntaxGuard": true, "multiFile": true, "preview": true },
+    "verify": { "multiMetric": true, "surfaceDiff": true, "build": true },
+    "index": { "symbols": true },
+    "observeQuery": { "readOnly": true }
   }
 }
 ```
@@ -155,7 +217,7 @@ Upon establishing a connection, the agent and runtime exchange capabilities:
 **Server Response:**
 ```json
 {
-  "protocolVersion": "1.5.0",
+  "protocolVersion": "1.6.0",
   "profile": "frontend",
   "sessionId": "sess-4f2a…",
   "ttlSeconds": 900,
@@ -163,9 +225,12 @@ Upon establishing a connection, the agent and runtime exchange capabilities:
   "capabilities": {
     "observe": { "levels": ["L0", "L1", "L2", "L3", "L4"], "formats": ["yaml", "json"] },
     "understand": { "causality": true, "signalsGraph": true },
-    "mutate": { "occ": true, "syntaxGuard": true, "multiFile": true },
-    "verify": { "multiMetric": true, "surfaceDiff": true },
-    "sessions": { "ttlSeconds": true },
+    "mutate": { "occ": true, "syntaxGuard": true, "multiFile": true, "preview": true },
+    "verify": { "multiMetric": true, "surfaceDiff": true, "build": true },
+    "index": { "symbols": true },
+    "observeQuery": { "readOnly": true },
+    "events": { "diagnostic": true },
+    "sessions": { "ttlSeconds": true, "cancel": true },
     "transports": ["http", "sse", "ws"]
   }
 }
@@ -183,7 +248,7 @@ Upon establishing a connection, the agent and runtime exchange capabilities:
 ## 4. The Four Pillars
 
 All payloads below are **normative**. Field names are exact; unknown fields are allowed
-but MUST be ignored. A runtime MUST NOT emit the deprecated aliases listed in §4.6.
+but MUST be ignored. A runtime MUST NOT emit the deprecated aliases listed in §4.7.
 
 ### 4.1 OBSERVE (`oumv/observe`)
 
@@ -356,7 +421,39 @@ without `symbol` is `-32011` (`data.reason="symbol_required"`); a `rename` witho
 `-32011` (`data.reason="hunks_required"`). A hunk whose `endLine` is past EOF is clamped,
 not rejected, and a hunk that changes nothing is reported in `hunksApplied` all the same.
 
-### 4.4 VERIFY (`oumv/verify`)
+### 4.4 Preview (`oumv/previewEdit`) — v1.5.0, wire 1.6.0
+
+A dry-run of `applyEdit`: identical params (single edit or the batch `edits` envelope,
+plus the optional `idempotencyKey`/`timeoutMs`), identical guard order — boundary →
+existence → syntax pre-flight → `expectedVersion` rules → OCC match → policy — but
+**no bytes are written**. The response is what `applyEdit` WOULD answer:
+
+```json
+{
+  "status": "PREVIEW",
+  "previews": [
+    { "path": "src/a.py", "mode": "replace", "unchanged": false,
+      "currentVersion": "sha256:…", "newVersion": "sha256:…",
+      "diff": "--- a/src/a.py\n+++ b/src/a.py\n@@ -1 +1 @@\n-old\n+new",
+      "syntaxCheck": { "status": "passed", "tool": "python-ast" },
+      "wouldApply": true }
+  ],
+  "applied": false
+}
+```
+
+* `newVersion` is the sha256 of the would-be bytes; `diff` is a unified diff per file
+  (omitted when `unchanged` is true). `wouldApply: false` is a valid, honest result for
+  a no-op edit — the guard verdict travelled, nothing else.
+* A preview MUST NOT consume the batch's `expectedVersion` protection: it neither
+  mutates the workspace nor invalidates another agent's OCC token.
+* A runtime that does not implement the method answers `-32601` like any unknown
+  method; a runtime that advertises `capabilities.mutate.preview` MUST implement the
+  full guard order, not a diff guess. Offline gateways MAY preview whole-file
+  replacements locally but MUST label such results with their own provenance (e.g.
+  `mode: "OFFLINE_FULL_FILE_PREVIEW"`) rather than implying the runtime verified them.
+
+### 4.5 VERIFY (`oumv/verify`)
 
 Request: `{target, method?, action?, payload?, headers?, steps?, sandbox?}` → 
 ```json
@@ -399,7 +496,7 @@ step was dispatched (a `4xx` inside a scenario is an observation, not a protocol
 A runtime that cannot share state across steps MUST reject `steps` with `-32006`
 (`data.reason="multi_step_unsupported"`) instead of silently running them isolated.
 
-### 4.5 Target grammar
+### 4.6 Target grammar
 
 `target` strings use exactly one of:
 * `"METHOD /path"` — backend endpoint (e.g. `"POST /api/orders"`);
@@ -409,7 +506,7 @@ A runtime that cannot share state across steps MUST reject `steps` with `-32006`
 
 `componentId` is an accepted alias for `component:<id>`; runtimes MUST NOT require both.
 
-### 4.6 Deprecated aliases (accepted on input, never emitted)
+### 4.7 Deprecated aliases (accepted on input, never emitted)
 
 | Canonical | Deprecated alias |
 | :--- | :--- |
@@ -463,7 +560,12 @@ add more but MUST keep the code's documented meaning.
 | `observe` | unknown level `-32006`; unresolvable target `-32009`; missing target for L2/L3 `-32602` |
 | `getSource` | boundary `-32003`; missing file or unknown `symbol` `-32009`; policy `-32007` |
 | `applyEdit` | §4.3 guard order; a `patch` hunk matching 0 times `-32009` (`target_not_found`), more than once `-32011` (`target_not_unique`) |
+| `previewEdit` | §4.4 guard order, no write; never `-32001` from its own run (no bytes changed) |
 | `verify` | missing target `-32602`; sandbox unavailable `-32008`; unknown action `-32005` |
+| `build` | command failed to start or timed out `-32008` (`reason="timeout"`); refusal outside declared scope `-32003` |
+| `index` | empty/missing `query` `-32602` |
+| `query` | non-read-only statement `-32003` (`reason="query_forbidden"`); no DB layer wired `-32006` |
+| `cancel` | best-effort — an unknown `requestId` answers `{cancelled: false}`, never an error |
 | `understand` | unknown query `-32006`; an unresolvable target returns an empty result with `observed: false` and a `note` (§4.2), because route/model registration is adapter-dependent and "no evidence yet" is a legitimate answer |
 | any | malformed body `-32700`; unknown method `-32601`; store failure `-32603` |
 
@@ -671,7 +773,7 @@ Reports are committed per adapter (e.g. `tokensafe-backend/certification/*.json`
 * **Minimum supported version.** A runtime MUST serve its own version and every earlier
   MINOR of the same MAJOR; a client sending a higher MINOR MUST tolerate additive
   fields it does not know. Dropping support for a MINOR is a MAJOR change.
-* Deprecated fields (§4.6) remain accepted for one MINOR after their replacement ships,
+* Deprecated fields (§4.7) remain accepted for one MINOR after their replacement ships,
   are announced in the CHANGELOG, and are removed at the next MAJOR.
 * `fixtures/conformance-cases.json` carries `fixtureVersion`; a certification report is
   only comparable with the same `fixtureVersion`.
@@ -686,6 +788,19 @@ Reports are committed per adapter (e.g. `tokensafe-backend/certification/*.json`
   a v1.1 adapter stays valid for its declared capabilities and answers `-32006` for
   `mode=patch`. This release also states the OCC rule the runtimes already implemented —
   `version` is the hash of the whole file even when the read returned a slice.
+* **Compatibility matrix (v1.5.0, wire 1.6.0).** [`compatibility.json`](../compatibility.json)
+  is the generated one-table answer to "which spec revision, wire version, fixture set and
+  adapter release work together": it pins, per released revision, the document revision,
+  wire `protocolVersion`, `fixtureVersion`, the published package versions that shipped it
+  and the certification reports that prove it. The generator script writes it at release
+  time and CI checks that the checked-in file matches the repo's current versions. When
+  this spec, the fixtures and a runtime disagree, `compatibility.json` is the arbiter of
+  what an adopter can rely on.
+* **Deprecation notice (v1.5.0, wire 1.6.0).** A runtime that receives a request using a
+  field or method listed as deprecated SHOULD include `data.deprecated: true` (plus
+  `data.since`/`data.useInstead` when known) in its successful response — the answer stays
+  correct, the agent learns the deadline. Runtimes MUST NOT fail a deprecated-but-accepted
+  call.
 
 ---
 
@@ -709,6 +824,17 @@ baseline rules:
   throttled call answers `-32012 RATE_LIMITED` (or HTTP `429` before dispatch) with a
   `Retry-After` header or `data.retryAfterMs`. Limits are advisory for local development
   and MUST NOT be the only protection for a non-loopback binding.
+* **Non-loopback bindings (v1.5.0, wire 1.6.0).** A runtime bound beyond the loopback
+  interface is a remote attack surface, so: the session token (§2.2) is REQUIRED —
+  loopback's MAY-stay-empty does not apply; the transport MUST be TLS or a private
+  tunnel the operator controls (plain HTTP beyond loopback is a conformance failure);
+  discovery MUST be by explicit URL (the operator's configuration, an env var, or a
+  user-entered descriptor) — the local zero-footprint registry (`~/.tokensafe/runtimes/`,
+  §9.2) is a loopback-only mechanism and MUST NOT be consulted for, or written by,
+  remote bindings; and §14 extensions stay read-only unless the workspace policy
+  explicitly enables them. The protocol cannot distinguish production from staging by
+  itself — an agent working against a non-loopback runtime MUST treat it as someone's
+  real environment.
 * **No execution beyond the declared scope.** `verify` runs the application's own handler
   in-process; it MUST NOT spawn shells, reach the network outside the handler, or persist
   state it did not create. `scope.notExecuted` states the boundary.
@@ -732,7 +858,95 @@ provenance is inferred rather than observed.
 
 ---
 
+## 14. Optional Extensions: Index, Query & Build (informative)
+
+Three extensions follow the `oumv/graph` pattern (§13): a runtime that does not
+implement them answers `-32601` like any unknown method, no certification claim is
+made, and an adopting agent MUST fall back to its own tools instead of assuming a
+static runtime can serve them. Each advertises a capability (`index.symbols`,
+`observe.query`, `verify.build`) in the handshake when implemented.
+
+### 14.1 `oumv/index` — repo-wide symbol search
+
+The largest remaining agent cost is not reading but *finding* what to read; grep is
+the fallback this method removes.
+
+Request: `{ "query": string, "kinds"?: string[], "scope"?: string, "limit"?: integer }` →
+```json
+{
+  "matches": [
+    { "resourceId": "function:create_order@orders.py", "name": "create_order",
+      "kind": "function", "file": "orders.py", "lines": [12, 20],
+      "signature": "def create_order(payload: dict) -> dict", "refs": 2,
+      "match": "exact" }
+  ],
+  "truncated": false
+}
+```
+
+* Ranking MUST prefer, in order: exact name, prefix, qualified-suffix
+  (`Type.member`), substring. `refs` (reverse-edge count) breaks ties.
+* `kinds` filters by symbol kind (`function`, `class`, `method`, `endpoint`, …);
+  `scope` filters by path prefix. An empty query is `-32602`.
+* `match` states which ranking tier answered, so an agent can weigh a substring hit.
+* A static runtime serves this from its AST; a live runtime MAY union runtime-known
+  symbols (registered routes, mounted components) and MUST mark such entries with
+  `evidence` provenance.
+
+### 14.2 `observe.query` — read-only data access
+
+Answering "what is actually in the table/session" without handing the agent a shell.
+
+Request: `{ "sql": string, "params"?: unknown[], "limit"?: integer }` →
+```json
+{ "columns": ["id", "status"], "rows": [[1, "open"]], "rowCount": 1, "truncated": false }
+```
+
+* **Read-only, enforced by the runtime**: only `SELECT`/`EXPLAIN`/read-only pragma
+  statements are accepted; anything else is `-32003 SECURITY_VIOLATION` with
+  `data.reason = "query_forbidden"`. A runtime MUST NOT rely on the client to pass
+  only SELECTs (statement allow-listing or a read-only connection/transaction both
+  qualify; the mechanism MAY be stated in the capability).
+* `limit` (default ≤ 100) caps rows; `truncated` states the cut. Results are subject
+  to the §12 redaction rules like any other payload.
+* Gated by an explicit opt-in capability (`observe.query`); a workspace policy may
+  disable it like mutation (`permissions.query: false` → `-32007`).
+* A runtime without a wired database layer answers `-32006` — never an empty result
+  that looks like "the table is empty".
+
+### 14.3 `oumv/build` — run a build/test command, return diagnostics
+
+The edit → verify loop needs the compiler's verdict, not a guess.
+
+Request: `{ "command"?: string, "target"?: string, "timeoutMs"?: integer }` →
+```json
+{
+  "status": "passed" | "failed" | "skipped",
+  "command": "go build ./...",
+  "diagnostics": [
+    { "severity": "error", "source": "build", "file": "internal/api/orders.go",
+      "line": 41, "message": "undefined: orders", "tool": "go build" }
+  ],
+  "durationMs": 1840
+}
+```
+
+* Without `command`, the runtime uses its configured default (e.g. the adapter's
+  verify command); `target` narrows the scope the same way `oumv/verify` does.
+* `timeoutMs` (§3) bounds the run; on expiry the process is stopped and the answer is
+  `status: "failed"` with a `reason="timeout"` diagnostic — never a hanging request.
+* `status: "skipped"` is honest only with a stated reason (no tool configured, policy
+  denied); a runtime MUST NOT report `skipped` in a way that reads as success.
+* The command runs in the workspace root with the §12 boundaries: no network reach the
+  application itself would not have, no persistence beyond what the command itself
+  creates, output truncated to `maxBodyBytes` with `truncated` set.
+* Diagnostics emitted during the run SHOULD also flow on the push transports (§2.6).
+
+---
+
 ## Changelog
+
+- **v1.5.0 release (2026-11-27)**: wire `protocolVersion` **1.6.0**, document revision `v1.9-canonical`, `fixtureVersion` **11**. New methods: `oumv/previewEdit` (§4.4 — applyEdit's guard order as a dry-run with per-file `wouldApply`/`newVersion`/`diff`, never writing), `oumv/cancel` (§3 — best-effort cooperative cancellation by `requestId` or `target:"last"`), `oumv/index` (§14.1 — repo-wide symbol search, ranked exact > prefix > qualified-suffix > substring with reverse-edge counts), `observe.query` (§14.2 — runtime-enforced read-only SQL access, opt-in capability), `oumv/build` (§14.3 — run the build/test command and return structured `diagnostics`). Envelope gains `params.requestId` (echoed in replies; §2.1) and per-method `timeoutMs`; mutations accept `idempotencyKey` with first-result-wins replay (§3). Push transports gain the `diagnostic` event / `notifications/oumv.diagnostic` (§2.6) with `capabilities.events.diagnostic`. Error model: `-32010` activated as `STALE_RESOURCE_VERSION`, new `-32012 RATE_LIMITED`, and the whole code set is now generated from the canonical registry `schemas/errors.json` (errors.ts generated, spec/README tables checked 1:1 by the conformance suite). §11 adds `compatibility.json` (generated cross-repo compat matrix) and a deprecation-notice field; §12 formalizes non-loopback bindings (token required, TLS/tunnel, explicit-URL discovery, registry stays loopback-only). Handshake capabilities grow `mutate.preview`, `verify.build`, `index.symbols`, `observeQuery.readOnly`, `events.diagnostic`, `sessions.cancel`.
 
 - **v1.4.0 release (2026-11-27)**: wire `protocolVersion` **1.5.0**, document revision `v1.8-canonical`, `fixtureVersion` **10**. New: `applyEdit` accepts a batch envelope — `edits: [{path, mode?, expectedVersion?, replacement?, hunks?}]` with 1..16 items, modes `replace|create|patch`, every item validated and syntax-checked before the first write, a write failure restoring the files already written (`-32603` + `data.rolledBack: true`), item-scoped errors carrying `data.editIndex`/`data.path`, and a per-item result `{status: "APPLIED", edits: [{path, newVersion, created?, hunksApplied?}]}`; advertised as `capabilities.mutate.multiFile` and proven by `apply-edit-batch-applies-all` and `apply-edit-batch-is-atomic`. Handshake gains `sessionTtlSeconds` (1..86400, clamped, echoed as the granted `ttlSeconds`) with `capabilities.sessions.ttlSeconds`, and the new `sessionCases` family proves an expired id answers `-32011` with `data.reason="session_expired"`. Certification: all six backend adapters, the Go/Python live servers and the React/Vue controllers re-run on fixtures v10.
 
