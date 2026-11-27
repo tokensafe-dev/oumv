@@ -95,6 +95,36 @@ const ws = oumv.attachWebSocket();
 `oumv/verify` dispatches over loopback HTTP against the live handler, and `applyEdit`
 writes a backup under `.tokensafe/backups/` before an OCC-checked write.
 
+### Java (Spring Boot, JDK-only sidecar)
+
+No build integration and no Spring jars: one source file scans the project and serves
+the wire on its own port.
+
+```bash
+java tokensafe-backend/java/src/dev/tokensafe/oumv/OumvSpring.java \
+  --root . --port 8787 --token "$OUMV_TOKEN"     # POST /__oumv/rpc
+java tokensafe-backend/java/src/dev/tokensafe/oumv/OumvSpring.java \
+  --root . --stdio                               # §2.5 binding
+```
+
+Route discovery reads `@RestController`/`@RequestMapping` and the method-level mapping
+annotations, including `{id:regex}` templates; edits are OCC-checked with guard order
+`-32003 → -32009 → -32002 → -32011 → -32001`; `verify` runs a configured compile/test
+command (`--verify-cmd`, default `javac {file}`) and says in `scope.notExecuted` that no
+runtime dispatch happened. Level 2, 32/33: L4 traces need a live app.
+
+### PHP (Laravel / Symfony, dependency-free sidecar)
+
+```bash
+php tokensafe-backend/php/bin/oumv-php --root . --stdio
+php -S 127.0.0.1:8787 tokensafe-backend/php/bin/oumv-php --root .   # POST /__oumv/rpc
+```
+
+Laravel `Route::` calls (groups, `controller` groups, `apiResource`/`resource`) and
+Symfony `#[Route]` attributes resolve to `Class#method` with `token_get_all()` line
+ranges; syntax pre-flight is `php -l` on a temp copy, so a broken edit is `-32002` and
+never touches disk. Level 2, 32/33 for the same reason.
+
 ### TypeScript (frontend, Vite)
 
 ```ts
@@ -202,7 +232,15 @@ Two rules that keep reports trustworthy:
 | `backend/fastapi` | backend | HTTP, SSE, WS, stdio | 3 | `tokensafe-backend/certification/python-fastapi.json` |
 | `backend/express` | backend | HTTP, batch, SSE, WS, stdio | 3 | `tokensafe-backend/certification/node-express.json` |
 | `backend/fastify` | backend | HTTP, batch, SSE, WS, stdio | 3 | `tokensafe-backend/certification/node-fastify.json` |
+| `backend/java-spring` | backend | HTTP, stdio | **2** | `tokensafe-backend/certification/java-spring.json` |
+| `backend/php-laravel` | backend | HTTP, stdio | **2** | `tokensafe-backend/certification/php-laravel.json` |
 | `frontend/react` | frontend | HTTP, batch, SSE, WS | **3 with a browser tab**, 1 offline | `agent-dom/certification/react-vite-browser.json` (L3), `react-vite.json` (L1 offline) |
+| `frontend/vue` | frontend | HTTP, batch, SSE, WS | **3 with a browser tab** | `agent-dom/certification/vue-vite-browser.json` (L3) |
+
+The two source-level adapters (`java-spring`, `php-laravel`) scan route declarations, apply
+OCC-checked edits and run a real verify command, but they do not boot the framework, so they
+record no live request traces: `observe-l4-returns-recorded-traces` fails and Level 3 is not
+claimed. Their reports name that single gap.
 
 The stdio claim is backed by the same fixtures run over §2.5:
 `tokensafe-backend/certification/transports/node-stdio.json` and
@@ -213,7 +251,23 @@ Django/Flask, Next and Angular adapters follow.
 
 ---
 
-## 6. Versioning
+## 6. Open conformance gaps
+
+These are known holes in the contract's evidence, not in any one adapter. They are
+listed so a third party can see what a certificate does **not** prove today.
+
+| Gap | What is missing | Why it is not a runtime bug |
+| :--- | :--- | :--- |
+| SSE (§2.3) and WebSocket (§2.4) have no fixtures | A runtime can advertise both and pass the whole suite, because every case is a request/response pair over the selected transport. `pkg/transport/streams_test.go` and Python's `tests/test_streams.py` prove the bindings, but no report does. | The fixture format needs push cases (`expectEvents`, `Last-Event-ID` replay) and a transport matrix in `oumv-certify`; adding cases without that would certify the HTTP path under an SSE label. |
+| No multi-file atomic `applyEdit` | §8 says a mutation is atomic, but `ApplyEditParams` is single-file. A cross-file change is several calls with no all-or-nothing rollback. | This is a wire addition (a transaction envelope), so it needs a `protocolVersion` minor, fixtures, and re-certification of every adapter — a coordinated release, not a runtime patch. |
+| Session expiry and auth rejection are not fixtures | `unknown-session-is-rejected` proves an unknown id fails; nothing proves an expired one fails, or that a missing token answers `401`/`-32007`. | Expiry needs an injectable clock (or a TTL of seconds) and auth needs per-case headers in the fixture schema; both are test-harness features, not adapter behaviour. |
+
+Fix them in that order: transport cases first (they unblock SSE/WS claims), then the
+transaction envelope, then auth/expiry harness hooks.
+
+---
+
+## 7. Versioning
 
 * The wire contract is versioned by `protocolVersion` (`1.1.0` today). Adapters
   answer with the version they implement; agents negotiate from the handshake.

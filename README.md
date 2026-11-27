@@ -9,7 +9,7 @@
 
 > **OUMV (Observe, Understand, Mutate, Verify) is the open, transport-agnostic standard that enables autonomous AI coding agents to inspect, reason about, safely edit, and verify software systems (user interfaces, backend services, APIs) with zero context waste.**
 >
-> With the **OUMV Retrofit Architecture**, any existing application (React, Node.js/Express/Fastify, Go, Python/FastAPI; Vue is planned) can adopt OUMV progressively without rewriting its framework.
+> With the **OUMV Retrofit Architecture**, any existing application (React, Vue, Node.js/Express/Fastify, Go, Python/FastAPI, Spring Boot, Laravel/Symfony) can adopt OUMV progressively without rewriting its framework.
 
 ---
 
@@ -55,11 +55,13 @@ instead of inflating it (spec §10.1).
 
 | Profile | Stack | Adapter entry point | Certification |
 | :--- | :--- | :--- | :--- |
-| Frontend | React 18/19 + Vite | `tokensafe-ui/vite` (zero-footprint bridge) | Level 3 (in-process conformance) |
-| Frontend | Vue 3 + Vite | — | planned: the Vite plugin serves no OUMV endpoints for Vue yet |
+| Frontend | React 18/19 + Vite | `tokensafe-ui/vite` (zero-footprint bridge) | Level 3 (real browser tab) |
+| Frontend | Vue 3 + Vite | `tokensafe-ui/vite` (Vue bridge, same plugin line) | Level 3 (real browser tab) |
 | Backend | Go (Gin / Chi / net/http) | `tokensafe-backend/go/pkg/adapters/*` | Level 3 (all cases) |
 | Backend | Python / FastAPI | `tokensafe-backend-python` (`mount_tokensafe`) | Level 3 (all cases) |
 | Backend | Node.js / Express, Fastify | `tokensafe-backend/node` | Level 3 (all cases) |
+| Backend | Spring Boot (JDK-only sidecar) | `tokensafe-backend/java` | Level 2 (32/33: no live traces) |
+| Backend | Laravel / Symfony (PHP sidecar) | `tokensafe-backend/php` | Level 2 (32/33: no live traces) |
 
 The native SolidJS runtime in `tokensafe-ui` and the `tokensafe.New()` Go framework remain
 in the trees as reference implementations for tests; they are not the recommended path.

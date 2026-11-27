@@ -1,0 +1,138 @@
+{
+  "identity": {
+    "id": "backend/php-laravel",
+    "name": "TokenSafe OUMV adapter for PHP (Laravel + Symfony)",
+    "version": "0.1.0",
+    "description": "Dependency-free PHP sidecar: static Laravel Route:: / Symfony #[Route] discovery, handler slicing via token_get_all, OCC mutations and php -l verification over stdio and HTTP",
+    "repo": "https://github.com/tokensafe-dev/tokensafe-backend"
+  },
+  "technology": {
+    "language": "php",
+    "framework": "laravel",
+    "minFrameworkVersion": "8.0",
+    "package": {
+      "manager": "binary",
+      "name": "oumv-php",
+      "install": "php bin/oumv-php --root <project> --stdio (single file, no Composer)"
+    }
+  },
+  "profiles": [
+    "backend"
+  ],
+  "capabilities": [
+    {
+      "name": "observe.pulse",
+      "constraints": {
+        "developmentOnly": true,
+        "readOnly": true,
+        "resourceTypes": [
+          "route",
+          "file"
+        ],
+        "limitations": [
+          "errorCount1m stays 0: the sidecar dispatches no requests"
+        ]
+      },
+      "conformanceLevel": 1
+    },
+    {
+      "name": "observe.surface",
+      "constraints": {
+        "developmentOnly": true,
+        "readOnly": true,
+        "resourceTypes": [
+          "route",
+          "file"
+        ],
+        "limitations": [
+          "static scan only: prefixes are resolved from literal Route::prefix/controller groups",
+          "middleware chains are ignored and reported as empty arrays",
+          "Symfony YAML/XML route files are not parsed (attributes only)"
+        ]
+      },
+      "conformanceLevel": 1
+    },
+    {
+      "name": "observe.contract",
+      "constraints": {
+        "developmentOnly": true,
+        "readOnly": true,
+        "resourceTypes": [
+          "route",
+          "file"
+        ],
+        "limitations": [
+          "request/response DTOs are omitted: they are not reflectable without booting the framework"
+        ]
+      },
+      "conformanceLevel": 2
+    },
+    {
+      "name": "observe.source",
+      "constraints": {
+        "developmentOnly": true,
+        "readOnly": true,
+        "resourceTypes": [
+          "route",
+          "file"
+        ],
+        "limitations": [
+          "handler ranges come from token_get_all(), never from line guessing",
+          "version is the sha256 of the whole file even when a window or symbol slice is returned"
+        ]
+      },
+      "conformanceLevel": 2
+    },
+    {
+      "name": "understand.impact",
+      "constraints": {
+        "developmentOnly": true,
+        "readOnly": true,
+        "resourceTypes": [
+          "route",
+          "file"
+        ],
+        "limitations": [
+          "affected symbols come from the scanned route catalog; breakingRisk stays UNKNOWN without evidence"
+        ]
+      },
+      "conformanceLevel": 2
+    },
+    {
+      "name": "mutate.source",
+      "constraints": {
+        "developmentOnly": true,
+        "resourceTypes": [
+          "route",
+          "file"
+        ],
+        "limitations": [
+          "OCC expectedVersion is mandatory; stale tokens fail with -32001",
+          "modes: replace, create, symbol, patch, delete, rename",
+          "syntax pre-flight runs php -l on a temp copy outside the workspace",
+          "backups are written under <root>/.tokensafe/backups/, never next to the source file"
+        ]
+      },
+      "conformanceLevel": 2
+    },
+    {
+      "name": "verify.behavior",
+      "constraints": {
+        "developmentOnly": true,
+        "resourceTypes": [
+          "route",
+          "file"
+        ],
+        "limitations": [
+          "verify runs the configured static command (default `php -l {file}`) against the resolved handler",
+          "requests are not dispatched: there is no live PHP application, so no HTTP status is asserted"
+        ]
+      },
+      "conformanceLevel": 2
+    }
+  ],
+  "security": {
+    "productionFailClosed": true,
+    "workspaceBoundary": true
+  }
+}

@@ -3,6 +3,35 @@
 The wire contract is versioned by `protocolVersion` (currently **1.3.0**); this
 changelog tracks the OUMV specification and its reference tooling.
 
+## Unreleased — adapters and scoped-edit diagnostics
+
+No `protocolVersion` bump: the wire request/response shapes do not change. The
+additions are two adapters, one frontend adapter brought to 1.3.0, and extra fields
+inside `error.data` for an error that already existed.
+
+- **Vue 3 + Vite adapter** (`frontend/vue`, `agent-dom`): the `tokensafeUi()` plugin
+  now serves `/__oumv/rpc` for a Vue app instead of returning early, with a browser
+  bridge that reads the Vue app instance (no instrumentation), a canonical 1.3.0
+  controller (`data` envelope, `mode=patch`, `getSource` window/`ifVersion`, sessions,
+  guard order, `understand` impact/causality), and a real-browser certificate:
+  `agent-dom/certification/vue-vite-browser.json` — Level 3, 33/33, fixtures v7.
+  The in-memory `createVueAdapter` answers the same canonical shapes.
+- **`backend/java-spring`** (`tokensafe-backend/java`): JDK-only sidecar (single source
+  file, no Maven/Gradle/Spring jars) that scans `@RestController` mappings, serves HTTP
+  and stdio, applies OCC-checked edits (`replace|create|delete|rename|symbol|patch`)
+  and verifies by running a configured compile/test command. Level 2, 32/33 — no live
+  app, so L4 traces fail and Level 3 is not claimed.
+- **`backend/php-laravel`** (`tokensafe-backend/php`): dependency-free PHP sidecar for
+  Laravel `Route::` declarations and Symfony `#[Route]` attributes, with
+  `token_get_all()` handler ranges, `php -l` pre-flight and the same OCC/guard set.
+  Level 2, 32/33 for the same reason.
+- **`-32011 target_not_unique` is now actionable** (`error.data`, additive): the error
+  carries `occurrences: [{line, text}]` and `suggestedHunks` (ready-to-use scoped hunks)
+  beside `count`/`lines`. Clients can retry with one parameter instead of re-reading the
+  file. Verified in Go, the Vue controller, the Node/Python runners' fixtures and the
+  TokenSafe `apply_edits` tool, which also auto-scopes a repeated target to the window
+  the session last read when exactly one occurrence is inside it — never when two are.
+
 ## v1.2.0 — 2026-11-27 (wire 1.3.0, fixtures v7)
 
 Minor, additive release: every v1.1 adapter stays valid for the capabilities it

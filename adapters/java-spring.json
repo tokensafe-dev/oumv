@@ -1,0 +1,125 @@
+{
+  "identity": {
+    "id": "backend/java-spring",
+    "name": "TokenSafe OUMV adapter for Spring Boot (JDK-only sidecar)",
+    "version": "0.1.0",
+    "description": "Static Spring annotation scanner plus OUMV JSON-RPC over stdio and HTTP, launched with the JDK single-file source launcher. No Maven, Gradle or Spring jars.",
+    "repo": "https://github.com/tokensafe-dev/tokensafe-backend"
+  },
+  "technology": {
+    "language": "java",
+    "framework": "spring",
+    "minFrameworkVersion": "5.0",
+    "package": {
+      "manager": "binary",
+      "name": "java/src/dev/tokensafe/oumv/OumvSpring.java",
+      "install": "java OumvSpring.java --root . --port 7331"
+    }
+  },
+  "profiles": [
+    "backend"
+  ],
+  "capabilities": [
+    {
+      "name": "observe.pulse",
+      "constraints": {
+        "developmentOnly": true,
+        "resourceTypes": [
+          "route",
+          "file"
+        ]
+      },
+      "conformanceLevel": 1
+    },
+    {
+      "name": "observe.surface",
+      "constraints": {
+        "developmentOnly": true,
+        "resourceTypes": [
+          "route",
+          "file"
+        ],
+        "limitations": [
+          "routes are discovered statically from Spring annotations; no live router registration is consulted"
+        ]
+      },
+      "conformanceLevel": 1
+    },
+    {
+      "name": "observe.contract",
+      "constraints": {
+        "developmentOnly": true,
+        "resourceTypes": [
+          "route",
+          "file"
+        ],
+        "limitations": [
+          "parameters are read from @PathVariable/@RequestParam/@RequestBody annotations; no DTO reflection without a Spring context"
+        ]
+      },
+      "conformanceLevel": 2
+    },
+    {
+      "name": "observe.source",
+      "constraints": {
+        "developmentOnly": true,
+        "resourceTypes": [
+          "route",
+          "file"
+        ],
+        "limitations": [
+          "L0-L3 only; L4 request traces are not implemented and not advertised because the sidecar never runs the application"
+        ]
+      },
+      "conformanceLevel": 2
+    },
+    {
+      "name": "understand.impact",
+      "constraints": {
+        "developmentOnly": true,
+        "resourceTypes": [
+          "route",
+          "file"
+        ],
+        "limitations": [
+          "static reverse-dependency scan; observe=false and provenance=static, never runtime evidence"
+        ]
+      },
+      "conformanceLevel": 2
+    },
+    {
+      "name": "mutate.source",
+      "constraints": {
+        "developmentOnly": true,
+        "resourceTypes": [
+          "route",
+          "file"
+        ],
+        "limitations": [
+          "OCC expectedVersion is mandatory; stale tokens fail with -32001",
+          "syntax pre-flight is a structural brace/paren/bracket and string/comment check, not a full Java parser"
+        ]
+      },
+      "conformanceLevel": 2
+    },
+    {
+      "name": "verify.behavior",
+      "constraints": {
+        "developmentOnly": true,
+        "resourceTypes": [
+          "route",
+          "file"
+        ],
+        "limitations": [
+          "runs a configured compile/test command (default `javac {file}`); the status is the real exit code",
+          "no runtime dispatch: the sidecar does not start the Spring application, and scope.notExecuted says so"
+        ]
+      },
+      "conformanceLevel": 2
+    }
+  ],
+  "security": {
+    "productionFailClosed": true,
+    "workspaceBoundary": true
+  }
+}
