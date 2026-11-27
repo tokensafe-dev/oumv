@@ -9,7 +9,7 @@ import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process';
 import { connect as netConnect, type Socket } from 'node:net';
 import { randomBytes } from 'node:crypto';
 import { URL } from 'node:url';
-import type { JsonRpcRequest, JsonRpcResponse, RpcTransport } from './fixtures.js';
+import type { JsonRpcRequest, JsonRpcResponse, PushEvent, PushEventSource, RpcTransport } from './fixtures.js';
 
 function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
   return new Promise<T>((resolve, reject) => {
@@ -186,10 +186,12 @@ export interface WsTransportOptions {
   timeoutMs?: number;
 }
 
+/** WS transport plus the server-push surface (spec §2.4 notifications). */
+export type WsTransport = RpcTransport & PushEventSource;
+
 const WS_GUID = '258EAFA5-E914-47DA-95CA-C5AB0DC85B11';
 
-function maskFrame(payload: Buffer, opcode = 0x1): Buffer {
-  const mask = randomBytes(4);
+function maskFrame(payload: Buffer, opcode = 0x1): Buffer {  const mask = randomBytes(4);
   const masked = Buffer.from(payload.map((byte, i) => byte ^ mask[i % 4]));
   let header: Buffer;
   if (payload.length < 126) {
@@ -240,12 +242,17 @@ function decodeServerFrame(buffer: Buffer): DecodedFrame | null {
   return { opcode, payload, size: offset + length };
 }
 
-/** WebSocket binding (spec §2.4): JSON-RPC text frames, notifications skipped. */
-export function wsTransport(options: WsTransportOptions): RpcTransport {
+/** WebSocket binding (spec §2.4): JSON-RPC text frames plus server notifications. */
+export function wsTransport(options: WsTransportOptions): WsTransport {
   const timeoutMs = options.timeoutMs ?? 10_000;
   let socket: Socket | null = null;
   let buffer = Buffer.alloc(0);
   const pending = new Map<string | number, (response: JsonRpcResponse) => void>();
+  const notifications: PushEvent[] = [];
+  const watchers = new Set<() => void>();
+  const notify = () => {
+    for (const watcher of [...watchers]) watcher();
+  };
 
   const connect = (): Promise<Socket> =>
     new Promise<Socket>((resolve, reject) => {
@@ -295,6 +302,14 @@ export function wsTransport(options: WsTransportOptions): RpcTransport {
                 pending.delete(message.id);
                 resolvePending(message as JsonRpcResponse);
               }
+            } else if (typeof message?.method === 'string') {
+              // Server-initiated notification (spec §2.4): buffer it for push cases.
+              notifications.push({
+                event: message.method,
+                id: '',
+                data: (message.params ?? {}) as Record<string, unknown>,
+              });
+              notify();
             }
           }
         });
@@ -310,6 +325,13 @@ export function wsTransport(options: WsTransportOptions): RpcTransport {
 
   return {
     name: 'ws',
+    kind: 'ws' as const,
+    lastEventId: () => '',
+    waitFor: (event, match, waitMs) =>
+      waitForPushEvent(notifications, watchers, event, match, waitMs, 'WS'),
+    reconnect: async () => {
+      throw new Error('WS has no replay cursor (spec §2.4 defines Last-Event-ID for SSE only)');
+    },
     request: async (request) => {
       try {
         if (!socket) socket = await withTimeout(connect(), timeoutMs, 'ws-connect');
@@ -336,4 +358,133 @@ export function wsTransport(options: WsTransportOptions): RpcTransport {
       }
     },
   };
+}
+
+/** Waits for a buffered push event whose payload matches every expected key. */
+function waitForPushEvent(
+  buffer: PushEvent[],
+  watchers: Set<() => void>,
+  event: string,
+  match: Record<string, unknown>,
+  timeoutMs: number,
+  label: string
+): Promise<PushEvent> {
+  return new Promise<PushEvent>((resolve, reject) => {
+    let timer: ReturnType<typeof setTimeout>;
+    const matches = (candidate: PushEvent) =>
+      candidate.event === event &&
+      Object.entries(match).every(
+        ([key, value]) => JSON.stringify(candidate.data?.[key]) === JSON.stringify(value)
+      );
+    const onChange = () => {
+      const found = buffer.find(matches);
+      if (!found) return;
+      clearTimeout(timer);
+      watchers.delete(onChange);
+      resolve(found);
+    };
+    timer = setTimeout(() => {
+      watchers.delete(onChange);
+      reject(new Error(`${label}: no "${event}" event within ${timeoutMs}ms`));
+    }, timeoutMs);
+    watchers.add(onChange);
+    onChange();
+  });
+}
+
+export interface SseEventSourceOptions {
+  url: string;
+  token?: string;
+  timeoutMs?: number;
+}
+
+/**
+ * SSE client for push cases (spec §2.3): parses `event:`/`id:`/`data:` frames,
+ * keeps the last id as the `Last-Event-ID` cursor and can reconnect from it to
+ * receive the replay.
+ */
+export function sseEventSource(options: SseEventSourceOptions): PushEventSource {
+  const timeoutMs = options.timeoutMs ?? 10_000;
+  let controller: AbortController | null = null;
+  let events: PushEvent[] = [];
+  let cursor = '';
+  const watchers = new Set<() => void>();
+
+  const open = async (lastEventId?: string): Promise<void> => {
+    controller?.abort();
+    controller = new AbortController();
+    const headers: Record<string, string> = {
+      Accept: 'text/event-stream',
+      ...authHeaders(options.token),
+    };
+    if (lastEventId) headers['Last-Event-ID'] = lastEventId;
+    const response = await withTimeout(
+      fetch(options.url, { headers, signal: controller.signal }),
+      timeoutMs,
+      'sse'
+    );
+    if (!response.ok || !response.body) {
+      throw new Error(`SSE ${options.url} answered HTTP ${response.status}`);
+    }
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    void (async () => {
+      let buffer = '';
+      try {
+        for (;;) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+          let index = buffer.indexOf('\n\n');
+          while (index >= 0) {
+            const frame = buffer.slice(0, index);
+            buffer = buffer.slice(index + 2);
+            index = buffer.indexOf('\n\n');
+            const parsed = parseSseFrame(frame);
+            if (!parsed) continue;
+            events.push(parsed);
+            if (parsed.id) cursor = parsed.id;
+            for (const watcher of [...watchers]) watcher();
+          }
+        }
+      } catch {
+        // Aborted on reconnect/close: the caller owns the lifecycle.
+      }
+    })();
+  };
+
+  return {
+    kind: 'sse',
+    start: () => open(),
+    lastEventId: () => cursor,
+    waitFor: (event, match, waitMs) =>
+      waitForPushEvent(events, watchers, event, match, waitMs, 'SSE'),
+    reconnect: async (lastEventId: string) => {
+      events = [];
+      await open(lastEventId);
+    },
+    close: () => {
+      controller?.abort();
+      controller = null;
+    },
+  };
+}
+
+function parseSseFrame(frame: string): PushEvent | null {
+  let event = 'message';
+  let id = '';
+  let data = '';
+  for (const line of frame.split('\n')) {
+    if (line.startsWith('event: ')) event = line.slice(7).trim();
+    else if (line.startsWith('id: ')) id = line.slice(4).trim();
+    else if (line.startsWith('data: ')) data += line.slice(6);
+  }
+  if (!data) return null;
+  let payload: Record<string, unknown>;
+  try {
+    payload = JSON.parse(data) as Record<string, unknown>;
+  } catch {
+    payload = { data };
+  }
+  return { event, id, data: payload };
 }

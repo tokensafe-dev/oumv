@@ -41,6 +41,37 @@ export interface FixtureSpec {
   fixtureVersion: number;
   levelDefinitions?: Record<string, string>;
   cases: ConformanceCase[];
+  /** Server-push cases (spec §2.3/§2.4); run by `--sse`/`--ws` certificates only. */
+  pushCases?: PushCase[];
+}
+
+/** A pushed event: SSE `event:`/`id:`/`data:`, or a WS notification method/params. */
+export interface PushEvent {
+  event: string;
+  id: string;
+  data: Record<string, unknown>;
+}
+
+/** A live push channel the runner asserts against. */
+export interface PushEventSource {
+  kind: 'sse' | 'ws';
+  /** Opens the channel before the suite runs (SSE connects eagerly). */
+  start?(): Promise<void>;
+  /** Cursor of the last delivered event ('' for transports without replay). */
+  lastEventId(): string;
+  waitFor(event: string, match: Record<string, unknown>, timeoutMs: number): Promise<PushEvent>;
+  /** SSE only: reconnect from `lastEventId` so the server replays what was missed. */
+  reconnect(lastEventId: string): Promise<void>;
+  close(): Promise<void> | void;
+}
+
+export interface PushCase {
+  id: string;
+  level: 1 | 2 | 3;
+  transport: 'sse' | 'ws';
+  trigger: { method: string; params: Record<string, unknown> };
+  expectEvents: Array<{ event: string; data?: Record<string, unknown> }>;
+  replay?: { expectEvents?: Array<{ event: string; data?: Record<string, unknown> }> };
 }
 
 /** Concrete values substituted for `${MARKER}` placeholders in case params. */
@@ -69,6 +100,9 @@ export interface CaseMarkers {
   // mode=patch hunk splices over it (the whole content, replaced)
   editContentVersion: string;
   patchReplacement: string;
+  // fixtures v8: the file a push case creates to prove `state`/notifications
+  pushFile: string;
+  pushContent: string;
 }
 
 export interface CaseResult {
@@ -144,6 +178,8 @@ const MARKER_KEYS: Record<string, keyof CaseMarkers> = {
   '${RENAME_SOURCE}': 'renameSource',
   '${RENAME_TARGET}': 'renameTarget',
   '${RENAME_VERSION}': 'renameVersion',
+  '${PUSH_FILE}': 'pushFile',
+  '${PUSH_CONTENT}': 'pushContent',
 };
 
 /** Substitutes every `${MARKER}` in a string (params and expectations). */
@@ -179,6 +215,8 @@ export function defaultMarkers(overrides: Partial<CaseMarkers> = {}): CaseMarker
     renameSource: '__oumv_conformance_rename.py',
     renameTarget: '__oumv_conformance_renamed.py',
     renameVersion: occVersion('value = 2\n'),
+    pushFile: '__oumv_conformance_push.py',
+    pushContent: 'value = 3\n',
     ...overrides,
   };
 }
@@ -326,7 +364,94 @@ export interface RunFixturesOptions {
   environment?: Record<string, unknown>;
   /** Called for every case; used by CLIs to stream progress. */
   onCase?: (result: CaseResult) => void;
+  /** Live push channel: runs the spec's pushCases that match its kind. */
+  push?: PushEventSource;
+  /** How long a push case waits for its event (default 5000 ms). */
+  pushTimeoutMs?: number;
 }
+
+/** Every expected key must equal the pushed payload (markers substituted). */
+function matchesPushPayload(
+  data: Record<string, unknown>,
+  expected: Record<string, unknown> | undefined,
+  markers: CaseMarkers
+): boolean {
+  for (const [key, rawWant] of Object.entries(expected ?? {})) {
+    const want = typeof rawWant === 'string' ? substituteText(rawWant, markers) : rawWant;
+    if (JSON.stringify(data?.[key]) !== JSON.stringify(want)) return false;
+  }
+  return true;
+}
+
+/**
+ * Runs one push case: make the trigger idempotent, fire it, then assert the
+ * delivered event (and, for SSE, that `Last-Event-ID` replays it).
+ * Returns '' on success or the failure reason.
+ */
+async function runPushCase(
+  pushCase: PushCase,
+  transport: RpcTransport,
+  source: PushEventSource,
+  markers: CaseMarkers,
+  timeoutMs: number
+): Promise<string> {
+  const params = substituteMarkers(pushCase.trigger.params, markers);
+  const targetPath = String(params.path ?? '');
+
+  // Idempotent across runs: a leftover probe file from a previous certificate
+  // would turn mode=create into CONFLICT_DETECTED.
+  if (targetPath) {
+    const probe = await transport.request({
+      jsonrpc: '2.0',
+      id: `${pushCase.id}-cleanup`,
+      method: 'oumv/getSource',
+      params: { path: targetPath },
+    });
+    const version = (probe.result as Record<string, unknown> | undefined)?.version;
+    if (!probe.error && typeof version === 'string') {
+      await transport.request({
+        jsonrpc: '2.0',
+        id: `${pushCase.id}-cleanup`,
+        method: 'oumv/applyEdit',
+        params: { path: targetPath, mode: 'delete', expectedVersion: version },
+      });
+    }
+  }
+
+  const cursorBefore = source.lastEventId();
+  const trigger = await transport.request({
+    jsonrpc: '2.0',
+    id: `${pushCase.id}-trigger`,
+    method: pushCase.trigger.method,
+    params,
+  });
+  if (trigger.error) {
+    return `trigger failed: ${trigger.error.code} ${trigger.error.message}`;
+  }
+
+  for (const expectation of pushCase.expectEvents) {
+    const match = substituteMarkers(expectation.data, markers);
+    try {
+      await source.waitFor(expectation.event, match, timeoutMs);
+    } catch (err: any) {
+      return err.message;
+    }
+  }
+
+  if (pushCase.replay) {
+    if (source.kind !== 'sse') return 'replay is only defined for SSE (Last-Event-ID)';
+    await source.reconnect(cursorBefore);
+    for (const expectation of pushCase.replay.expectEvents ?? []) {
+      try {
+        await source.waitFor(expectation.event, substituteMarkers(expectation.data, markers), timeoutMs);
+      } catch (err: any) {
+        return `replay: ${err.message}`;
+      }
+    }
+  }
+  return '';
+}
+
 
 /**
  * Runs every fixture case over the transport and builds a report conforming to
@@ -377,6 +502,28 @@ export async function runFixtureSuite(
     }
     results.push(result);
     options.onCase?.(result);
+  }
+
+  // Push cases run only for the transport this certificate is produced for: a
+  // certificate names one transport, and a claim without a report is not made.
+  if (options.push) {
+    for (const pushCase of spec.pushCases ?? []) {
+      if (pushCase.transport !== options.push.kind) continue;
+      const result: CaseResult = { id: pushCase.id, level: pushCase.level, status: 'passed' };
+      const failure = await runPushCase(
+        pushCase,
+        transport,
+        options.push,
+        markers,
+        options.pushTimeoutMs ?? 5_000
+      );
+      if (failure) {
+        result.status = 'failed';
+        result.error = failure;
+      }
+      results.push(result);
+      options.onCase?.(result);
+    }
   }
 
   const passed = results.filter((r) => r.status === 'passed').length;

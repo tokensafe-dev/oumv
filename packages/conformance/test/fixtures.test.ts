@@ -50,7 +50,7 @@ describe('language-neutral conformance fixtures', () => {
   it('references the OUMV spec, protocol version and fixture version', () => {
     const data = loadFixture();
     expect(data.protocolVersion).toBe('1.3.0');
-    expect(data.fixtureVersion).toBe(7);
+    expect(data.fixtureVersion).toBe(8);
     expect(data.spec).toContain('SPEC.md');
   });
 

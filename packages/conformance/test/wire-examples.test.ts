@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync, readdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import Ajv2020Module from 'ajv/dist/2020.js';
+import { SPEC_VERSION } from '../src/fixtures.js';
 
 const Ajv2020 = (Ajv2020Module as any).default ?? Ajv2020Module;
 
@@ -90,7 +91,7 @@ describe('golden wire examples', () => {
     (_path, file) => {
       const data = JSON.parse(readFileSync(file.path, 'utf-8'));
       expect(data.profile).toBe(file.profile);
-      expect(data.specVersion).toBe('1.1.0');
+      expect(data.specVersion).toBe(SPEC_VERSION);
       expect(data.adapter).toBeTruthy();
 
       const mapping = METHOD_SCHEMAS[data.method];
@@ -112,6 +113,12 @@ describe('golden wire examples', () => {
         }
         const responseOk = validateResponse(entry.response.result);
         expect(responseOk, `${entry.name} response: ${JSON.stringify(validateResponse.errors)}`).toBe(true);
+        if (data.method === 'oumv/handshake') {
+          expect(
+            (entry.response.result as { protocolVersion?: string }).protocolVersion,
+            `${entry.name} must echo the wire version it serves`
+          ).toBe(SPEC_VERSION);
+        }
       }
     }
   );

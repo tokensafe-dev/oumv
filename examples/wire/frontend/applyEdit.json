@@ -1,0 +1,42 @@
+{
+  "method": "oumv/applyEdit",
+  "profile": "frontend",
+  "specVersion": "1.3.0",
+  "adapter": "frontend/react",
+  "note": "captured from the React/Vite controller without a browser tab; verify answers -32008 and L4 has no traces, which is the honest offline shape",
+  "cases": [
+    {
+      "name": "patch one field under OCC",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": "oumv/applyEdit:patch one field under OCC",
+        "method": "oumv/applyEdit",
+        "params": {
+          "path": "src/store.ts",
+          "mode": "patch",
+          "expectedVersion": "sha256:61915a502f70592141b3d32a7a806b512d98938a2c9deb0cb4e52d4433f411db",
+          "hunks": [
+            {
+              "target": "filterPriority: 'All',",
+              "replacement": "filterPriority: 'High',"
+            }
+          ]
+        }
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": "oumv/applyEdit:patch one field under OCC",
+        "result": {
+          "status": "APPLIED",
+          "path": "src/store.ts",
+          "newVersion": "sha256:69886c4e9211e268ce64b67c9b3098f24cd0b639408625526e7750033eb52984",
+          "syntaxCheck": {
+            "status": "passed",
+            "tool": "@babel/parser"
+          },
+          "hunksApplied": 1
+        }
+      }
+    }
+  ]
+}

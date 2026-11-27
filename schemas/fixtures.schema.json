@@ -55,8 +55,7 @@
      "level",
      "method",
      "params"
-    ],
-    "properties": {
+    ],    "properties": {
      "id": {
       "type": "string",
       "pattern": "^[a-z0-9-]+$"
@@ -125,6 +124,103 @@
       "type": "object",
       "description": "JSON-path -> expected value (dotted paths, e.g. data.hasMore)",
       "additionalProperties": true
+     }
+    }
+   }
+  },
+  "pushCases": {
+   "type": "array",
+   "description": "Server-push cases (spec §2.3/§2.4). Run only when the certificate is produced for the case's transport: `--sse` (requests over HTTP, events over SSE) or `--ws`.",
+   "items": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+     "id",
+     "level",
+     "transport",
+     "trigger",
+     "expectEvents"
+    ],
+    "properties": {
+     "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9-]+$"
+     },
+     "level": {
+      "enum": [
+       1,
+       2,
+       3
+      ]
+     },
+     "transport": {
+      "enum": [
+       "sse",
+       "ws"
+      ]
+     },
+     "trigger": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+       "method",
+       "params"
+      ],
+      "properties": {
+       "method": {
+        "type": "string",
+        "pattern": "^oumv/"
+       },
+       "params": {
+        "type": "object"
+       }
+      }
+     },
+     "expectEvents": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+       "type": "object",
+       "additionalProperties": false,
+       "required": [
+        "event"
+       ],
+       "properties": {
+        "event": {
+         "type": "string"
+        },
+        "data": {
+         "type": "object",
+         "description": "Keys that must match the event payload (params for WS notifications)."
+        }
+       }
+      }
+     },
+     "replay": {
+      "type": "object",
+      "description": "SSE only: reconnect with Last-Event-ID captured before the trigger and expect the same events again.",
+      "additionalProperties": false,
+      "properties": {
+       "expectEvents": {
+        "type": "array",
+        "minItems": 1,
+        "items": {
+         "type": "object",
+         "additionalProperties": false,
+         "required": [
+          "event"
+         ],
+         "properties": {
+          "event": {
+           "type": "string"
+          },
+          "data": {
+           "type": "object"
+          }
+         }
+        }
+       }
+      }
      }
     }
    }

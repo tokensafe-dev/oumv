@@ -3,6 +3,29 @@
 The wire contract is versioned by `protocolVersion` (currently **1.3.0**); this
 changelog tracks the OUMV specification and its reference tooling.
 
+## Unreleased (fixtures v8, transport certificates)
+
+No `protocolVersion` bump: the wire request/response shapes do not change. What changes
+is what a transport claim has to prove.
+
+- **Fixtures v8: `pushCases`.** Two cases assert the optional bindings (§2.3/§2.4):
+  a successful `applyEdit` is pushed as SSE `event: state` / WS
+  `notifications/oumv.state` with the resource path and operation, and reconnecting
+  SSE with `Last-Event-ID` replays the missed event. Push cases run only for the
+  transport a certificate is produced for.
+- **`oumv-certify --sse <events-url>`** certifies the SSE binding (requests stay on
+  `--url`); `--ws` now also runs the WS push case. The report records
+  `environment.transport`.
+- **Reference runtimes emit `state`.** Go, Node and Python publish a mutation on a
+  monotonic event log after the bytes are on disk; SSE ids become monotonic integers
+  (was: a timestamp in Go/Python, a ring position in Node) and `Last-Event-ID` replays
+  both `trace` and `state`. WS notifications are bound to the handshake session and
+  the socket close ends it. The Vite plugin's SSE/WS bindings share the same id space.
+- **Certificates:** Node Express and Fastify now have `sse`/`ws` transport reports
+  (`certification/transports/*.json` in `tokensafe-backend`), each Level 3, 34/34.
+  Go and Python behaviour is covered by their native transport tests; their own
+  transport certificates follow the same CLI.
+
 ## v1.2.1 — 2026-11-27 (adapters and scoped-edit diagnostics)
 
 No `protocolVersion` bump: the wire request/response shapes do not change. The

@@ -156,8 +156,10 @@ npx -p tokensafe-oumv oumv-certify \
   `fixtureFile`, `editTarget`, `l2Target`, `l3Target`, `verifyTarget`.
   `editVersion` is optional — the CLI derives it with `oumv/getSource`, so the
   OCC token comes from the runtime under test, not from the test.
-* Transport flags are mutually exclusive: `--url`, `--ws`, `--stdio "<cmd>"`.
-  stdio runs the fixture suite against any headless adapter (spec §2.5).
+* Transport flags: `--url`, `--ws`, `--stdio "<cmd>"` (one of them), plus
+  `--sse <events-url>` next to `--url` to certify the SSE binding. stdio runs the
+  fixture suite against any headless adapter (spec §2.5); `--sse`/`--ws` also run the
+  fixture v8 push cases for that binding.
 * Exit code is `0` only when every case passed and `attainedLevel >= --min-level`.
 
 Validate an adapter manifest (identity, profiles, capability constraints) against
@@ -178,7 +180,7 @@ in `tokensafe-backend`) — a level that stops reproducing fails the build.
 For the React adapter there are two runs. The **browser** run is the real certificate:
 it starts the app's Vite dev server, opens it in headless Chrome (`playwright-core`
 with the system Chrome channel), waits for the bridge, and runs `oumv-certify --url`
-against the committed `certification/app` — 18/18, level 3.
+against the committed `certification/app` — 33/33, level 3.
 
 ```bash
 cd agent-dom/certification/app && npm install && cd ../..
@@ -242,10 +244,18 @@ OCC-checked edits and run a real verify command, but they do not boot the framew
 record no live request traces: `observe-l4-returns-recorded-traces` fails and Level 3 is not
 claimed. Their reports name that single gap.
 
-The stdio claim is backed by the same fixtures run over §2.5:
-`tokensafe-backend/certification/transports/node-stdio.json` and
-`python-stdio.json` (both Level 3, 25/25), regenerated in CI next to the HTTP
-reports. A transport claim without a report is not made.
+The optional bindings are certified by reports, not by the matrix. Node Express and
+Fastify have SSE and WS certificates (`tokensafe-backend/certification/transports/*-sse.json`,
+`*-ws.json`) at Level 3, 34/34: the suite plus the fixture v8 push cases. `stdio` is
+certified by `node-stdio.json` and `python-stdio.json` (Level 3, 33/33). The Go adapters
+mount SSE and WS and their bindings are exercised by `go/pkg/transport/streams_test.go`
+(state event, `Last-Event-ID` replay, WS notification) and the Python runtime by
+`python/tests/test_streams.py`; their own transport certificates are not generated yet.
+A transport claim without a report is not made.
+
+The `sse`/`ws` certificates are produced by passing the push channel to the
+runner — `oumv-certify --url <rpc> --sse <events>` for SSE, `oumv-certify --ws <rpc>`
+for WebSocket — so any runtime that mounts the binding can be certified the same way.
 
 Django/Flask, Next and Angular adapters follow.
 
@@ -258,18 +268,18 @@ listed so a third party can see what a certificate does **not** prove today.
 
 | Gap | What is missing | Why it is not a runtime bug |
 | :--- | :--- | :--- |
-| SSE (§2.3) and WebSocket (§2.4) have no fixtures | A runtime can advertise both and pass the whole suite, because every case is a request/response pair over the selected transport. `pkg/transport/streams_test.go` and Python's `tests/test_streams.py` prove the bindings, but no report does. | The fixture format needs push cases (`expectEvents`, `Last-Event-ID` replay) and a transport matrix in `oumv-certify`; adding cases without that would certify the HTTP path under an SSE label. |
+| Go and Python have bindings but no transport certificates | Fixtures v8 define the push cases and `oumv-certify --sse/--ws` runs them; the Node adapters have reports at 34/34. The Go/Python SSE and WS semantics (`state` on mutation, monotonic ids, `Last-Event-ID` replay, WS notifications) are exercised by their native transport tests, not by a committed report. | Behaviour is implemented and tested; what is missing is a CI step that boots a live server per runtime and points the certifier at it — a harness gap, not a wire gap. |
 | No multi-file atomic `applyEdit` | §8 says a mutation is atomic, but `ApplyEditParams` is single-file. A cross-file change is several calls with no all-or-nothing rollback. | This is a wire addition (a transaction envelope), so it needs a `protocolVersion` minor, fixtures, and re-certification of every adapter — a coordinated release, not a runtime patch. |
 | Session expiry and auth rejection are not fixtures | `unknown-session-is-rejected` proves an unknown id fails; nothing proves an expired one fails, or that a missing token answers `401`/`-32007`. | Expiry needs an injectable clock (or a TTL of seconds) and auth needs per-case headers in the fixture schema; both are test-harness features, not adapter behaviour. |
 
-Fix them in that order: transport cases first (they unblock SSE/WS claims), then the
+Fix them in that order: a live-server certifier step for Go and Python first, then the
 transaction envelope, then auth/expiry harness hooks.
 
 ---
 
 ## 7. Versioning
 
-* The wire contract is versioned by `protocolVersion` (`1.1.0` today). Adapters
+* The wire contract is versioned by `protocolVersion` (`1.3.0` today). Adapters
   answer with the version they implement; agents negotiate from the handshake.
 * Fixtures carry `fixtureVersion`; a report records both, so a level always maps
   to a concrete suite.

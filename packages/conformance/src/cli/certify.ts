@@ -17,9 +17,10 @@ import {
   loadFixtures,
   runFixtureSuite,
   type CaseMarkers,
+  type PushEventSource,
   type RpcTransport,
 } from '../fixtures.js';
-import { httpTransport, stdioTransport, wsTransport } from '../transports.js';
+import { httpTransport, sseEventSource, stdioTransport, wsTransport } from '../transports.js';
 
 export interface CertifyOptions {
   adapter: string;
@@ -28,6 +29,8 @@ export interface CertifyOptions {
   url?: string;
   ws?: string;
   stdio?: string;
+  /** SSE events endpoint: requests stay on `--url`, push cases run over SSE. */
+  sse?: string;
   token?: string;
   fixtures?: string;
   markers?: Partial<CaseMarkers>;
@@ -64,6 +67,9 @@ export function parseCertifyArgs(argv: string[]): CertifyOptions {
         break;
       case '--stdio':
         options.stdio = next();
+        break;
+      case '--sse':
+        options.sse = next();
         break;
       case '--token':
         options.token = next();
@@ -103,6 +109,9 @@ export function parseCertifyArgs(argv: string[]): CertifyOptions {
   if (!options.adapter) throw new Error('--adapter is required');
   if ([options.url, options.ws, options.stdio].filter(Boolean).length !== 1) {
     throw new Error('exactly one of --url, --ws or --stdio is required');
+  }
+  if (options.sse && !options.url) {
+    throw new Error('--sse runs the push cases alongside HTTP requests; it needs --url');
   }
   return options;
 }
@@ -173,11 +182,13 @@ const HELP = `oumv-certify — OUMV conformance certification (spec §10)
 
 Usage:
   oumv-certify --adapter <id> (--url <http> | --ws <url> | --stdio <cmd>) [options]
+  oumv-certify --adapter <id> --url <http> --sse <events-url>   # certifies the SSE binding
 
 Options:
   --framework <name>    framework reported in the report (gin, fastapi, react, ...)
   --profile <name>      frontend | backend (recorded in environment)
   --token <token>       X-OUMV-Session-Token / Bearer token
+  --sse <url>           SSE events endpoint; push cases run over it, requests stay on --url
   --fixtures <path>     fixture file (default: fixtures/conformance-cases.json)
   --markers <json|@f>   marker overrides: fixtureFile, editTarget, l2Target, ...
   --report <path>       report output (default: certification/<adapter>.json)
@@ -192,8 +203,16 @@ export async function certify(options: CertifyOptions): Promise<number> {
   const spec = loadFixtures(fixturesPath);
   const markers = defaultMarkers(options.markers);
   const transport = buildTransport(options);
+  // `--sse` certifies the SSE binding: requests stay on HTTP, push cases use the
+  // event stream. `--ws` uses the same socket for both.
+  const push: PushEventSource | undefined = options.sse
+    ? sseEventSource({ url: options.sse, token: options.token, timeoutMs: options.timeoutMs })
+    : options.ws
+      ? (transport as unknown as PushEventSource)
+      : undefined;
 
   try {
+    await push?.start?.();
     if (!markers.editVersion) {
       const probe = await transport.request({
         jsonrpc: '2.0',
@@ -221,10 +240,12 @@ export async function certify(options: CertifyOptions): Promise<number> {
       adapterName: options.adapter,
       framework: options.framework,
       environment: {
-        transport: transport.name,
+        transport: options.sse ? 'sse' : transport.name,
         ...(options.profile ? { profile: options.profile } : {}),
         node: process.version,
       },
+      push,
+      pushTimeoutMs: options.timeoutMs,
       onCase: options.quiet
         ? undefined
         : (result) => {
@@ -252,6 +273,7 @@ export async function certify(options: CertifyOptions): Promise<number> {
     }
     return 0;
   } finally {
+    await push?.close?.();
     await transport.close?.();
   }
 }

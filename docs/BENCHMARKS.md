@@ -7,7 +7,7 @@ The two are deliberately separate artifacts.
 
 | What | Where |
 | :--- | :--- |
-| Language-neutral fixture suite | `fixtures/conformance-cases.json` (v7, 33 cases) |
+| Language-neutral fixture suite | `fixtures/conformance-cases.json` (v8, 33 cases + 2 push) |
 | Certification reports, 6 backend adapters | `tokensafe-backend/certification/*.json` |
 | Certification report, React/Vite (browser, Level 3) | `agent-dom/certification/react-vite-browser.json` |
 | Reproduction in CI | `tokensafe-backend/.github/workflows/ci.yml` → "Certification is reproducible" |
