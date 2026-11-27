@@ -1,0 +1,93 @@
+{
+  "method": "oumv/previewEdit",
+  "profile": "backend",
+  "specVersion": "1.6.0",
+  "adapter": "backend/stdhttp",
+  "note": "captured from the net/http adapter against a temp workspace; paths are relative to it",
+  "cases": [
+    {
+      "name": "dry-run create",
+      "request": {
+        "id": "oumv/previewEdit:dry-run create",
+        "jsonrpc": "2.0",
+        "method": "oumv/previewEdit",
+        "params": {
+          "mode": "create",
+          "path": "cert_preview_new.go",
+          "replacement": "package cert\n\nvar Previewed = true\n"
+        }
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": "oumv/previewEdit:dry-run create",
+        "result": {
+          "status": "PREVIEW",
+          "applied": false,
+          "previews": [
+            {
+              "path": "cert_preview_new.go",
+              "mode": "create",
+              "newVersion": "sha256:3deab3ff0290a3a6d1c92aaa162114f6e943a0dd0626ed17cb2c399b91a2fc6b",
+              "syntaxCheck": {
+                "status": "passed",
+                "tool": "go-parser"
+              },
+              "wouldApply": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "dry-run versioned edit",
+      "request": {
+        "id": "oumv/previewEdit:dry-run versioned edit",
+        "jsonrpc": "2.0",
+        "method": "oumv/previewEdit",
+        "params": {
+          "expectedVersion": "sha256:8b877082c7e07db686c4776a0944ae99490148df91758fcae8dce7387d39d100",
+          "mode": "replace",
+          "path": "cert_edit_target.go",
+          "replacement": "package cert\n\nfunc Value() int {\n\treturn 42\n}\n"
+        }
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": "oumv/previewEdit:dry-run versioned edit",
+        "error": {
+          "code": -32001,
+          "message": "version mismatch: expected sha256:8b877082c7e07db686c4776a0944ae99490148df91758fcae8dce7387d39d100, current is sha256:e1023abc426bb4df999a27bd70e8a6e436b559a64e08bf4db679b048b96ad7e2",
+          "data": {
+            "path": "cert_edit_target.go",
+            "reason": "version_mismatch"
+          }
+        }
+      }
+    },
+    {
+      "name": "create refuses an existing file",
+      "request": {
+        "id": "oumv/previewEdit:create refuses an existing file",
+        "jsonrpc": "2.0",
+        "method": "oumv/previewEdit",
+        "params": {
+          "mode": "create",
+          "path": "cert_edit_target.go",
+          "replacement": "package cert\n"
+        }
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": "oumv/previewEdit:create refuses an existing file",
+        "error": {
+          "code": -32001,
+          "message": "file already exists; use mode=replace with its version: cert_edit_target.go",
+          "data": {
+            "path": "cert_edit_target.go",
+            "reason": "file_exists"
+          }
+        }
+      }
+    }
+  ]
+}

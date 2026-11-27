@@ -16,7 +16,7 @@
             "name": "oumv-examples",
             "version": "1.0.0"
           },
-          "protocolVersion": "1.5.0"
+          "protocolVersion": "1.6.0"
         }
       },
       "response": {
@@ -25,7 +25,7 @@
         "result": {
           "protocolVersion": "1.6.0",
           "profile": "backend",
-          "sessionId": "sess-cdaf5cbdb591a77e",
+          "sessionId": "sess-b7cdc8645808cdd4",
           "ttlSeconds": 3600,
           "runtimeInfo": {
             "name": "tokensafe-stdhttp",
@@ -51,10 +51,12 @@
             "mutate": {
               "occ": true,
               "syntaxGuard": true,
-              "multiFile": true
+              "multiFile": true,
+              "preview": true
             },
             "verify": {
-              "multiMetric": true
+              "multiMetric": true,
+              "build": true
             },
             "transports": [
               "http",
@@ -62,8 +64,14 @@
               "ws"
             ],
             "sessions": {
-              "ttlSeconds": true
-            }
+              "ttlSeconds": true,
+              "cancel": true,
+              "idempotency": true
+            },
+            "index": {
+              "symbols": true
+            },
+            "observeQuery": {}
           }
         }
       }
@@ -75,7 +83,7 @@
         "jsonrpc": "2.0",
         "method": "oumv/handshake",
         "params": {
-          "protocolVersion": "1.5.0",
+          "protocolVersion": "1.6.0",
           "requestedCapabilities": {
             "observe": {
               "levels": [
@@ -92,7 +100,7 @@
         "result": {
           "protocolVersion": "1.6.0",
           "profile": "backend",
-          "sessionId": "sess-a2ef520a163459e0",
+          "sessionId": "sess-e1e00bdbbecd04d3",
           "ttlSeconds": 3600,
           "runtimeInfo": {
             "name": "tokensafe-stdhttp",
@@ -115,10 +123,12 @@
             "mutate": {
               "occ": true,
               "syntaxGuard": true,
-              "multiFile": true
+              "multiFile": true,
+              "preview": true
             },
             "verify": {
-              "multiMetric": true
+              "multiMetric": true,
+              "build": true
             },
             "transports": [
               "http",
@@ -126,8 +136,14 @@
               "ws"
             ],
             "sessions": {
-              "ttlSeconds": true
-            }
+              "ttlSeconds": true,
+              "cancel": true,
+              "idempotency": true
+            },
+            "index": {
+              "symbols": true
+            },
+            "observeQuery": {}
           }
         }
       }

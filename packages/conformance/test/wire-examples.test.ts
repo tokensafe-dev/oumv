@@ -30,6 +30,12 @@ const METHOD_SCHEMAS: Record<string, { file: string; request: string; response: 
   'oumv/getSource': { file: 'oumv-mutate.json', request: 'GetSourceRequest', response: 'GetSourceResponse' },
   'oumv/applyEdit': { file: 'oumv-mutate.json', request: 'ApplyEditRequest', response: 'ApplyEditResponse' },
   'oumv/verify': { file: 'oumv-verify.json', request: 'Request', response: 'Response' },
+  // Wire 1.6.0 (§3/§4.4/§14)
+  'oumv/previewEdit': { file: 'oumv-preview.json', request: 'Request', response: 'Response' },
+  'oumv/index': { file: 'oumv-index.json', request: 'Request', response: 'Response' },
+  'oumv/query': { file: 'oumv-query.json', request: 'Request', response: 'Response' },
+  'oumv/build': { file: 'oumv-build.json', request: 'Request', response: 'Response' },
+  'oumv/cancel': { file: 'oumv-cancel.json', request: 'Request', response: 'Response' },
 };
 
 const loadSchema = (file: string) => JSON.parse(readFileSync(join(SCHEMAS, file), 'utf-8'));

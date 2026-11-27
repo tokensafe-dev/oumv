@@ -1,0 +1,47 @@
+{
+  "method": "oumv/cancel",
+  "profile": "backend",
+  "specVersion": "1.6.0",
+  "adapter": "backend/stdhttp",
+  "note": "captured from the net/http adapter against a temp workspace; paths are relative to it",
+  "cases": [
+    {
+      "name": "unknown requestId is a result",
+      "request": {
+        "id": "oumv/cancel:unknown requestId is a result",
+        "jsonrpc": "2.0",
+        "method": "oumv/cancel",
+        "params": {
+          "requestId": "op-unknown"
+        }
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": "oumv/cancel:unknown requestId is a result",
+        "result": {
+          "cancelled": false,
+          "requestId": "op-unknown"
+        }
+      }
+    },
+    {
+      "name": "target last is already finished",
+      "request": {
+        "id": "oumv/cancel:target last is already finished",
+        "jsonrpc": "2.0",
+        "method": "oumv/cancel",
+        "params": {
+          "target": "last"
+        }
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": "oumv/cancel:target last is already finished",
+        "result": {
+          "cancelled": false,
+          "finished": true
+        }
+      }
+    }
+  ]
+}

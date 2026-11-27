@@ -1,0 +1,30 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "https://oumv.org/schemas/oumv-cancel.json",
+ "title": "oumv/cancel",
+ "x-oumv-spec-version": "1.6.0",
+ "description": "Best-effort cooperative cancellation (spec §3, wire 1.6.0; capability sessions.cancel). An unknown requestId is a result, never an error.",
+ "$defs": {
+  "Request": {
+   "type": "object",
+   "properties": {
+    "sessionId": { "type": "string" },
+    "requestId": { "type": "string" },
+    "target": { "enum": ["last"] }
+   }
+  },
+  "Response": {
+   "type": "object",
+   "required": ["cancelled"],
+   "properties": {
+    "cancelled": { "type": "boolean" },
+    "requestId": { "type": "string" },
+    "finished": { "type": "boolean" }
+   }
+  }
+ },
+ "anyOf": [
+  { "$ref": "#/$defs/Request" },
+  { "$ref": "#/$defs/Response" }
+ ]
+}

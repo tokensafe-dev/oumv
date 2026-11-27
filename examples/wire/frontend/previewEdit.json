@@ -1,0 +1,75 @@
+{
+  "method": "oumv/previewEdit",
+  "profile": "frontend",
+  "specVersion": "1.6.0",
+  "adapter": "frontend/react",
+  "note": "captured from the React/Vite controller without a browser tab; verify answers -32008 and L4 has no traces, which is the honest offline shape",
+  "cases": [
+    {
+      "name": "dry-run patch under OCC",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": "oumv/previewEdit:dry-run patch under OCC",
+        "method": "oumv/previewEdit",
+        "params": {
+          "path": "src/store.ts",
+          "mode": "patch",
+          "expectedVersion": "sha256:61915a502f70592141b3d32a7a806b512d98938a2c9deb0cb4e52d4433f411db",
+          "hunks": [
+            {
+              "target": "filterPriority: 'All',",
+              "replacement": "filterPriority: 'High',"
+            }
+          ]
+        }
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": "oumv/previewEdit:dry-run patch under OCC",
+        "result": {
+          "status": "PREVIEW",
+          "applied": false,
+          "previews": [
+            {
+              "path": "src/store.ts",
+              "mode": "patch",
+              "unchanged": false,
+              "currentVersion": "sha256:61915a502f70592141b3d32a7a806b512d98938a2c9deb0cb4e52d4433f411db",
+              "newVersion": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "syntaxCheck": {
+                "status": "passed",
+                "tool": "@babel/parser"
+              },
+              "wouldApply": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "create refuses an existing file",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": "oumv/previewEdit:create refuses an existing file",
+        "method": "oumv/previewEdit",
+        "params": {
+          "path": "src/store.ts",
+          "mode": "create",
+          "replacement": "export const store = {};\n"
+        }
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": "oumv/previewEdit:create refuses an existing file",
+        "error": {
+          "code": -32001,
+          "message": "CONFLICT_DETECTED: file already exists; use mode=replace with its version",
+          "data": {
+            "reason": "file_exists",
+            "path": "src/store.ts"
+          }
+        }
+      }
+    }
+  ]
+}

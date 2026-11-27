@@ -27,7 +27,9 @@
           "syntaxCheck": {
             "status": "passed",
             "tool": "go/parser"
-          }
+          },
+          "backupPath": ".tokensafe/backups/8b877082_cert_edit_target.go.bak",
+          "rollbackHint": ".tokensafe/backups/8b877082_cert_edit_target.go.bak"
         }
       }
     }

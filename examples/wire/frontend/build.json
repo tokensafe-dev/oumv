@@ -1,0 +1,26 @@
+{
+  "method": "oumv/build",
+  "profile": "frontend",
+  "specVersion": "1.6.0",
+  "adapter": "frontend/react",
+  "note": "captured from the React/Vite controller without a browser tab; verify answers -32008 and L4 has no traces, which is the honest offline shape",
+  "cases": [
+    {
+      "name": "frontend runtime answers -32601",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": "oumv/build:frontend runtime answers -32601",
+        "method": "oumv/build",
+        "params": {}
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": "oumv/build:frontend runtime answers -32601",
+        "error": {
+          "code": -32601,
+          "message": "Method not found: oumv/build"
+        }
+      }
+    }
+  ]
+}

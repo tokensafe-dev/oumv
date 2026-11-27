@@ -1,0 +1,48 @@
+{
+  "method": "oumv/cancel",
+  "profile": "frontend",
+  "specVersion": "1.6.0",
+  "adapter": "frontend/react",
+  "note": "captured from the React/Vite controller without a browser tab; verify answers -32008 and L4 has no traces, which is the honest offline shape",
+  "cases": [
+    {
+      "name": "unknown requestId is a result",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": "oumv/cancel:unknown requestId is a result",
+        "method": "oumv/cancel",
+        "params": {
+          "requestId": "op-unknown"
+        }
+      },
+      "response": {
+        "requestId": "op-unknown",
+        "jsonrpc": "2.0",
+        "id": "oumv/cancel:unknown requestId is a result",
+        "result": {
+          "cancelled": false,
+          "requestId": "op-unknown"
+        }
+      }
+    },
+    {
+      "name": "target last is already finished",
+      "request": {
+        "jsonrpc": "2.0",
+        "id": "oumv/cancel:target last is already finished",
+        "method": "oumv/cancel",
+        "params": {
+          "target": "last"
+        }
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": "oumv/cancel:target last is already finished",
+        "result": {
+          "cancelled": false,
+          "finished": true
+        }
+      }
+    }
+  ]
+}

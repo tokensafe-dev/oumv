@@ -1,0 +1,75 @@
+{
+  "method": "oumv/index",
+  "profile": "backend",
+  "specVersion": "1.6.0",
+  "adapter": "backend/stdhttp",
+  "note": "captured from the net/http adapter against a temp workspace; paths are relative to it",
+  "cases": [
+    {
+      "name": "exact symbol search",
+      "request": {
+        "id": "oumv/index:exact symbol search",
+        "jsonrpc": "2.0",
+        "method": "oumv/index",
+        "params": {
+          "limit": 10,
+          "query": "value"
+        }
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": "oumv/index:exact symbol search",
+        "result": {
+          "matches": [
+            {
+              "resourceId": "function:Value@cert_edit_target.go",
+              "name": "Value",
+              "kind": "function",
+              "file": "cert_edit_target.go",
+              "lines": [
+                3,
+                3
+              ],
+              "match": "exact"
+            }
+          ],
+          "truncated": false,
+          "totalMatches": 1
+        }
+      }
+    },
+    {
+      "name": "prefix search",
+      "request": {
+        "id": "oumv/index:prefix search",
+        "jsonrpc": "2.0",
+        "method": "oumv/index",
+        "params": {
+          "limit": 10,
+          "query": "sym"
+        }
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": "oumv/index:prefix search",
+        "result": {
+          "matches": [
+            {
+              "resourceId": "function:Symbol@cert_symbol_target.go",
+              "name": "Symbol",
+              "kind": "function",
+              "file": "cert_symbol_target.go",
+              "lines": [
+                3,
+                3
+              ],
+              "match": "prefix"
+            }
+          ],
+          "truncated": false,
+          "totalMatches": 1
+        }
+      }
+    }
+  ]
+}

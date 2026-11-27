@@ -1,0 +1,56 @@
+{
+  "method": "oumv/build",
+  "profile": "backend",
+  "specVersion": "1.6.0",
+  "adapter": "backend/stdhttp",
+  "note": "captured from the net/http adapter against a temp workspace; paths are relative to it",
+  "cases": [
+    {
+      "name": "skipped without a configured command",
+      "request": {
+        "id": "oumv/build:skipped without a configured command",
+        "jsonrpc": "2.0",
+        "method": "oumv/build",
+        "params": {}
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": "oumv/build:skipped without a configured command",
+        "result": {
+          "status": "skipped",
+          "command": "none",
+          "diagnostics": [],
+          "skipReason": "no build command is configured for this runtime (set RuntimeConfig.BuildCommand or pass command)"
+        }
+      }
+    },
+    {
+      "name": "deterministic command passes",
+      "request": {
+        "id": "oumv/build:deterministic command passes",
+        "jsonrpc": "2.0",
+        "method": "oumv/build",
+        "params": {
+          "command": "echo ok"
+        }
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": "oumv/build:deterministic command passes",
+        "result": {
+          "status": "passed",
+          "command": "echo ok",
+          "diagnostics": [
+            {
+              "severity": "info",
+              "source": "build",
+              "message": "ok",
+              "tool": "echo"
+            }
+          ],
+          "durationMs": 144
+        }
+      }
+    }
+  ]
+}

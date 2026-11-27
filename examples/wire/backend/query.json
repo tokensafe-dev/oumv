@@ -1,0 +1,28 @@
+{
+  "method": "oumv/query",
+  "profile": "backend",
+  "specVersion": "1.6.0",
+  "adapter": "backend/stdhttp",
+  "note": "captured from the net/http adapter against a temp workspace; paths are relative to it",
+  "cases": [
+    {
+      "name": "no engine wired",
+      "request": {
+        "id": "oumv/query:no engine wired",
+        "jsonrpc": "2.0",
+        "method": "oumv/query",
+        "params": {
+          "sql": "SELECT 1"
+        }
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": "oumv/query:no engine wired",
+        "error": {
+          "code": -32006,
+          "message": "UNSUPPORTED_CAPABILITY: \"no query-capable database engine is wired into this runtime\" is not supported by this runtime adapter"
+        }
+      }
+    }
+  ]
+}
