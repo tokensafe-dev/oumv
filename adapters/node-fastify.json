@@ -127,6 +127,29 @@
         ]
       },
       "conformanceLevel": 2
+    },
+    {
+      "name": "mutate.multiFile",
+      "constraints": {
+        "developmentOnly": true,
+        "resourceTypes": [
+          "file"
+        ],
+        "limitations": [
+          "each item is validated and syntax-checked before the first write; a write failure restores what was written"
+        ]
+      },
+      "conformanceLevel": 3
+    },
+    {
+      "name": "sessions.ttlSeconds",
+      "constraints": {
+        "developmentOnly": false,
+        "limitations": [
+          "requested lifetime is clamped to 1..86400 and echoed as the granted ttlSeconds"
+        ]
+      },
+      "conformanceLevel": 3
     }
   ],
   "security": {

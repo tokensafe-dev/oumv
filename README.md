@@ -124,13 +124,14 @@ Three independent numbers, often mistaken for a mismatch:
 
 | Axis | Current | Meaning |
 | :--- | :--- | :--- |
-| Standard release | `v1.3.0` (2026-11-27) | Additive MINOR: `verify.sandbox` transactional rollback with evidence, handshake `transports`, fixture v9 capability cases. |
+| Standard release | `v1.4.0` (2026-11-27) | Additive MINOR: multi-file atomic `applyEdit` (`mutate.multiFile`), handshake `sessionTtlSeconds` + `sessions.ttlSeconds`, fixture v10 batch and expired-session cases. |
+| Previous release | `v1.3.0` (2026-11-27) | `verify.sandbox` transactional rollback with evidence, handshake `transports`, fixture v9 capability cases. |
 | Document revision | `v1.7-canonical` | The revision of `spec/SPEC.md`; see the changelog in that file. |
-| Wire `protocolVersion` | `1.4.0` | Sent in `oumv/handshake`. A runtime MUST echo the version it actually serves; clients accept a matching MAJOR. |
-| Fixtures | `fixtureVersion 9` (33 cases + 2 push + capability cases) | `fixtures/conformance-cases.json`; every report records the revision it ran. |
+| Wire `protocolVersion` | `1.5.0` | Sent in `oumv/handshake`. A runtime MUST echo the version it actually serves; clients accept a matching MAJOR. |
+| Fixtures | `fixtureVersion 10` (33 cases + 2 push + capability + session cases) | `fixtures/conformance-cases.json`; every report records the revision it ran. |
 
 These axes move independently by design: v1.3.0 ships document revision v1.7-canonical,
-wire version 1.4.0 and fixture set v9. A v1.0 adapter stays valid for the capabilities it
+wire version 1.5.0 and fixture set v10. A v1.0 adapter stays valid for the capabilities it
 declares — new modes answer `-32006` where unimplemented. Implementations negotiate the
 **wire** version, never the document revision.
 

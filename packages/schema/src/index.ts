@@ -11,6 +11,8 @@ import type {
   GetSourceResult,
   ApplyEditParams,
   ApplyEditResult,
+  ApplyEditBatchParams,
+  ApplyEditBatchResult,
   VerifyParams,
   VerifyResult,
 } from '@oumv/protocol';
@@ -25,6 +27,8 @@ export const OumvHandshakeParamsSchema = z.object({
     })
     .optional(),
   requestedCapabilities: z.record(z.any()).optional(),
+  // Wire 1.5.0: the client may ask for a shorter lifetime; runtimes clamp to 1..86400.
+  sessionTtlSeconds: z.number().int().min(1).max(86400).optional(),
 });
 
 export const OumvHandshakeResultSchema = z.object({
@@ -33,6 +37,8 @@ export const OumvHandshakeResultSchema = z.object({
     name: z.string(),
     version: z.string(),
   }),
+  sessionId: z.string().min(1).optional(),
+  ttlSeconds: z.number().int().min(1).max(86400).optional(),
   capabilities: z.object({
     observe: z.object({
       levels: z.array(z.enum(['L0', 'L1', 'L2', 'L3', 'L4'])),
@@ -47,12 +53,18 @@ export const OumvHandshakeResultSchema = z.object({
       occ: z.boolean(),
       syntaxGuard: z.boolean(),
       ephemeralDispatch: z.boolean(),
+      multiFile: z.boolean().optional(),
     }),
     verify: z.object({
       multiMetric: z.boolean(),
       surfaceDiff: z.boolean(),
       sandboxRollback: z.boolean().optional(),
     }),
+    sessions: z
+      .object({
+        ttlSeconds: z.boolean().optional(),
+      })
+      .optional(),
     transports: z
       .array(z.enum(['http', 'sse', 'ws', 'stdio', 'memory', 'batch']))
       .optional(),
@@ -241,6 +253,36 @@ export const ApplyEditResultSchema = z
       .optional(),
     backupPath: z.string().optional(),
     rollbackHint: z.string().optional(),
+  })
+  .passthrough();
+
+// Wire 1.5.0: multi-file atomic mutation. Every item is validated and
+// syntax-checked before the first byte is written, so a failure leaves no bytes.
+export const ApplyEditBatchItemSchema = z.object({
+  path: z.string(),
+  mode: z.enum(['replace', 'create', 'patch']).optional(),
+  expectedVersion: z.string().regex(/^sha256:[a-f0-9]{64}$/).optional(),
+  replacement: z.string().optional(),
+  hunks: z.array(ApplyEditHunkSchema).optional(),
+});
+
+export const ApplyEditBatchParamsSchema = z.object({
+  edits: z.array(ApplyEditBatchItemSchema).min(1).max(16),
+});
+
+export const ApplyEditBatchResultSchema = z
+  .object({
+    status: z.literal('APPLIED'),
+    edits: z
+      .array(
+        z.object({
+          path: z.string(),
+          newVersion: z.string().regex(/^sha256:[a-f0-9]{64}$/),
+          created: z.boolean().optional(),
+          hunksApplied: z.number().int().min(1).optional(),
+        })
+      )
+      .min(1),
   })
   .passthrough();
 

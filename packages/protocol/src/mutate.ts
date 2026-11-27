@@ -34,3 +34,33 @@ export interface ApplyEditResult {
   version: string;
   message?: string;
 }
+
+/** One item of a multi-file atomic mutation (wire 1.5.0). */
+export interface ApplyEditBatchItem {
+  path: string;
+  /** Defaults to `replace`; `symbol`/`delete`/`rename` answer -32006 inside a batch. */
+  mode?: 'replace' | 'create' | 'patch';
+  expectedVersion?: string;
+  replacement?: string;
+  hunks?: Array<{
+    target: string;
+    replacement: string;
+    startLine?: number;
+    endLine?: number;
+    replaceAll?: boolean;
+  }>;
+}
+
+export interface ApplyEditBatchParams {
+  edits: ApplyEditBatchItem[];
+}
+
+export interface ApplyEditBatchResult {
+  status: 'APPLIED';
+  edits: Array<{
+    path: string;
+    newVersion: string;
+    created?: boolean;
+    hunksApplied?: number;
+  }>;
+}

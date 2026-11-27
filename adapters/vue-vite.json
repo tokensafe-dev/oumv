@@ -140,6 +140,16 @@
         ]
       },
       "conformanceLevel": 2
+    },
+    {
+      "name": "sessions.ttlSeconds",
+      "constraints": {
+        "developmentOnly": false,
+        "limitations": [
+          "requested lifetime is clamped to 1..86400 and echoed as the granted ttlSeconds"
+        ]
+      },
+      "conformanceLevel": 3
     }
   ],
   "security": {

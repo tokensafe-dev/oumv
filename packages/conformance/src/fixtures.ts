@@ -11,7 +11,7 @@ import { createHash } from 'node:crypto';
 import { determineConformanceLevel, summarizeLevels } from './levels.js';
 import type { ConformanceLevel, LevelStatus } from './levels.js';
 
-export const SPEC_VERSION = '1.4.0';
+export const SPEC_VERSION = '1.5.0';
 
 export interface ConformanceCaseError {
   code: number;
@@ -45,12 +45,26 @@ export interface FixtureSpec {
   pushCases?: PushCase[];
   /** Cases gated on an advertised handshake capability (e.g. verify.sandboxRollback). */
   capabilityCases?: CapabilityCase[];
+  /** Session-lifecycle cases: handshake with a TTL, wait for it, expect -32011. */
+  sessionCases?: SessionCase[];
 }
 
 /** A case that only makes sense when the runtime advertises a capability. */
 export interface CapabilityCase extends ConformanceCase {
   /** Dotted path in the handshake capabilities, e.g. `verify.sandboxRollback`. */
   requiresCapability: string;
+  /** Paths removed before the case so a leftover from a previous run cannot fail it. */
+  cleanup?: string[];
+  /** One follow-up call whose expectations the case also asserts (atomicity probes). */
+  followUp?: ConformanceCase;
+}
+
+/** An expired-session case: issue a short-lived session, wait it out, expect -32011. */
+export interface SessionCase extends ConformanceCase {
+  /** Capability that must be advertised for this case to run (e.g. `sessions.ttlSeconds`). */
+  requiresCapability?: string;
+  /** Lifetime requested from the handshake; the runner waits ttl + 300 ms. */
+  ttlSeconds: number;
 }
 
 /** A pushed event: SSE `event:`/`id:`/`data:`, or a WS notification method/params. */
@@ -113,6 +127,10 @@ export interface CaseMarkers {
   pushContent: string;
   // fixtures v9: the target a sandbox capability case dispatches against
   sandboxTarget: string;
+  // fixtures v10: the two files an applyEdit batch creates, and their content
+  batchFileA: string;
+  batchFileB: string;
+  batchContent: string;
 }
 
 export interface CaseResult {
@@ -191,6 +209,9 @@ const MARKER_KEYS: Record<string, keyof CaseMarkers> = {
   '${PUSH_FILE}': 'pushFile',
   '${PUSH_CONTENT}': 'pushContent',
   '${SANDBOX_TARGET}': 'sandboxTarget',
+  '${BATCH_FILE_A}': 'batchFileA',
+  '${BATCH_FILE_B}': 'batchFileB',
+  '${BATCH_CONTENT}': 'batchContent',
 };
 
 /** Substitutes every `${MARKER}` in a string (params and expectations). */
@@ -229,6 +250,9 @@ export function defaultMarkers(overrides: Partial<CaseMarkers> = {}): CaseMarker
     pushFile: '__oumv_conformance_push.py',
     pushContent: 'value = 3\n',
     sandboxTarget: 'POST /__oumv_sandbox_probe',
+    batchFileA: '__oumv_conformance_batch_a.py',
+    batchFileB: '__oumv_conformance_batch_b.py',
+    batchContent: 'value = 7\n',
     ...overrides,
   };
 }
@@ -410,6 +434,38 @@ function matchesPushPayload(
   return true;
 }
 
+const delay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+
+/**
+ * Removes leftover files before a case that creates them, so a previous run
+ * (or a crashed certificate) cannot turn mode=create into CONFLICT_DETECTED.
+ */
+async function cleanupPaths(
+  transport: RpcTransport,
+  paths: string[],
+  markers: CaseMarkers
+): Promise<void> {
+  for (const rawPath of paths) {
+    const path = substituteText(String(rawPath), markers);
+    if (!path) continue;
+    const probe = await transport.request({
+      jsonrpc: '2.0',
+      id: 'cleanup',
+      method: 'oumv/getSource',
+      params: { path },
+    });
+    const version = (probe.result as Record<string, unknown> | undefined)?.version;
+    if (!probe.error && typeof version === 'string') {
+      await transport.request({
+        jsonrpc: '2.0',
+        id: 'cleanup',
+        method: 'oumv/applyEdit',
+        params: { path, mode: 'delete', expectedVersion: version },
+      });
+    }
+  }
+}
+
 /**
  * Runs one push case: make the trigger idempotent, fire it, then assert the
  * delivered event (and, for SSE, that `Last-Event-ID` replays it).
@@ -424,26 +480,7 @@ async function runPushCase(
 ): Promise<string> {
   const params = substituteMarkers(pushCase.trigger.params, markers);
   const targetPath = String(params.path ?? '');
-
-  // Idempotent across runs: a leftover probe file from a previous certificate
-  // would turn mode=create into CONFLICT_DETECTED.
-  if (targetPath) {
-    const probe = await transport.request({
-      jsonrpc: '2.0',
-      id: `${pushCase.id}-cleanup`,
-      method: 'oumv/getSource',
-      params: { path: targetPath },
-    });
-    const version = (probe.result as Record<string, unknown> | undefined)?.version;
-    if (!probe.error && typeof version === 'string') {
-      await transport.request({
-        jsonrpc: '2.0',
-        id: `${pushCase.id}-cleanup`,
-        method: 'oumv/applyEdit',
-        params: { path: targetPath, mode: 'delete', expectedVersion: version },
-      });
-    }
-  }
+  await cleanupPaths(transport, targetPath ? [targetPath] : [], markers);
 
   const cursorBefore = source.lastEventId();
   const trigger = await transport.request({
@@ -559,13 +596,25 @@ export async function runFixtureSuite(
     for (const capabilityCase of spec.capabilityCases ?? []) {
       if (!capabilityAdvertised(options.capabilities, capabilityCase.requiresCapability)) continue;
       const result: CaseResult = { id: capabilityCase.id, level: capabilityCase.level, status: 'passed' };
+      await cleanupPaths(transport, capabilityCase.cleanup ?? [], markers);
       const response = await transport.request({
         jsonrpc: '2.0',
         id: capabilityCase.id,
         method: capabilityCase.method,
         params: substituteMarkers(capabilityCase.params, markers),
       });
-      const failure = evaluateCase(capabilityCase, response, markers);
+      let failure = evaluateCase(capabilityCase, response, markers);
+      if (!failure && capabilityCase.followUp) {
+        const followUp = capabilityCase.followUp;
+        const followResponse = await transport.request({
+          jsonrpc: '2.0',
+          id: `${capabilityCase.id}-follow-up`,
+          method: followUp.method,
+          params: substituteMarkers(followUp.params, markers),
+        });
+        const followFailure = evaluateCase(followUp, followResponse, markers);
+        if (followFailure) failure = `follow-up: ${followFailure}`;
+      }
       if (failure) {
         result.status = 'failed';
         result.error = failure;
@@ -573,6 +622,50 @@ export async function runFixtureSuite(
       results.push(result);
       options.onCase?.(result);
     }
+  }
+
+  // Session cases prove the TTL the handshake advertises: a session issued with a
+  // short lifetime must be dead after it, with the spec's -32011/session_expired.
+  for (const sessionCase of spec.sessionCases ?? []) {
+    if (!options.capabilities) continue;
+    if (
+      sessionCase.requiresCapability &&
+      !capabilityAdvertised(options.capabilities, sessionCase.requiresCapability)
+    ) {
+      continue;
+    }
+    const result: CaseResult = { id: sessionCase.id, level: sessionCase.level, status: 'passed' };
+    let failure = '';
+    const handshake = await transport.request({
+      jsonrpc: '2.0',
+      id: `${sessionCase.id}-handshake`,
+      method: 'oumv/handshake',
+      params: { protocolVersion: spec.protocolVersion, sessionTtlSeconds: sessionCase.ttlSeconds },
+    });
+    const granted = (handshake.result as Record<string, unknown> | undefined)?.ttlSeconds;
+    const sessionId = (handshake.result as Record<string, unknown> | undefined)?.sessionId;
+    if (handshake.error) {
+      failure = `handshake with sessionTtlSeconds failed: ${handshake.error.code} ${handshake.error.message}`;
+    } else if (typeof granted !== 'number' || granted > sessionCase.ttlSeconds) {
+      failure = `runtime granted ttlSeconds=${String(granted)}, expected <= ${sessionCase.ttlSeconds}`;
+    } else if (typeof sessionId !== 'string' || !sessionId) {
+      failure = 'handshake returned no sessionId';
+    } else {
+      await delay(sessionCase.ttlSeconds * 1000 + 300);
+      const response = await transport.request({
+        jsonrpc: '2.0',
+        id: sessionCase.id,
+        method: sessionCase.method,
+        params: { ...substituteMarkers(sessionCase.params, markers), sessionId },
+      });
+      failure = evaluateCase(sessionCase, response, markers);
+    }
+    if (failure) {
+      result.status = 'failed';
+      result.error = failure;
+    }
+    results.push(result);
+    options.onCase?.(result);
   }
 
   const passed = results.filter((r) => r.status === 'passed').length;

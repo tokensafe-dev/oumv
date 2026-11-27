@@ -24,13 +24,19 @@ const CAPABILITY_CASES = {
   'understand.impact': 'understand-impact-resolves-target',
   'understand.causality': 'understand-causality-after-execution',
   'mutate.source': 'apply-edit-returns-real-occ-version',
+  'mutate.multiFile': 'apply-edit-batch-applies-all',
   'verify.behavior': 'verify-returns-status-timings-and-scope',
   'verify.sandboxRollback': 'verify-sandbox-rolls-back',
+  'sessions.ttlSeconds': 'expired-session-is-rejected',
 };
 
 const fixtures = JSON.parse(readFileSync(FIXTURES, 'utf-8'));
 const casesById = new Map(
-  [...fixtures.cases, ...(fixtures.capabilityCases ?? [])].map((c) => [c.id, c])
+  [
+    ...fixtures.cases,
+    ...(fixtures.capabilityCases ?? []),
+    ...(fixtures.sessionCases ?? []),
+  ].map((c) => [c.id, c])
 );
 
 const problems = [];

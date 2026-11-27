@@ -1,8 +1,8 @@
-# The OUMV Protocol Specification (v1.7-canonical)
+# The OUMV Protocol Specification (v1.8-canonical)
 **The Universal Agent-Runtime Protocol (UARP)**
 
-- **Date**: 2026-11-22 (v1.0 draft) · 2026-11-26 (v1.0.0 frozen; document revision v1.4-canonical) · 2026-11-26 (v1.1.0; revision v1.5-canonical, wire `protocolVersion` 1.2.0) · 2026-11-27 (v1.2.0; revision v1.6-canonical, wire `protocolVersion` 1.3.0) · 2026-11-27 (v1.3.0; revision v1.7-canonical, wire `protocolVersion` 1.4.0)  
-- **Status**: Stable — v1.3.0  
+- **Date**: 2026-11-22 (v1.0 draft) · 2026-11-26 (v1.0.0 frozen; document revision v1.4-canonical) · 2026-11-26 (v1.1.0; revision v1.5-canonical, wire `protocolVersion` 1.2.0) · 2026-11-27 (v1.2.0; revision v1.6-canonical, wire `protocolVersion` 1.3.0) · 2026-11-27 (v1.3.0; revision v1.7-canonical, wire `protocolVersion` 1.4.0) · 2026-11-27 (v1.4.0; revision v1.8-canonical, wire `protocolVersion` 1.5.0)  
+- **Status**: Stable — v1.4.0  
 - **Author**: Oleg Savelev  
 - **Repository**: [github.com/tokensafe-dev/oumv](https://github.com/tokensafe-dev/oumv)
 
@@ -123,6 +123,14 @@ A session begins with `oumv/handshake` and ends with `oumv/disconnect` or a TTL 
   transports that support them (SSE, WebSocket); see §2.1.
 * An expired or unknown `sessionId` MUST return `-32011 VALIDATION_FAILED` with
   `data.reason = "session_expired"` — the agent re-handshakes.
+* **TTL negotiation (v1.4.0, wire 1.5.0).** A client MAY send `sessionTtlSeconds`
+  (integer 1..86400) in the handshake. A runtime that advertises
+  `capabilities.sessions.ttlSeconds` MUST clamp the request to that range, issue the
+  session with the granted lifetime and answer the granted value as `ttlSeconds`; a
+  runtime that does not advertise it ignores the field and serves its own default. The
+  granted `ttlSeconds` is what a client may rely on, not the requested value: a client
+  that needs a short session MUST verify the echo (the `expired-session-is-rejected`
+  case does exactly that before waiting).
 
 ### 3.1 Handshake (`oumv/handshake`)
 
@@ -131,13 +139,14 @@ Upon establishing a connection, the agent and runtime exchange capabilities:
 **Client Request:**
 ```json
 {
-  "protocolVersion": "1.1.0",
+  "protocolVersion": "1.5.0",
   "clientInfo": { "name": "Antigravity", "version": "2.0.0" },
   "supportedTransports": ["http", "memory"],
+  "sessionTtlSeconds": 900,
   "requestedCapabilities": {
     "observe": { "levels": ["L0", "L1", "L2", "L3", "L4"], "formats": ["yaml", "json"] },
     "understand": { "causality": true, "signalsGraph": true },
-    "mutate": { "occ": true, "syntaxGuard": true },
+    "mutate": { "occ": true, "syntaxGuard": true, "multiFile": true },
     "verify": { "multiMetric": true, "surfaceDiff": true }
   }
 }
@@ -146,14 +155,18 @@ Upon establishing a connection, the agent and runtime exchange capabilities:
 **Server Response:**
 ```json
 {
-  "protocolVersion": "1.1.0",
+  "protocolVersion": "1.5.0",
   "profile": "frontend",
-  "runtimeInfo": { "name": "tokensafe-ui", "version": "0.1.22" },
+  "sessionId": "sess-4f2a…",
+  "ttlSeconds": 900,
+  "runtimeInfo": { "name": "tokensafe-ui", "version": "0.1.28" },
   "capabilities": {
     "observe": { "levels": ["L0", "L1", "L2", "L3", "L4"], "formats": ["yaml", "json"] },
     "understand": { "causality": true, "signalsGraph": true },
-    "mutate": { "occ": true, "syntaxGuard": true },
-    "verify": { "multiMetric": true, "surfaceDiff": true }
+    "mutate": { "occ": true, "syntaxGuard": true, "multiFile": true },
+    "verify": { "multiMetric": true, "surfaceDiff": true },
+    "sessions": { "ttlSeconds": true },
+    "transports": ["http", "sse", "ws"]
   }
 }
 ```
@@ -239,7 +252,7 @@ answer `{path, version, unchanged: true}` with **no** `source`, instead of resen
 the agent already has. A `symbol` that does not exist in the file is `-32009`; it is never
 answered with the whole file under a symbol label.
 
-`applyEdit`: request `{path, symbol?, replacement?, expectedVersion?, mode?: "replace"|"create"|"symbol"|"delete"|"rename"|"patch", renameTo?, hunks?}` → 
+`applyEdit`: request `{path, symbol?, replacement?, expectedVersion?, mode?: "replace"|"create"|"symbol"|"delete"|"rename"|"patch", renameTo?, hunks?}` — or the batch envelope `{edits: [{path, mode?, expectedVersion?, replacement?, hunks?}]}` documented below — → 
 ```json
 { "status": "APPLIED"|"CURRENT", "path": "src/api/orders.go", "symbol": "CreateOrder",
   "newPath": "src/api/orders_v2.go", "newVersion": "sha256:…", "created": true, "deleted": true,
@@ -284,6 +297,45 @@ Why `create`/`delete`/`rename` are modes and not separate methods: an agent that
 express them through the protocol falls back to shell redirects or `mv`, which bypasses
 the workspace jail, the syntax pre-flight and the mutation policy — the four pillars would
 have a hole exactly where files enter, leave or move in the repository.
+
+**Multi-file atomic mutation (v1.4.0, wire 1.5.0).** A request whose parameters carry
+`edits` instead of top-level `path` is a batch:
+
+```json
+{ "edits": [
+    { "path": "src/api/orders.go", "mode": "create", "replacement": "…" },
+    { "path": "src/api/routes.go", "expectedVersion": "sha256:…", "replacement": "…" },
+    { "path": "src/api/util.go", "mode": "patch", "expectedVersion": "sha256:…",
+      "hunks": [{ "target": "old()", "replacement": "new()" }] } ] }
+```
+→
+```json
+{ "status": "APPLIED",
+  "edits": [ { "path": "src/api/orders.go", "newVersion": "sha256:…", "created": true },
+             { "path": "src/api/routes.go", "newVersion": "sha256:…" },
+             { "path": "src/api/util.go", "newVersion": "sha256:…", "hunksApplied": 1 } ] }
+```
+
+`edits` holds 1..16 items; an item's `mode` is `replace` (default), `create` or `patch`
+— the single-file modes `symbol`/`delete`/`rename` are `-32006` inside a batch with
+`data.editIndex`, because a rename that a later item's path depends on cannot be
+staged without ordering assumptions the spec refuses to make. A path may appear only
+once (`-32011`, `data.reason="duplicate_path"`).
+
+A batch is **all or nothing**. The runtime MUST validate every item — jail, existence,
+`expectedVersion` rules, OCC match, hunk resolution — and syntax-check every staged
+result **before writing the first byte**. A failure in item *i* answers with the error
+that item alone would produce, plus `data.editIndex: i` and `data.path`; nothing is
+written. Only after every item staged cleanly are the files written, in order; if a
+write fails after some files were already written, the runtime MUST restore the
+already-written files to their previous bytes (and delete created ones) and answer
+`-32603 INTERNAL_ERROR` with `data.rolledBack: true` and `data.editIndex`. The result
+carries one entry per item, in request order. `mutate.multiFile` advertises the
+capability; a runtime that does not advertise it answers `-32006`.
+
+Batch semantics are proven by two cases: `apply-edit-batch-applies-all` (two creates,
+both present in the result) and `apply-edit-batch-is-atomic` (second item invalid →
+`-32002` with `data.editIndex=1`, and the first path still answers `-32009`).
 
 Normative guards, in this order (first failure wins):
 
@@ -570,7 +622,9 @@ Conformance is **per adapter and per profile**, and it is a claim that MUST be b
 
 ### 10.2 Language-neutral fixtures
 
-Cases live in `fixtures/conformance-cases.json` (`fixtureVersion` 6). Every case declares the `level` it certifies and may declare `preconditions` such as `verify` (which establishes the runtime evidence that L4/causality cases assert on). Each runtime executes the same file with its native toolchain — no TypeScript required for Go or Python certification.
+Cases live in `fixtures/conformance-cases.json` (`fixtureVersion` 10). Every case declares the `level` it certifies and may declare `preconditions` such as `verify` (which establishes the runtime evidence that L4/causality cases assert on). Each runtime executes the same file with its native toolchain — no TypeScript required for Go or Python certification.
+
+Besides the ordered `cases`, the file carries three gated families: `pushCases` (run only by the SSE/WS certificate whose `transport` matches), `capabilityCases` (run only when the runtime's handshake advertises `requiresCapability`, and dropped from the report otherwise, so no claim is ever certified by a skipped case) and `sessionCases` (handshake with `sessionTtlSeconds: ttlSeconds`, wait the granted lifetime, then assert `-32011` + `data.reason="session_expired"`). A capability case may name `cleanup` paths removed before it runs and a `followUp` call whose expectations it also asserts — the second half of an atomicity proof.
 
 A case declares its expectations declaratively: `expectResultFields`, `expectValues` (JSON-path equality on the result), `expectError.code` (with optional `expectError.data`), `expectLevelEquals`, `expectSha256Field`, `expectArrayField`, `expectEvidence`, `expectVersionMatchesContent`. The reference runners are the Go/Python packages in `tokensafe-backend` and `@oumv/conformance` (CLI `oumv-certify`); a certification claim is reproduced in CI by re-running one of them.
 
@@ -584,9 +638,9 @@ A level claim MUST be accompanied by a report (schema: `schemas/conformance-repo
 {
   "adapterName": "go-gin",
   "framework": "gin",
-  "specVersion": "1.2.0",
-  "fixtureVersion": 6,
-  "total": 25, "passed": 25, "failed": 0,
+  "specVersion": "1.5.0",
+  "fixtureVersion": 10,
+  "total": 36, "passed": 36, "failed": 0,
   "attainedLevel": 3,
   "levels": { "1": "passed", "2": "passed", "3": "passed" },
   "cases": [{ "id": "handshake-negotiates-capabilities", "level": 1, "status": "passed" }],
@@ -669,6 +723,8 @@ provenance is inferred rather than observed.
 ---
 
 ## Changelog
+
+- **v1.4.0 release (2026-11-27)**: wire `protocolVersion` **1.5.0**, document revision `v1.8-canonical`, `fixtureVersion` **10**. New: `applyEdit` accepts a batch envelope — `edits: [{path, mode?, expectedVersion?, replacement?, hunks?}]` with 1..16 items, modes `replace|create|patch`, every item validated and syntax-checked before the first write, a write failure restoring the files already written (`-32603` + `data.rolledBack: true`), item-scoped errors carrying `data.editIndex`/`data.path`, and a per-item result `{status: "APPLIED", edits: [{path, newVersion, created?, hunksApplied?}]}`; advertised as `capabilities.mutate.multiFile` and proven by `apply-edit-batch-applies-all` and `apply-edit-batch-is-atomic`. Handshake gains `sessionTtlSeconds` (1..86400, clamped, echoed as the granted `ttlSeconds`) with `capabilities.sessions.ttlSeconds`, and the new `sessionCases` family proves an expired id answers `-32011` with `data.reason="session_expired"`. Certification: all six backend adapters, the Go/Python live servers and the React/Vue controllers re-run on fixtures v10.
 
 - **v1.3.0 release (2026-11-27)**: wire `protocolVersion` **1.4.0**, document revision `v1.7-canonical`, `fixtureVersion` **9**. New: `verify.sandbox: {mode: "rollback"}` — one transaction for the whole request, evidence-gated `rolledBack`/`rollbackStatus`, `dbDiff {rollback, queries?, driver?}`, advertised as `capabilities.verify.sandboxRollback` and proven by the `verify-sandbox-rolls-back` capability case. Handshake capabilities now carry `transports` (the bindings a runtime actually mounted, §2.3/§2.4). `mutate.ephemeralDispatch` is documented here (it was already in the schema). Behavioural alignment: SSE ids are monotonic integers on every runtime, `Last-Event-ID` replays `trace` and `state`, WS `notifications/oumv.state` is bound to the handshake session, and the fixture v8 push cases certify those bindings. Certification: Go/Node/Python adapters at Level 3, Spring/PHP at Level 2 with the named L4 gap; Node Express/Fastify carry SSE and WS transport certificates.
 

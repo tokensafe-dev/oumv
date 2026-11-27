@@ -1,7 +1,7 @@
 {
   "method": "oumv/handshake",
   "profile": "frontend",
-  "specVersion": "1.4.0",
+  "specVersion": "1.5.0",
   "adapter": "frontend/react",
   "note": "captured from the React/Vite controller without a browser tab; verify answers -32008 and L4 has no traces, which is the honest offline shape",
   "cases": [
@@ -23,9 +23,9 @@
         "jsonrpc": "2.0",
         "id": "oumv/handshake:negotiates capabilities",
         "result": {
-          "protocolVersion": "1.4.0",
+          "protocolVersion": "1.5.0",
           "profile": "frontend",
-          "sessionId": "sess-19f9964c012a78c4",
+          "sessionId": "sess-5c79c39a7fea051a",
           "ttlSeconds": 3600,
           "runtimeInfo": {
             "name": "react",
@@ -59,6 +59,9 @@
             "verify": {
               "multiMetric": true,
               "surfaceDiff": true
+            },
+            "sessions": {
+              "ttlSeconds": true
             }
           }
         }
@@ -86,9 +89,9 @@
         "jsonrpc": "2.0",
         "id": "oumv/handshake:narrows requested observe levels",
         "result": {
-          "protocolVersion": "1.4.0",
+          "protocolVersion": "1.5.0",
           "profile": "frontend",
-          "sessionId": "sess-0e48c3283447bb9a",
+          "sessionId": "sess-42b4f2f2d6babb10",
           "ttlSeconds": 3600,
           "runtimeInfo": {
             "name": "react",
@@ -119,6 +122,9 @@
             "verify": {
               "multiMetric": true,
               "surfaceDiff": true
+            },
+            "sessions": {
+              "ttlSeconds": true
             }
           }
         }

@@ -180,7 +180,7 @@ in `tokensafe-backend`) — a level that stops reproducing fails the build.
 For the React adapter there are two runs. The **browser** run is the real certificate:
 it starts the app's Vite dev server, opens it in headless Chrome (`playwright-core`
 with the system Chrome channel), waits for the bridge, and runs `oumv-certify --url`
-against the committed `certification/app` — 33/33, level 3.
+against the committed `certification/app` — 34/34, level 3 (the v10 expired-session case included).
 
 ```bash
 cd agent-dom/certification/app && npm install && cd ../..
@@ -247,9 +247,10 @@ claimed. Their reports name that single gap.
 The optional bindings are certified by reports, not by the matrix. Node Express and
 Fastify, Go net/http and Python FastAPI each have SSE and WS certificates
 (`tokensafe-backend/certification/transports/*-sse.json`, `*-ws.json`) at Level 3,
-35/35: the 33-case suite plus the fixture v8 push case and the v9 sandbox capability
-case. `stdio` is certified by `node-stdio.json` and `python-stdio.json` (Level 3,
-33/33). A transport claim without a report is not made.
+38/38: the 33-case suite plus the fixture v8 push case, the v9 sandbox capability case
+and the v10 batch and expired-session cases. `stdio` is certified by `node-stdio.json`
+and `python-stdio.json` (Level 3, 33/33). A transport claim without a report is not
+made.
 
 The `sse`/`ws` certificates are produced by passing the push channel to the
 runner — `oumv-certify --url <rpc> --sse <events>` for SSE, `oumv-certify --ws <rpc>`
@@ -268,16 +269,17 @@ listed so a third party can see what a certificate does **not** prove today.
 
 | Gap | What is missing | Why it is not a runtime bug |
 | :--- | :--- | :--- |
-| No multi-file atomic `applyEdit` | §8 says a mutation is atomic, but `ApplyEditParams` is single-file. A cross-file change is several calls with no all-or-nothing rollback. | This is a wire addition (a transaction envelope), so it needs a `protocolVersion` minor, fixtures, and re-certification of every adapter — a coordinated release, not a runtime patch. |
-| Session expiry and auth rejection are not fixtures | `unknown-session-is-rejected` proves an unknown id fails; nothing proves an expired one fails, or that a missing token answers `401`/`-32007`. | Expiry needs an injectable clock (or a TTL of seconds) and auth needs per-case headers in the fixture schema; both are test-harness features, not adapter behaviour. |
+| Auth rejection is not a fixture | `unknown-session-is-rejected` and `expired-session-is-rejected` prove session identity and expiry; nothing proves a missing token answers `401`/`-32007`. | Auth is transport-level policy, so the fixture needs per-case headers; the runtime hooks exist (`X-OUMV-Session-Token`), the harness field does not. |
 
-Fix them in that order: the transaction envelope first, then auth/expiry harness hooks.
+Closed in wire 1.5.0: multi-file atomic `applyEdit` (`mutate.multiFile`,
+`apply-edit-batch-applies-all` / `apply-edit-batch-is-atomic`) and session expiry
+(`sessionTtlSeconds` + `sessions.ttlSeconds`, `expired-session-is-rejected`).
 
 ---
 
 ## 7. Versioning
 
-* The wire contract is versioned by `protocolVersion` (`1.4.0` today). Adapters
+* The wire contract is versioned by `protocolVersion` (`1.5.0` today). Adapters
   answer with the version they implement; agents negotiate from the handshake.
 * Fixtures carry `fixtureVersion`; a report records both, so a level always maps
   to a concrete suite.

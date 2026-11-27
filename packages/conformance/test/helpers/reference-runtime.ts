@@ -10,10 +10,32 @@ import type { JsonRpcRequest, JsonRpcResponse } from '../../src/fixtures.js';
 
 export const REFERENCE_SOURCE = 'value = 1\n';
 // The reference runtime has no disk. A path "exists" unless it carries the create
-// marker ("created" appears in every runner's ${NEW_FILE}), which keeps create-mode
-// outcomes deterministic across cases.
-const pathExists = (candidate: string) => !String(candidate).includes('created');
+// marker ("created" appears in every runner's ${NEW_FILE}); batch paths exist only
+// after a batch created them, which is what the atomicity follow-up asserts.
+const batchFiles = new Set<string>();
+const pathExists = (candidate: string) => {
+  const name = String(candidate);
+  if (name.includes('batch_')) return batchFiles.has(name);
+  return !name.includes('created');
+};
 export const ZERO_VERSION = `sha256:${'0'.repeat(64)}`;
+
+/** Live handshake sessions; the reference TTL is honoured on read (spec §3). */
+const sessions = new Map<string, number>();
+
+function createSession(requestedTtl: unknown): { id: string; ttl: number } {
+  const requested = Number(requestedTtl);
+  const ttl = Number.isFinite(requested) && requested > 0 ? Math.min(Math.max(Math.floor(requested), 1), 86400) : 3600;
+  const id = `sess-ref-${crypto.randomBytes(4).toString('hex')}`;
+  sessions.set(id, Date.now() + ttl * 1000);
+  return { id, ttl };
+}
+
+function sessionExpired(sessionId: unknown): boolean {
+  if (!sessionId) return false;
+  const expiresAt = sessions.get(String(sessionId));
+  return expiresAt === undefined || Date.now() > expiresAt;
+}
 
 export function occToken(content: string): string {
   return `sha256:${crypto.createHash('sha256').update(content, 'utf-8').digest('hex')}`;
@@ -32,29 +54,36 @@ export function referenceRuntime(request: JsonRpcRequest): JsonRpcResponse {
     case 'oumv/handshake':
       if (params.protocolVersion) {
         const [maj, min] = String(params.protocolVersion).split('.').map(Number);
-        if (maj !== 1 || min > 3) {
+        if (maj !== 1 || min > 5) {
           return fail(-32006, `UNSUPPORTED_CAPABILITY: protocol version ${params.protocolVersion}`, {
             reason: 'unsupported_version',
           });
         }
       }
-      return ok({
-        protocolVersion: '1.3.0',
-        profile: 'backend',
-        sessionId: 'sess-reference',
-        ttlSeconds: 3600,
-        runtimeInfo: { name: 'reference', version: '0.0.1' },
-        capabilities: {
-          observe: { levels: ['L0', 'L1', 'L2', 'L3', 'L4'] },
-          understand: { impactAnalysis: true, causality: true },
-          mutate: { occ: true },
-          verify: {},
-        },
-      });
+      {
+        const session = createSession(params.sessionTtlSeconds);
+        return ok({
+          protocolVersion: '1.5.0',
+          profile: 'backend',
+          sessionId: session.id,
+          ttlSeconds: session.ttl,
+          runtimeInfo: { name: 'reference', version: '0.0.1' },
+          capabilities: {
+            observe: { levels: ['L0', 'L1', 'L2', 'L3', 'L4'] },
+            understand: { impactAnalysis: true, causality: true },
+            mutate: { occ: true, multiFile: true },
+            verify: {},
+            sessions: { ttlSeconds: true },
+          },
+        });
+      }
 
     case 'oumv/observe': {
-      if (params.sessionId === 'sess-unknown') {
-        return fail(-32011, 'VALIDATION_FAILED: unknown sessionId', { reason: 'session_expired' });
+      if (sessionExpired(params.sessionId)) {
+        return fail(-32011, 'VALIDATION_FAILED: unknown or expired sessionId — re-run oumv/handshake', {
+          reason: 'session_expired',
+          sessionId: params.sessionId,
+        });
       }
       const level = String(params.level);
       if (!['L0', 'L1', 'L2', 'L3', 'L4'].includes(level)) {
@@ -114,6 +143,9 @@ export function referenceRuntime(request: JsonRpcRequest): JsonRpcResponse {
     case 'oumv/getSource':
       if (String(params.path).includes('missing')) {
         return fail(-32009, 'RESOURCE_NOT_FOUND: no such file');
+      }
+      if (!pathExists(String(params.path))) {
+        return fail(-32009, `RESOURCE_NOT_FOUND: ${String(params.path)} does not exist`);
       }
       if (params.symbol && !REFERENCE_SOURCE.includes(String(params.symbol))) {
         return fail(-32009, `RESOURCE_NOT_FOUND: symbol ${params.symbol} not found`);
@@ -186,6 +218,100 @@ export function referenceRuntime(request: JsonRpcRequest): JsonRpcResponse {
       });
 
     case 'oumv/applyEdit': {
+      // Wire 1.5.0 batch envelope: pre-flight every item, then answer per item.
+      if (Array.isArray(params.edits)) {
+        const edits = params.edits as Array<Record<string, any>>;
+        if (edits.length === 0 || edits.length > 16) {
+          return fail(-32011, 'VALIDATION_FAILED: edits must hold 1..16 items', { reason: 'batch_size' });
+        }
+        const seen = new Set<string>();
+        const staged: Array<Record<string, unknown>> = [];
+        const created: string[] = [];
+        for (let index = 0; index < edits.length; index++) {
+          const item = edits[index] ?? {};
+          const path = String(item.path ?? '');
+          const mode = String(item.mode ?? 'replace');
+          if (!['replace', 'create', 'patch'].includes(mode)) {
+            return fail(-32006, `UNSUPPORTED_CAPABILITY: mode ${mode} is not batchable`, {
+              reason: 'unknown_mode',
+              editIndex: index,
+              path,
+            });
+          }
+          if (seen.has(path)) {
+            return fail(-32011, 'VALIDATION_FAILED: duplicate path in batch', {
+              reason: 'duplicate_path',
+              editIndex: index,
+              path,
+            });
+          }
+          seen.add(path);
+          if (mode === 'create') {
+            if (item.expectedVersion) {
+              return fail(-32011, 'VALIDATION_FAILED: expectedVersion must be omitted for mode=create', {
+                reason: 'create_forbids_version',
+                editIndex: index,
+                path,
+              });
+            }
+            if (pathExists(path)) {
+              return fail(-32001, 'CONFLICT_DETECTED: file already exists', {
+                reason: 'file_exists',
+                editIndex: index,
+                path,
+              });
+            }
+            if (String(item.replacement).includes('def broken(:')) {
+              return fail(-32002, 'SYNTAX_ERROR: invalid syntax', { editIndex: index, path });
+            }
+            created.push(path);
+            staged.push({ path, newVersion: occToken(String(item.replacement)), created: true });
+            continue;
+          }
+          if (!item.expectedVersion) {
+            return fail(-32011, 'VALIDATION_FAILED: expectedVersion is required', {
+              reason: 'expected_version_required',
+              editIndex: index,
+              path,
+            });
+          }
+          if (String(item.expectedVersion) === ZERO_VERSION) {
+            return fail(-32001, 'CONFLICT_DETECTED: stale expectedVersion', { editIndex: index, path });
+          }
+          if (mode === 'patch') {
+            const hunks = Array.isArray(item.hunks) ? item.hunks : [];
+            if (!hunks.length) {
+              return fail(-32011, 'VALIDATION_FAILED: hunks is required for mode=patch', {
+                reason: 'hunks_required',
+                editIndex: index,
+                path,
+              });
+            }
+            const text = REFERENCE_SOURCE;
+            for (const hunk of hunks) {
+              const count = text.split(String(hunk?.target ?? '')).length - 1;
+              if (count === 0) {
+                return fail(-32009, 'RESOURCE_NOT_FOUND: target not found', {
+                  reason: 'target_not_found',
+                  editIndex: index,
+                  path,
+                });
+              }
+            }
+            staged.push({ path, newVersion: occToken(text), hunksApplied: hunks.length });
+            continue;
+          }
+          if (String(item.replacement).includes('def broken(:')) {
+            return fail(-32002, 'SYNTAX_ERROR: invalid syntax', { editIndex: index, path });
+          }
+          staged.push({ path, newVersion: occToken(String(item.replacement)) });
+        }
+        // Nothing exists until the whole batch staged: the atomicity follow-up
+        // asserts that a failed batch left no file behind.
+        for (const path of created) batchFiles.add(path);
+        return ok({ status: 'APPLIED', edits: staged });
+      }
+
       const editMode = String(params.mode ?? 'replace');
       if (!['replace', 'create', 'symbol', 'delete', 'rename', 'patch'].includes(editMode)) {
         return fail(-32006, `UNSUPPORTED_CAPABILITY: unknown applyEdit mode ${editMode}`, { reason: 'unknown_mode' });
@@ -248,6 +374,7 @@ export function referenceRuntime(request: JsonRpcRequest): JsonRpcResponse {
         if (!params.expectedVersion) {
           return fail(-32011, 'VALIDATION_FAILED: expectedVersion is required', { reason: 'expected_version_required' });
         }
+        batchFiles.delete(String(params.path));
         return ok({ status: 'APPLIED', path: params.path, syntaxCheck: { status: 'skipped' }, deleted: true });
       }
       if (params.mode === 'rename') {

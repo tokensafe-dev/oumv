@@ -2,7 +2,7 @@
  "$schema": "https://json-schema.org/draft/2020-12/schema",
  "$id": "https://github.com/tokensafe-dev/oumv/schemas/oumv-handshake.json",
  "title": "oumv/handshake",
- "x-oumv-spec-version": "1.4.0",
+ "x-oumv-spec-version": "1.5.0",
  "$defs": {
   "Request": {
    "type": "object",
@@ -44,6 +44,12 @@
     },
     "requestedCapabilities": {
      "type": "object"
+    },
+    "sessionTtlSeconds": {
+     "type": "integer",
+     "minimum": 1,
+     "maximum": 86400,
+     "description": "Requested session lifetime (wire 1.5.0). Runtimes clamp to 1..86400 and answer the granted value as `ttlSeconds`; a runtime without `sessions.ttlSeconds` ignores it and serves its default."
     }
    }
   },
@@ -126,6 +132,20 @@
       },
       "ephemeralDispatch": {
        "type": "boolean"
+      },
+      "multiFile": {
+       "type": "boolean",
+       "description": "atomic multi-file applyEdit (wire 1.5.0)"
+      }
+     }
+    },
+    "sessions": {
+     "type": "object",
+     "additionalProperties": false,
+     "properties": {
+      "ttlSeconds": {
+       "type": "boolean",
+       "description": "honours a client-requested handshake `sessionTtlSeconds` (wire 1.5.0)"
       }
      }
     },
@@ -172,7 +192,9 @@
     },
     "ttlSeconds": {
      "type": "integer",
-     "minimum": 1
+     "minimum": 1,
+     "maximum": 86400,
+     "description": "granted session lifetime; echoes the clamped `sessionTtlSeconds` or the runtime default"
     },
     "runtimeInfo": {
      "type": "object",

@@ -2,7 +2,7 @@
  "$schema": "https://json-schema.org/draft/2020-12/schema",
  "$id": "https://github.com/tokensafe-dev/oumv/schemas/oumv-verify.json",
  "title": "oumv/verify",
- "x-oumv-spec-version": "1.4.0",
+ "x-oumv-spec-version": "1.5.0",
  "$defs": {
   "Request": {
    "type": "object",

@@ -1,7 +1,38 @@
 # Changelog
 
-The wire contract is versioned by `protocolVersion` (currently **1.4.0**); this
+The wire contract is versioned by `protocolVersion` (currently **1.5.0**); this
 changelog tracks the OUMV specification and its reference tooling.
+
+## v1.4.0 — 2026-11-27 (wire 1.5.0, fixtures v10)
+
+Additive MINOR: two long-standing gaps in the contract's evidence are closed by the wire
+itself, not by an adapter-specific extension.
+
+- **`applyEdit` multi-file batch.** A request may carry `edits: [{path, mode?,
+  expectedVersion?, replacement?, hunks?}]` (1..16 items, modes `replace|create|patch`).
+  Every item is jail-, version- and syntax-checked before the first byte is written; a
+  write failure restores the files already written and answers `-32603` with
+  `data.rolledBack` and `data.editIndex`. Item-scoped errors carry `data.editIndex` and
+  `data.path`; the result is `{status: "APPLIED", edits: [{path, newVersion, created?,
+  hunksApplied?}]}`. Advertised as `capabilities.mutate.multiFile` and proven by
+  `apply-edit-batch-applies-all` and `apply-edit-batch-is-atomic` (the second case also
+  asserts, through a `followUp`, that the first path does not exist).
+- **Session TTL negotiation.** The handshake accepts `sessionTtlSeconds` (1..86400,
+  clamped), issues the session with the granted lifetime and echoes it as `ttlSeconds`;
+  advertised as `capabilities.sessions.ttlSeconds`. The new `sessionCases` family issues
+  a one-second session, waits it out and asserts `-32011` with
+  `data.reason="session_expired"` (`expired-session-is-rejected`).
+- **Runners.** All three reference runners (`@oumv/conformance`, Go, Python) grew
+  `sessionCases`, `cleanup` paths and a `followUp` call for capability cases, plus
+  `expectError.data` matching. A case a runtime does not claim stays out of its report.
+- **Defect fixed while regenerating the golden examples.** The Go handshake rejected a
+  client that asked for the runtime's own version (`minor > 3` while serving 1.4.0); the
+  frozen example showed the rejection and nobody noticed. Go now accepts every minor up
+  to the one it serves.
+- **Certification.** Go (gin/chi/net-http), Node (Express/Fastify) and Python (FastAPI)
+  at Level 3, 37/37; Java and PHP sidecars at Level 2, 32/33 (L4 traces, by design);
+  React and Vue in a real browser at Level 3, 34/34; SSE/WS transport certificates at
+  Level 3, 38/38, including the new batch and expired-session cases.
 
 ## v1.3.0 — 2026-11-27 (wire 1.4.0, fixtures v9)
 
