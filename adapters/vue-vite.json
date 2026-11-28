@@ -2,7 +2,7 @@
   "identity": {
     "id": "frontend/vue",
     "name": "tokensafe-ui OUMV adapter for Vue 3 + Vite",
-    "version": "0.1.34",
+    "version": "0.1.35",
     "description": "OUMV frontend adapter served by the Vite dev server (HTTP, SSE, WebSocket, batch)",
     "repo": "https://github.com/tokensafe-dev/agent-dom"
   },
@@ -18,6 +18,10 @@
   },
   "profiles": [
     "frontend"
+  ],
+  "modes": [
+    "read-write",
+    "read-only"
   ],
   "capabilities": [
     {
@@ -201,6 +205,17 @@
         ]
       },
       "conformanceLevel": 3
+    },
+    {
+      "name": "deployment.read_only",
+      "constraints": {
+        "readOnly": true,
+        "limitations": [
+          "read-only mode registers no applyEdit/previewEdit/verify/build: they answer -32601 METHOD_NOT_FOUND (spec §8.5)",
+          "the handshake advertises capabilities.readOnly and omits mutate/verify"
+        ]
+      },
+      "conformanceLevel": 1
     }
   ],
   "security": {

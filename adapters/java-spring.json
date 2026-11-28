@@ -2,7 +2,7 @@
   "identity": {
     "id": "backend/java-spring",
     "name": "TokenSafe OUMV adapter for Spring Boot (JDK-only sidecar)",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "description": "Static Spring annotation scanner plus OUMV JSON-RPC over stdio and HTTP, launched with the JDK single-file source launcher. No Maven, Gradle or Spring jars.",
     "repo": "https://github.com/tokensafe-dev/tokensafe-backend"
   },
@@ -18,6 +18,10 @@
   },
   "profiles": [
     "backend"
+  ],
+  "modes": [
+    "read-write",
+    "read-only"
   ],
   "capabilities": [
     {
@@ -116,6 +120,17 @@
         ]
       },
       "conformanceLevel": 2
+    },
+    {
+      "name": "deployment.read_only",
+      "constraints": {
+        "readOnly": true,
+        "limitations": [
+          "read-only mode registers no applyEdit/previewEdit/verify/build: they answer -32601 METHOD_NOT_FOUND (spec §8.5)",
+          "the handshake advertises capabilities.readOnly and omits mutate/verify"
+        ]
+      },
+      "conformanceLevel": 1
     }
   ],
   "security": {

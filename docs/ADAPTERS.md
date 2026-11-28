@@ -303,7 +303,15 @@ listed so a third party can see what a certificate does **not** prove today.
 
 | Gap | What is missing | Why it is not a runtime bug |
 | :--- | :--- | :--- |
-| Auth rejection is not a fixture | `unknown-session-is-rejected` and `expired-session-is-rejected` prove session identity and expiry; nothing proves a missing token answers `401`/`-32007`. | Auth is transport-level policy, so the fixture needs per-case headers; the runtime hooks exist (`X-OUMV-Session-Token`), the harness field does not. |
+| *(none recorded at level ≤ 3)* | Every capability an adapter manifest advertises is backed by a named case; `scripts/check_adapter_capabilities.mjs` fails the build otherwise. | — |
+
+Closed in revision v1.11: the read-only deployment shape. `read-only-*` capability
+cases assert `-32601` for `applyEdit`/`previewEdit`/`verify`/`build`, the
+`capabilities.readOnly` flag and that observe still works, and every manifest carries
+`modes: ["read-write", "read-only"]` with a `deployment.read_only` claim.
+
+Closed in revision v1.10: transport auth rejection (`authCases` — missing, invalid and
+wrong-scheme credentials answer `401` + `-32007` before dispatch).
 
 Closed in wire 1.5.0: multi-file atomic `applyEdit` (`mutate.multiFile`,
 `apply-edit-batch-applies-all` / `apply-edit-batch-is-atomic`) and session expiry

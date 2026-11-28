@@ -2,7 +2,7 @@
   "identity": {
     "id": "backend/php-laravel",
     "name": "TokenSafe OUMV adapter for PHP (Laravel + Symfony)",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "description": "Dependency-free PHP sidecar: static Laravel Route:: / Symfony #[Route] discovery, handler slicing via token_get_all, OCC mutations and php -l verification over stdio and HTTP",
     "repo": "https://github.com/tokensafe-dev/tokensafe-backend"
   },
@@ -18,6 +18,10 @@
   },
   "profiles": [
     "backend"
+  ],
+  "modes": [
+    "read-write",
+    "read-only"
   ],
   "capabilities": [
     {
@@ -129,6 +133,17 @@
         ]
       },
       "conformanceLevel": 2
+    },
+    {
+      "name": "deployment.read_only",
+      "constraints": {
+        "readOnly": true,
+        "limitations": [
+          "read-only mode registers no applyEdit/previewEdit/verify/build: they answer -32601 METHOD_NOT_FOUND (spec §8.5)",
+          "the handshake advertises capabilities.readOnly and omits mutate/verify"
+        ]
+      },
+      "conformanceLevel": 1
     }
   ],
   "security": {

@@ -2,7 +2,7 @@
   "identity": {
     "id": "backend/next",
     "name": "TokenSafe OUMV adapter for Next.js (App Router)",
-    "version": "0.9.0",
+    "version": "0.10.0",
     "description": "OUMV adapter for the Next.js App Router (Route Handler: HTTP + SSE; server profile)",
     "repo": "https://github.com/tokensafe-dev/tokensafe-backend"
   },
@@ -17,6 +17,10 @@
   },
   "profiles": [
     "backend"
+  ],
+  "modes": [
+    "read-write",
+    "read-only"
   ],
   "capabilities": [
     {
@@ -212,6 +216,17 @@
         ]
       },
       "conformanceLevel": 3
+    },
+    {
+      "name": "deployment.read_only",
+      "constraints": {
+        "readOnly": true,
+        "limitations": [
+          "read-only mode registers no applyEdit/previewEdit/verify/build: they answer -32601 METHOD_NOT_FOUND (spec §8.5)",
+          "the handshake advertises capabilities.readOnly and omits mutate/verify"
+        ]
+      },
+      "conformanceLevel": 1
     }
   ],
   "security": {

@@ -34,6 +34,9 @@ const CAPABILITY_CASES = {
   'mutate.preview': 'preview-edit-does-not-write',
   'index.symbols': 'index-returns-ranked-matches',
   'observeQuery.readOnly': 'query-read-only-select-answers-columns-rows',
+  // Spec §8.5 (revision v1.11): the read-only deployment shape, proven by the
+  // capability case that asserts -32601 for the writing methods on such a runtime.
+  'deployment.read_only': 'read-only-handshake-declares',
 };
 
 const fixtures = JSON.parse(readFileSync(FIXTURES, 'utf-8'));
