@@ -12,7 +12,7 @@
 
 The **OUMV Protocol** (Observe, Understand, Mutate, Verify) defines an open, transport-agnostic standard for autonomous AI coding agents to inspect, reason about, modify, and verify running software systems (user interfaces, backend services, APIs) in real time.
 
-Much like the **Language Server Protocol (LSP)** decouples code intelligence from editor implementations, and the **Model Context Protocol (MCP)** standardizes tool calling for LLMs, **OUMV (The Universal Agent-Runtime Protocol)** decouples agent runtime interaction from technology stacks (tokensafe-ui, React; tokensafe-backend, Go, Node, Python). Vue, ASP.NET Core, Spring and PHP adapters ship today alongside the Go, Node and Python backends (a Solid adapter is planned); the protocol is not UI-only and both profiles share one wire contract.
+Much like the **Language Server Protocol (LSP)** decouples code intelligence from editor implementations, and the **Model Context Protocol (MCP)** standardizes tool calling for LLMs, **OUMV (The Universal Agent-Runtime Protocol)** decouples agent runtime interaction from technology stacks (tokensafe-ui, React; tokensafe-backend, Go, Node, Python). Vue, ASP.NET Core, Spring, PHP, Next.js and Elysia (Bun) adapters ship today alongside the Go, Node and Python backends (a Solid adapter is planned); the protocol is not UI-only and both profiles share one wire contract.
 
 ```text
        AI Coding Agent (Claude Code / Codex / Antigravity)

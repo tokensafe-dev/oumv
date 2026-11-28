@@ -3,6 +3,23 @@
 The wire contract is versioned by `protocolVersion` (currently **1.6.0**); this
 changelog tracks the OUMV specification and its reference tooling.
 
+## v1.7.0 — 2026-11-28 (wire 1.6.0, fixtures v14, revision v1.11)
+
+The thirteenth adapter: **Elysia on Bun** (`backend/elysia`). Elysia handlers are Web
+`Request`/`Response` functions, so the adapter mounts the runtime through a fetch
+binding instead of the Node `IncomingMessage` one; Next.js now shares that binding
+module rather than keeping its own copy. The plugin reads the composed app's route
+table in `onStart` (Elysia has no `onRoute` hook), writes the discovery descriptor
+with the bound port, and dispatches `oumv/verify` through `app.handle`. Read-only
+mode registers no mutating method, like the other runtimes (§8.5).
+
+Certified from `tokensafe-backend` at **Level 3** on fixtures v14: `bun-elysia`
+51/51 over HTTP (including the three transport-auth cases and the `bun:sqlite`
+sandbox that proves rollback + read-only query), SSE 52/52 and WebSocket 49/49.
+The manifest declares 19 capabilities; the capability gate now covers **209 claims
+across 13 manifests**. The Node adapter package moves to 0.11.0 (its `./elysia`
+subpath declares `elysia` as an optional peer, so Node installs are unaffected).
+
 ## v1.6.0 — 2026-11-28 (wire 1.6.0, fixtures v14, revision v1.11)
 
 Read-only deployments are a shape of the runtime, not a check inside it. A runtime

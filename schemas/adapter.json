@@ -62,7 +62,8 @@
                 "pip",
                 "go",
                 "binary",
-                "nuget"
+                "nuget",
+                "bun"
               ]
             },
             "name": {

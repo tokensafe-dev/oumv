@@ -1,0 +1,258 @@
+{
+  "identity": {
+    "id": "backend/elysia",
+    "name": "TokenSafe OUMV adapter for Elysia (Bun)",
+    "version": "0.11.0",
+    "description": "OUMV adapter for Elysia on Bun (HTTP + SSE + WebSocket; server profile)",
+    "repo": "https://github.com/tokensafe-dev/tokensafe-backend"
+  },
+  "technology": {
+    "language": "typescript",
+    "framework": "elysia (bun)",
+    "package": {
+      "manager": "bun",
+      "name": "tokensafe-backend-node",
+      "install": "bun add tokensafe-backend-node"
+    }
+  },
+  "profiles": [
+    "backend"
+  ],
+  "modes": [
+    "read-write",
+    "read-only"
+  ],
+  "capabilities": [
+    {
+      "name": "observe.pulse",
+      "constraints": {
+        "developmentOnly": true,
+        "resourceTypes": [
+          "route",
+          "file"
+        ]
+      },
+      "conformanceLevel": 1
+    },
+    {
+      "name": "observe.surface",
+      "constraints": {
+        "developmentOnly": true,
+        "resourceTypes": [
+          "route",
+          "file"
+        ],
+        "limitations": [
+          "route surface is read from the composed Elysia app's route table in onStart"
+        ]
+      },
+      "conformanceLevel": 1
+    },
+    {
+      "name": "observe.contract",
+      "constraints": {
+        "developmentOnly": true,
+        "resourceTypes": [
+          "route",
+          "file"
+        ]
+      },
+      "conformanceLevel": 2
+    },
+    {
+      "name": "observe.source",
+      "constraints": {
+        "developmentOnly": true,
+        "resourceTypes": [
+          "route",
+          "file"
+        ]
+      },
+      "conformanceLevel": 2
+    },
+    {
+      "name": "observe.traces",
+      "constraints": {
+        "developmentOnly": true,
+        "resourceTypes": [
+          "route",
+          "file"
+        ]
+      },
+      "conformanceLevel": 3
+    },
+    {
+      "name": "understand.impact",
+      "constraints": {
+        "developmentOnly": true,
+        "resourceTypes": [
+          "route",
+          "file"
+        ]
+      },
+      "conformanceLevel": 2
+    },
+    {
+      "name": "understand.causality",
+      "constraints": {
+        "developmentOnly": true,
+        "resourceTypes": [
+          "route",
+          "file"
+        ]
+      },
+      "conformanceLevel": 3
+    },
+    {
+      "name": "mutate.source",
+      "constraints": {
+        "developmentOnly": true,
+        "resourceTypes": [
+          "route",
+          "file"
+        ],
+        "limitations": [
+          "OCC expectedVersion is mandatory; stale tokens fail with -32001",
+          "a backup is written under .tokensafe/backups/ inside the workspace"
+        ]
+      },
+      "conformanceLevel": 2
+    },
+    {
+      "name": "verify.behavior",
+      "constraints": {
+        "developmentOnly": true,
+        "resourceTypes": [
+          "route",
+          "file"
+        ]
+      },
+      "conformanceLevel": 2
+    },
+    {
+      "name": "mutate.multiFile",
+      "constraints": {
+        "developmentOnly": true,
+        "resourceTypes": [
+          "file"
+        ],
+        "limitations": [
+          "each item is validated and syntax-checked before the first write; a write failure restores what was written"
+        ]
+      },
+      "conformanceLevel": 3
+    },
+    {
+      "name": "sessions.ttlSeconds",
+      "constraints": {
+        "developmentOnly": false,
+        "limitations": [
+          "requested lifetime is clamped to 1..86400 and echoed as the granted ttlSeconds"
+        ]
+      },
+      "conformanceLevel": 3
+    },
+    {
+      "name": "mutate.preview",
+      "constraints": {
+        "developmentOnly": true,
+        "resourceTypes": [
+          "file"
+        ],
+        "limitations": [
+          "§4.4 dry-run: the full applyEdit guard order (boundary, existence, syntax pre-flight, expectedVersion, OCC) runs without any write"
+        ]
+      },
+      "conformanceLevel": 3
+    },
+    {
+      "name": "sessions.cancel",
+      "constraints": {
+        "developmentOnly": false,
+        "resourceTypes": [],
+        "limitations": [
+          "best-effort (§3): unknown request ids and finished requests answer as results, never errors"
+        ]
+      },
+      "conformanceLevel": 1
+    },
+    {
+      "name": "sessions.idempotency",
+      "constraints": {
+        "developmentOnly": false,
+        "resourceTypes": [],
+        "limitations": [
+          "per-session first-result-wins replay: a retried mutation returns the original result instead of re-applying"
+        ]
+      },
+      "conformanceLevel": 3
+    },
+    {
+      "name": "index.symbols",
+      "constraints": {
+        "developmentOnly": true,
+        "resourceTypes": [
+          "file",
+          "symbol"
+        ]
+      },
+      "conformanceLevel": 3
+    },
+    {
+      "name": "verify.build",
+      "constraints": {
+        "developmentOnly": true,
+        "resourceTypes": [
+          "file"
+        ],
+        "limitations": [
+          "honest skip: status=skipped with skipReason when no build command is wired"
+        ]
+      },
+      "conformanceLevel": 3
+    },
+    {
+      "name": "deployment.read_only",
+      "constraints": {
+        "readOnly": true,
+        "limitations": [
+          "read-only mode registers no applyEdit/previewEdit/verify/build: they answer -32601 METHOD_NOT_FOUND (spec §8.5)",
+          "the handshake advertises capabilities.readOnly and omits mutate/verify"
+        ]
+      },
+      "conformanceLevel": 1
+    },
+    {
+      "name": "verify.sandboxRollback",
+      "constraints": {
+        "developmentOnly": true,
+        "resourceTypes": [
+          "route",
+          "file"
+        ],
+        "limitations": [
+          "the adopter supplies sandbox.db.run; the certificate proves a bun:sqlite transaction is rolled back"
+        ]
+      },
+      "conformanceLevel": 2
+    },
+    {
+      "name": "observeQuery.readOnly",
+      "constraints": {
+        "developmentOnly": true,
+        "resourceTypes": [
+          "route",
+          "file"
+        ],
+        "limitations": [
+          "sandbox.db.query runs SELECT/EXPLAIN/PRAGMA/WITH only; a writing statement is -32003 query_forbidden"
+        ]
+      },
+      "conformanceLevel": 3
+    }
+  ],
+  "security": {
+    "productionFailClosed": true,
+    "workspaceBoundary": true
+  }
+}

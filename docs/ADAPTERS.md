@@ -95,6 +95,27 @@ const ws = oumv.attachWebSocket();
 `oumv/verify` dispatches over loopback HTTP against the live handler, and `applyEdit`
 writes a backup under `.tokensafe/backups/` before an OCC-checked write.
 
+### Bun / Elysia
+
+```ts
+import { Elysia } from 'elysia';
+import { oumv } from 'tokensafe-backend-node/elysia';
+
+const app = new Elysia()
+  .get('/api/orders', () => ({ orders: [] }))
+  .use(oumv({ authToken: process.env.OUMV_TOKEN })); // mounts /__oumv/rpc, /events and the WS upgrade
+app.listen(3000);
+```
+
+The plugin is a Web `Request`/`Response` binding on `Bun.serve`: the route table is
+read from the composed app in `onStart` (Elysia has no `onRoute` hook), the
+descriptor carries the bound port, and `oumv/verify` dispatches through `app.handle`
+with no loopback server. `readOnly: true` registers no mutating method (§8.5).
+`elysia` is an optional peer dependency of `tokensafe-backend-node`, so Node installs
+are unaffected. Certified 51/51 over HTTP (with the transport-auth cases), 52/52 SSE
+and 49/49 WS on fixtures v14; the `bun:sqlite` sandbox in the certificate proves both
+rollback and read-only query.
+
 ### ASP.NET Core (minimal APIs, MVC controllers, EF Core)
 
 ```csharp

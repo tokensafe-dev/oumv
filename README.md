@@ -60,6 +60,8 @@ instead of inflating it (spec §10.1).
 | Backend | Go (Gin / Chi / net/http) | `tokensafe-backend/go/pkg/adapters/*` | Level 3 (all cases) |
 | Backend | Python / FastAPI | `tokensafe-backend-python` (`mount_tokensafe`) | Level 3 (all cases) |
 | Backend | Node.js / Express, Fastify | `tokensafe-backend/node` | Level 3 (all cases) |
+| Backend | Next.js App Router (Route Handlers) | `tokensafe-backend/node` (`createNextRouteHandlers`) | Level 3 (48/48) |
+| Backend | Elysia (Bun) | `tokensafe-backend-node/elysia` (`oumv()`) | Level 3 (51/51: HTTP+SSE+WS) |
 | Backend | ASP.NET Core (minimal APIs + MVC, EF Core) | `tokensafe-backend/dotnet` (`TokenSafe.Oumv.AspNetCore`) | Level 3 (all cases) |
 | Backend | Spring Boot (JDK-only sidecar, frozen at wire 1.5.0) | `tokensafe-backend/java` | Level 2 (32/33: no live traces) |
 | Backend | Laravel / Symfony (PHP sidecar, frozen at wire 1.5.0) | `tokensafe-backend/php` | Level 2 (32/33: no live traces) |
@@ -119,7 +121,7 @@ Every failure is a typed JSON-RPC error. The canonical registry is
 ## Reference Implementations
 
 - [**tokensafe-ui**](https://github.com/tokensafe-dev/tokensafe-ui) — Frontend Profile accumulator: React adapter (`tokensafe-ui/react` — Zustand, Redux, Context, useReducer), Vue adapter (`tokensafe-ui/vue`), and the zero-footprint Vite bridge (`tokensafe-ui/vite`). The native SolidJS runtime remains in the package as a legacy reference implementation, not the recommended path.
-- [**tokensafe-backend**](https://github.com/tokensafe-dev/tokensafe-backend) — Backend Profile accumulator: Go adapters (`go/` — Gin, Chi, net/http), the Node adapters (`node/` — Express, Fastify), the Python runtime (`python/` — FastAPI, SQLAlchemy rollback sandbox) and the ASP.NET Core adapter (`dotnet/` — `TokenSafe.Oumv.AspNetCore`). All seven live-runtime adapters are certified Level 3; the Java and PHP single-file sidecars are frozen at the wire 1.5.0 surface (Level 2). Exact case counts and fixture revisions are generated from the committed reports in [`tokensafe-backend/certification/`](https://github.com/tokensafe-dev/tokensafe-backend/tree/main/certification), so this page cannot drift from them.
+- [**tokensafe-backend**](https://github.com/tokensafe-dev/tokensafe-backend) — Backend Profile accumulator: Go adapters (`go/` — Gin, Chi, net/http), the Node adapters (`node/` — Express, Fastify, Next.js App Router, Elysia on Bun), the Python runtime (`python/` — FastAPI, SQLAlchemy rollback sandbox) and the ASP.NET Core adapter (`dotnet/` — `TokenSafe.Oumv.AspNetCore`). All nine live-runtime adapters are certified Level 3; the Java and PHP single-file sidecars are frozen at the wire 1.5.0 surface (Level 2). Exact case counts and fixture revisions are generated from the committed reports in [`tokensafe-backend/certification/`](https://github.com/tokensafe-dev/tokensafe-backend/tree/main/certification), so this page cannot drift from them.
 - [**tokensafe**](https://github.com/tokensafe-dev/tokensafe) — Main engine containing the Retrofit CLI (`tokensafe integrate`), out-of-the-box stack detection, and the MCP OUMV Gateway with Level 1 static fallback.
 
 ---
