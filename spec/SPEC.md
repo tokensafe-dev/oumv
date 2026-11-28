@@ -12,7 +12,7 @@
 
 The **OUMV Protocol** (Observe, Understand, Mutate, Verify) defines an open, transport-agnostic standard for autonomous AI coding agents to inspect, reason about, modify, and verify running software systems (user interfaces, backend services, APIs) in real time.
 
-Much like the **Language Server Protocol (LSP)** decouples code intelligence from editor implementations, and the **Model Context Protocol (MCP)** standardizes tool calling for LLMs, **OUMV (The Universal Agent-Runtime Protocol)** decouples agent runtime interaction from technology stacks (tokensafe-ui, React; tokensafe-backend, Go, Node, Python). Vue and Solid adapters are planned; the protocol is not UI-only and both profiles share one wire contract.
+Much like the **Language Server Protocol (LSP)** decouples code intelligence from editor implementations, and the **Model Context Protocol (MCP)** standardizes tool calling for LLMs, **OUMV (The Universal Agent-Runtime Protocol)** decouples agent runtime interaction from technology stacks (tokensafe-ui, React; tokensafe-backend, Go, Node, Python). Vue, ASP.NET Core, Spring and PHP adapters ship today alongside the Go, Node and Python backends (a Solid adapter is planned); the protocol is not UI-only and both profiles share one wire contract.
 
 ```text
        AI Coding Agent (Claude Code / Codex / Antigravity)
@@ -743,9 +743,9 @@ Conformance is **per adapter and per profile**, and it is a claim that MUST be b
 
 ### 10.2 Language-neutral fixtures
 
-Cases live in `fixtures/conformance-cases.json` (`fixtureVersion` 10). Every case declares the `level` it certifies and may declare `preconditions` such as `verify` (which establishes the runtime evidence that L4/causality cases assert on). Each runtime executes the same file with its native toolchain — no TypeScript required for Go or Python certification.
+Cases live in `fixtures/conformance-cases.json` (`fixtureVersion` 12). Every case declares the `level` it certifies and may declare `preconditions` such as `verify` (which establishes the runtime evidence that L4/causality cases assert on). Each runtime executes the same file with its native toolchain — no TypeScript required for Go or Python certification.
 
-Besides the ordered `cases`, the file carries three gated families: `pushCases` (run only by the SSE/WS certificate whose `transport` matches), `capabilityCases` (run only when the runtime's handshake advertises `requiresCapability`, and dropped from the report otherwise, so no claim is ever certified by a skipped case) and `sessionCases` (handshake with `sessionTtlSeconds: ttlSeconds`, wait the granted lifetime, then assert `-32011` + `data.reason="session_expired"`). A capability case may name `cleanup` paths removed before it runs and a `followUp` call whose expectations it also asserts — the second half of an atomicity proof.
+Besides the ordered `cases`, the file carries three gated families: `pushCases` (run only by the SSE/WS certificate whose `transport` matches), `capabilityCases` (run only when the runtime's handshake advertises `requiresCapability`, and dropped from the report otherwise, so no claim is ever certified by a skipped case) and `sessionCases` (handshake with `sessionTtlSeconds: ttlSeconds`, wait the granted lifetime, then assert `-32011` + `data.reason="session_expired"`). A capability case may name `cleanup` paths removed before it runs and a `followUp` call whose expectations it also asserts — the second half of an atomicity proof. Any case may also declare `minWireVersion`: it is skipped, and dropped from the report, when the runtime negotiates an older wire version — that is how the §4.1 result-versioning cases stay Level-2 assertions for wire 1.6.0 runtimes without penalizing runtimes frozen on 1.5.0.
 
 A case declares its expectations declaratively: `expectResultFields`, `expectValues` (JSON-path equality on the result), `expectError.code` (with optional `expectError.data`), `expectLevelEquals`, `expectSha256Field`, `expectArrayField`, `expectEvidence`, `expectVersionMatchesContent`. The reference runners are the Go/Python packages in `tokensafe-backend` and `@oumv/conformance` (CLI `oumv-certify`); a certification claim is reproduced in CI by re-running one of them.
 
@@ -759,8 +759,8 @@ A level claim MUST be accompanied by a report (schema: `schemas/conformance-repo
 {
   "adapterName": "go-gin",
   "framework": "gin",
-  "specVersion": "1.5.0",
-  "fixtureVersion": 10,
+  "specVersion": "1.6.0",
+  "fixtureVersion": 12,
   "total": 36, "passed": 36, "failed": 0,
   "attainedLevel": 3,
   "levels": { "1": "passed", "2": "passed", "3": "passed" },
@@ -918,8 +918,8 @@ Request: `{ "sql": string, "params"?: unknown[], "limit"?: integer }` →
   qualify; the mechanism MAY be stated in the capability).
 * `limit` (default ≤ 100) caps rows; `truncated` states the cut. Results are subject
   to the §12 redaction rules like any other payload.
-* Gated by an explicit opt-in capability (`observe.query`); a workspace policy may
-  disable it like mutation (`permissions.query: false` → `-32007`).
+* Gated by an explicit opt-in capability (`observeQuery.readOnly`); a workspace
+  policy may disable it like mutation (`permissions.query: false` → `-32007`).
 * A runtime without a wired database layer answers `-32006` — never an empty result
   that looks like "the table is empty".
 

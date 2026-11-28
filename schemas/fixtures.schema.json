@@ -82,6 +82,10 @@
        ]
       }
      },
+     "minWireVersion": {
+      "type": "string",
+      "description": "Wire floor: the case is skipped (dropped from the report) when the runtime negotiates an older wire version."
+     },
      "expectResultFields": {
       "type": "array",
       "items": {

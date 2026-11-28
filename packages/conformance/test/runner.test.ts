@@ -42,13 +42,16 @@ describe('fixture-driven conformance runner', () => {
     const spec = loadFixtures(FIXTURES);
     const transport = memoryTransport((request) => referenceRuntime(request));
 
-    const report = await runFixtureSuite(transport, spec, markers, { adapterName: 'reference' });
+    const report = await runFixtureSuite(transport, spec, markers, {
+      adapterName: 'reference',
+      negotiatedVersion: '1.6.0',
+    });
 
     expect(report.total).toBe(spec.cases.length);
     expect(report.failed).toBe(0);
     expect(report.attainedLevel).toBe(3);
     expect(report.levels).toEqual({ 1: 'passed', 2: 'passed', 3: 'passed' });
-    expect(report.fixtureVersion).toBe(11);
+    expect(report.fixtureVersion).toBe(12);
     expect(report.specVersion).toBe(spec.protocolVersion);
     expect(validateReport(report), reportErrors().join('; ')).toBe(true);
   });

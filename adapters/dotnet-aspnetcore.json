@@ -1,0 +1,167 @@
+{
+  "identity": {
+    "id": "backend/aspnetcore",
+    "name": "TokenSafe OUMV adapter for ASP.NET Core",
+    "version": "0.1.2",
+    "description": "OUMV adapter for ASP.NET Core (minimal APIs + MVC, EF Core rollback sandbox)",
+    "repo": "https://github.com/tokensafe-dev/tokensafe-backend"
+  },
+  "technology": {
+    "language": "csharp",
+    "framework": "aspnetcore",
+    "minFrameworkVersion": "net8.0",
+    "package": {
+      "manager": "nuget",
+      "name": "TokenSafe.Oumv.AspNetCore",
+      "install": "dotnet add package TokenSafe.Oumv.AspNetCore"
+    }
+  },
+  "profiles": [
+    "backend"
+  ],
+  "capabilities": [
+    {
+      "name": "observe.pulse",
+      "constraints": {
+        "developmentOnly": true,
+        "resourceTypes": [
+          "route",
+          "file"
+        ]
+      },
+      "conformanceLevel": 1
+    },
+    {
+      "name": "observe.surface",
+      "constraints": {
+        "developmentOnly": true,
+        "resourceTypes": [
+          "route",
+          "file"
+        ]
+      },
+      "conformanceLevel": 1
+    },
+    {
+      "name": "observe.contract",
+      "constraints": {
+        "developmentOnly": true,
+        "resourceTypes": [
+          "route",
+          "file"
+        ]
+      },
+      "conformanceLevel": 2
+    },
+    {
+      "name": "observe.source",
+      "constraints": {
+        "developmentOnly": true,
+        "resourceTypes": [
+          "route",
+          "file"
+        ]
+      },
+      "conformanceLevel": 2
+    },
+    {
+      "name": "observe.traces",
+      "constraints": {
+        "developmentOnly": true,
+        "resourceTypes": [
+          "route",
+          "file"
+        ]
+      },
+      "conformanceLevel": 3
+    },
+    {
+      "name": "understand.impact",
+      "constraints": {
+        "developmentOnly": true,
+        "resourceTypes": [
+          "route",
+          "file"
+        ]
+      },
+      "conformanceLevel": 2
+    },
+    {
+      "name": "understand.causality",
+      "constraints": {
+        "developmentOnly": true,
+        "resourceTypes": [
+          "route",
+          "file"
+        ]
+      },
+      "conformanceLevel": 3
+    },
+    {
+      "name": "mutate.source",
+      "constraints": {
+        "developmentOnly": true,
+        "resourceTypes": [
+          "route",
+          "file"
+        ],
+        "limitations": [
+          "OCC expectedVersion is mandatory; stale tokens fail with -32001"
+        ]
+      },
+      "conformanceLevel": 2
+    },
+    {
+      "name": "verify.behavior",
+      "constraints": {
+        "developmentOnly": true,
+        "resourceTypes": [
+          "route",
+          "file"
+        ]
+      },
+      "conformanceLevel": 2
+    },
+    {
+      "name": "mutate.multiFile",
+      "constraints": {
+        "developmentOnly": true,
+        "resourceTypes": [
+          "file"
+        ],
+        "limitations": [
+          "each item is validated and syntax-checked before the first write; a write failure restores what was written"
+        ]
+      },
+      "conformanceLevel": 3
+    },
+    {
+      "name": "sessions.ttlSeconds",
+      "constraints": {
+        "developmentOnly": false,
+        "resourceTypes": [],
+        "limitations": [
+          "requested lifetime is clamped to 1..86400 and echoed as the granted ttlSeconds"
+        ]
+      },
+      "conformanceLevel": 3
+    },
+    {
+      "name": "verify.sandboxRollback",
+      "constraints": {
+        "developmentOnly": true,
+        "resourceTypes": [
+          "database"
+        ],
+        "limitations": [
+          "EF Core transaction is rolled back per request; rolledBack/dbDiff evidence only from an observed rollback"
+        ]
+      },
+      "conformanceLevel": 2
+    }
+  ],
+  "security": {
+    "productionFailClosed": true,
+    "workspaceBoundary": true
+  }
+}

@@ -58,7 +58,7 @@ export const ERROR_CODE_REASONS: Readonly<Record<number, readonly string[]>> = {
   [OumvErrorCode.STALE_RESOURCE_VERSION]: ["stale_version"],
   [OumvErrorCode.RESOURCE_NOT_FOUND]: ["resource_not_found","file_not_found","patch_target_not_found"],
   [OumvErrorCode.RUNTIME_UNAVAILABLE]: ["sandbox_unavailable"],
-  [OumvErrorCode.PERMISSION_DENIED]: ["mutate_disabled","policy_denied"],
+  [OumvErrorCode.PERMISSION_DENIED]: ["mutate_disabled","query_disabled","policy_denied"],
   [OumvErrorCode.UNSUPPORTED_CAPABILITY]: ["unsupported_level","unsupported_query","unsupported_mode","capability_not_advertised","unsupported_protocol_version"],
   [OumvErrorCode.ACTION_NOT_FOUND]: ["unknown_action"],
   [OumvErrorCode.TARGET_NOT_FOUND]: ["target_not_found"],

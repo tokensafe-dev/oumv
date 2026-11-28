@@ -61,7 +61,8 @@
                 "npm",
                 "pip",
                 "go",
-                "binary"
+                "binary",
+                "nuget"
               ]
             },
             "name": {

@@ -61,8 +61,8 @@ instead of inflating it (spec §10.1).
 | Backend | Python / FastAPI | `tokensafe-backend-python` (`mount_tokensafe`) | Level 3 (all cases) |
 | Backend | Node.js / Express, Fastify | `tokensafe-backend/node` | Level 3 (all cases) |
 | Backend | ASP.NET Core (minimal APIs + MVC, EF Core) | `tokensafe-backend/dotnet` (`TokenSafe.Oumv.AspNetCore`) | Level 3 (all cases) |
-| Backend | Spring Boot (JDK-only sidecar) | `tokensafe-backend/java` | Level 2 (32/33: no live traces) |
-| Backend | Laravel / Symfony (PHP sidecar) | `tokensafe-backend/php` | Level 2 (32/33: no live traces) |
+| Backend | Spring Boot (JDK-only sidecar, frozen at wire 1.5.0) | `tokensafe-backend/java` | Level 2 (32/33: no live traces) |
+| Backend | Laravel / Symfony (PHP sidecar, frozen at wire 1.5.0) | `tokensafe-backend/php` | Level 2 (32/33: no live traces) |
 
 The native SolidJS runtime in `tokensafe-ui` and the `tokensafe.New()` Go framework remain
 in the trees as reference implementations for tests; they are not the recommended path.
@@ -119,7 +119,7 @@ Every failure is a typed JSON-RPC error. The canonical registry is
 ## Reference Implementations
 
 - [**tokensafe-ui**](https://github.com/tokensafe-dev/tokensafe-ui) — Frontend Profile accumulator: React adapter (`tokensafe-ui/react` — Zustand, Redux, Context, useReducer), Vue adapter (`tokensafe-ui/vue`), and the zero-footprint Vite bridge (`tokensafe-ui/vite`). The native SolidJS runtime remains in the package as a legacy reference implementation, not the recommended path.
-- [**tokensafe-backend**](https://github.com/tokensafe-dev/tokensafe-backend) — Backend Profile accumulator: Go adapters (`go/` — Gin, Chi, net/http) and the Python runtime (`python/` — FastAPI, SQLAlchemy rollback sandbox), published as `tokensafe-backend-python`. All six adapters are certified Level 3. Exact case counts and fixture revisions are generated from the committed reports in [`tokensafe-backend/certification/`](https://github.com/tokensafe-dev/tokensafe-backend/tree/main/certification), so this page cannot drift from them.
+- [**tokensafe-backend**](https://github.com/tokensafe-dev/tokensafe-backend) — Backend Profile accumulator: Go adapters (`go/` — Gin, Chi, net/http), the Node adapters (`node/` — Express, Fastify), the Python runtime (`python/` — FastAPI, SQLAlchemy rollback sandbox) and the ASP.NET Core adapter (`dotnet/` — `TokenSafe.Oumv.AspNetCore`). All seven live-runtime adapters are certified Level 3; the Java and PHP single-file sidecars are frozen at the wire 1.5.0 surface (Level 2). Exact case counts and fixture revisions are generated from the committed reports in [`tokensafe-backend/certification/`](https://github.com/tokensafe-dev/tokensafe-backend/tree/main/certification), so this page cannot drift from them.
 - [**tokensafe**](https://github.com/tokensafe-dev/tokensafe) — Main engine containing the Retrofit CLI (`tokensafe integrate`), out-of-the-box stack detection, and the MCP OUMV Gateway with Level 1 static fallback.
 
 ---
@@ -136,7 +136,7 @@ ships which wire version and fixture set" — when in doubt, trust it over this 
 | Previous release | `v1.4.0` (2026-11-27) | Multi-file atomic `applyEdit` (`mutate.multiFile`), handshake `sessionTtlSeconds` + `sessions.ttlSeconds`, fixture v10 batch and expired-session cases. |
 | Document revision | `v1.9-canonical` | The revision of `spec/SPEC.md`; see the changelog in that file. |
 | Wire `protocolVersion` | `1.6.0` | Sent in `oumv/handshake`. A runtime MUST echo the version it actually serves; clients accept a matching MAJOR. |
-| Fixtures | `fixtureVersion 11` (33 ordered + 2 push + 10 capability + 1 session cases) | `fixtures/conformance-cases.json`; every report records the revision it ran. |
+| Fixtures | `fixtureVersion 12` (37 ordered + 2 push + 10 capability + 1 session cases) | `fixtures/conformance-cases.json`; every report records the revision it ran. |
 
 These axes move independently by design: v1.5.0 ships document revision v1.9-canonical,
 wire version 1.6.0 and fixture set v11. A v1.0 adapter stays valid for the capabilities it

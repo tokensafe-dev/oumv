@@ -150,6 +150,78 @@
         ]
       },
       "conformanceLevel": 3
+    },
+    {
+      "name": "mutate.preview",
+      "constraints": {
+        "developmentOnly": true,
+        "resourceTypes": [
+          "file"
+        ],
+        "limitations": [
+          "§4.4 dry-run: the full applyEdit guard order (boundary, existence, syntax pre-flight, expectedVersion, OCC) runs without any write"
+        ]
+      },
+      "conformanceLevel": 3
+    },
+    {
+      "name": "sessions.cancel",
+      "constraints": {
+        "developmentOnly": false,
+        "resourceTypes": [],
+        "limitations": [
+          "best-effort (§3): unknown request ids and finished requests answer as results, never errors"
+        ]
+      },
+      "conformanceLevel": 1
+    },
+    {
+      "name": "sessions.idempotency",
+      "constraints": {
+        "developmentOnly": false,
+        "resourceTypes": [],
+        "limitations": [
+          "per-session first-result-wins replay: a retried mutation returns the original result instead of re-applying"
+        ]
+      },
+      "conformanceLevel": 3
+    },
+    {
+      "name": "index.symbols",
+      "constraints": {
+        "developmentOnly": true,
+        "resourceTypes": [
+          "file",
+          "symbol"
+        ]
+      },
+      "conformanceLevel": 3
+    },
+    {
+      "name": "verify.build",
+      "constraints": {
+        "developmentOnly": true,
+        "resourceTypes": [
+          "file"
+        ],
+        "limitations": [
+          "honest skip: status=skipped with skipReason when no build command is wired"
+        ]
+      },
+      "conformanceLevel": 3
+    },
+    {
+      "name": "verify.sandboxRollback",
+      "constraints": {
+        "developmentOnly": true,
+        "resourceTypes": [
+          "database"
+        ],
+        "limitations": [
+          "one transaction per request; rolledBack/dbDiff evidence only from an observed rollback"
+        ]
+      },
+      "conformanceLevel": 2
     }
   ],
   "security": {

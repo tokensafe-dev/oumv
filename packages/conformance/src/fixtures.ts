@@ -25,6 +25,8 @@ export interface ConformanceCase {
   params: Record<string, unknown>;
   /** Setup calls needed before the assertion (currently only `verify`). */
   preconditions?: string[];
+  /** Wire floor: the case is skipped (dropped from the report) when the runtime negotiates an older wire version. */
+  minWireVersion?: string;
   expectResultFields?: string[];
   expectValues?: Record<string, unknown>;
   expectError?: ConformanceCaseError;
@@ -131,6 +133,8 @@ export interface CaseMarkers {
   batchFileA: string;
   batchFileB: string;
   batchContent: string;
+  // fixtures v12: the §4.1 freshness token captured from the runtime's observe
+  workspaceVersion: string;
 }
 
 export interface CaseResult {
@@ -212,6 +216,7 @@ const MARKER_KEYS: Record<string, keyof CaseMarkers> = {
   '${BATCH_FILE_A}': 'batchFileA',
   '${BATCH_FILE_B}': 'batchFileB',
   '${BATCH_CONTENT}': 'batchContent',
+  '${WORKSPACE_VERSION}': 'workspaceVersion',
 };
 
 /** Substitutes every `${MARKER}` in a string (params and expectations). */
@@ -253,6 +258,7 @@ export function defaultMarkers(overrides: Partial<CaseMarkers> = {}): CaseMarker
     batchFileA: '__oumv_conformance_batch_a.py',
     batchFileB: '__oumv_conformance_batch_b.py',
     batchContent: 'value = 7\n',
+    workspaceVersion: '',
     ...overrides,
   };
 }
@@ -405,7 +411,9 @@ export interface RunFixturesOptions {
   /** How long a push case waits for its event (default 5000 ms). */
   pushTimeoutMs?: number;
   /** Handshake capabilities: capabilityCases run only when their claim is true. */
-  capabilities?: Record<string, unknown>;
+  capabilities?: undefined | Record<string, unknown>;
+  /** The wire version the runtime answered in its handshake: drives minWireVersion skips and the §4.1 token capture. */
+  negotiatedVersion?: string;
 }
 
 /** True only when the dotted capability path resolves to literal `true`. */
@@ -435,6 +443,24 @@ function matchesPushPayload(
 }
 
 const delay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+
+/** Numeric dotted-version compare: true only when `version` is known and >= `min`. */
+export function wireVersionAtLeast(version: string | undefined, min: string): boolean {
+  if (!version) return false;
+  const parse = (value: string): [number, number, number] => {
+    const parts = String(value).split('.').map((n) => {
+      const num = Number(n);
+      return Number.isFinite(num) && num >= 0 ? num : 0;
+    });
+    return [parts[0] ?? 0, parts[1] ?? 0, parts[2] ?? 0];
+  };
+  const a = parse(version);
+  const b = parse(min);
+  for (let i = 0; i < 3; i++) {
+    if (a[i] !== b[i]) return a[i] > b[i];
+  }
+  return true;
+}
 
 /**
  * Removes leftover files before a case that creates them, so a previous run
@@ -529,7 +555,25 @@ export async function runFixtureSuite(
 ): Promise<FixtureReport> {
   const results: CaseResult[] = [];
 
+  // §4.1 result versioning (wire 1.6.0): capture the runtime's workspace token
+  // once, so the ifVersion cases can assert both the unchanged envelope and
+  // -32010 without a cross-case capture mechanism. Skipped for older wire
+  // versions, where the token does not exist.
+  if (wireVersionAtLeast(options.negotiatedVersion, '1.6.0')) {
+    const probe = await transport.request({
+      jsonrpc: '2.0',
+      id: 'workspace-version-probe',
+      method: 'oumv/observe',
+      params: { level: 'L0' },
+    });
+    const token = (probe.result as Record<string, unknown> | undefined)?.workspaceVersion;
+    if (typeof token === 'string' && token) {
+      markers.workspaceVersion = token;
+    }
+  }
+
   for (const testCase of spec.cases) {
+    if (testCase.minWireVersion && !wireVersionAtLeast(options.negotiatedVersion, testCase.minWireVersion)) continue;
     const result: CaseResult = { id: testCase.id, level: testCase.level, status: 'passed' };
     let failure = '';
 

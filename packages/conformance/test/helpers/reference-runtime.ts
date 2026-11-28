@@ -43,6 +43,13 @@ export function occToken(content: string): string {
   return `sha256:${crypto.createHash('sha256').update(content, 'utf-8').digest('hex')}`;
 }
 
+/**
+ * §4.1 result versioning (wire 1.6.0): the freshness token over the reference
+ * runtime's (imaginary) workspace inventory. Constant, because the reference
+ * runtime has no disk to digest.
+ */
+export const REFERENCE_WORKSPACE_VERSION = occToken('reference workspace inventory\n');
+
 /** Store-and-replay for idempotent mutations (§3): returns the result unchanged. */
 function cls_store_idempotent(params: Record<string, any>, result: Record<string, unknown>): Record<string, unknown> {
   if (params.idempotencyKey) {
@@ -102,14 +109,25 @@ export function referenceRuntime(request: JsonRpcRequest): JsonRpcResponse {
       if (!['L0', 'L1', 'L2', 'L3', 'L4'].includes(level)) {
         return fail(-32006, `UNSUPPORTED_CAPABILITY: unknown observe level ${level}`, { reason: 'unsupported_level' });
       }
-      if (level === 'L0') return ok({ level, format: 'json', data: { route: '/', mountedComponents: 3 } });
+      // §4.1: honour the ifVersion freshness handshake (match → short envelope, mismatch → -32010).
+      if (params.ifVersion) {
+        if (String(params.ifVersion) !== REFERENCE_WORKSPACE_VERSION) {
+          return fail(-32010, "STALE_RESOURCE_VERSION: the caller's token no longer matches the workspace — refetch without ifVersion", {
+            reason: 'stale_version',
+            current: REFERENCE_WORKSPACE_VERSION,
+            expected: String(params.ifVersion),
+          });
+        }
+        return ok({ level, format: 'json', unchanged: true, workspaceVersion: REFERENCE_WORKSPACE_VERSION });
+      }
+      if (level === 'L0') return ok({ level, format: 'json', data: { route: '/', mountedComponents: 3 }, workspaceVersion: REFERENCE_WORKSPACE_VERSION });
       if (level === 'L1') {
         const elements = [{ id: 'one' }, { id: 'two' }];
         const limit = Number(params.limit) > 0 ? Math.floor(Number(params.limit)) : 0;
         if (limit && limit < elements.length) {
-          return ok({ level, format: 'json', data: { target: params.target ?? '/', elements: elements.slice(0, limit), hasMore: true, nextCursor: String(limit) } });
+          return ok({ level, format: 'json', data: { target: params.target ?? '/', elements: elements.slice(0, limit), hasMore: true, nextCursor: String(limit) }, workspaceVersion: REFERENCE_WORKSPACE_VERSION });
         }
-        return ok({ level, format: 'json', data: { target: params.target ?? '/', elements } });
+        return ok({ level, format: 'json', data: { target: params.target ?? '/', elements }, workspaceVersion: REFERENCE_WORKSPACE_VERSION });
       }
       if (level === 'L2') {
         if (!params.target) return fail(-32602, 'INVALID_PARAMS: target is required');
@@ -121,6 +139,7 @@ export function referenceRuntime(request: JsonRpcRequest): JsonRpcResponse {
             components: [],
             evidence: { provenance: 'static', confidence: 'confirmed', resources: [] },
           },
+          workspaceVersion: REFERENCE_WORKSPACE_VERSION,
         });
       }
       if (level === 'L3') {
@@ -129,6 +148,7 @@ export function referenceRuntime(request: JsonRpcRequest): JsonRpcResponse {
           level,
           format: 'json',
           data: { target: params.target, source: REFERENCE_SOURCE, version: occToken(REFERENCE_SOURCE) },
+          workspaceVersion: REFERENCE_WORKSPACE_VERSION,
         });
       }
       if (level === 'L4') {
@@ -148,6 +168,7 @@ export function referenceRuntime(request: JsonRpcRequest): JsonRpcResponse {
               },
             ],
           },
+          workspaceVersion: REFERENCE_WORKSPACE_VERSION,
         });
       }
       return fail(-32011, 'VALIDATION_FAILED: unknown level');
@@ -175,6 +196,17 @@ export function referenceRuntime(request: JsonRpcRequest): JsonRpcResponse {
       });
 
     case 'oumv/understand':
+      // §4.1: understand honours the same freshness handshake (spec §4.1 note).
+      if (params.ifVersion) {
+        if (String(params.ifVersion) !== REFERENCE_WORKSPACE_VERSION) {
+          return fail(-32010, "STALE_RESOURCE_VERSION: the caller's token no longer matches the workspace — refetch without ifVersion", {
+            reason: 'stale_version',
+            current: REFERENCE_WORKSPACE_VERSION,
+            expected: String(params.ifVersion),
+          });
+        }
+        return ok({ query: String(params.query ?? 'causality'), unchanged: true, workspaceVersion: REFERENCE_WORKSPACE_VERSION });
+      }
       if (params.query === 'impact') {
         return ok({
           query: 'impact',
@@ -187,6 +219,7 @@ export function referenceRuntime(request: JsonRpcRequest): JsonRpcResponse {
             observed: false,
             evidence: { provenance: 'static' },
           },
+          workspaceVersion: REFERENCE_WORKSPACE_VERSION,
         });
       }
       return ok({
@@ -200,6 +233,7 @@ export function referenceRuntime(request: JsonRpcRequest): JsonRpcResponse {
           rootCause: 'GET /health',
           evidence: { provenance: 'runtime' },
         },
+        workspaceVersion: REFERENCE_WORKSPACE_VERSION,
       });
 
     case 'oumv/verify':

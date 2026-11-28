@@ -137,7 +137,8 @@ Route discovery reads `@RestController`/`@RequestMapping` and the method-level m
 annotations, including `{id:regex}` templates; edits are OCC-checked with guard order
 `-32003 → -32009 → -32002 → -32011 → -32001`; `verify` runs a configured compile/test
 command (`--verify-cmd`, default `javac {file}`) and says in `scope.notExecuted` that no
-runtime dispatch happened. Level 2, 32/33: L4 traces need a live app.
+runtime dispatch happened. Level 2, 32/33: L4 traces need a live app. Frozen at wire 1.5.0
+(the handshake negotiates 1.5.0; see the support matrix below).
 
 ### PHP (Laravel / Symfony, dependency-free sidecar)
 
@@ -149,7 +150,8 @@ php -S 127.0.0.1:8787 tokensafe-backend/php/bin/oumv-php --root .   # POST /__ou
 Laravel `Route::` calls (groups, `controller` groups, `apiResource`/`resource`) and
 Symfony `#[Route]` attributes resolve to `Class#method` with `token_get_all()` line
 ranges; syntax pre-flight is `php -l` on a temp copy, so a broken edit is `-32002` and
-never touches disk. Level 2, 32/33 for the same reason.
+never touches disk. Level 2, 32/33 for the same reason. Frozen at wire 1.5.0
+(the handshake negotiates 1.5.0; see the support matrix below).
 
 ### TypeScript (frontend, Vite)
 
@@ -261,15 +263,20 @@ Two rules that keep reports trustworthy:
 | `backend/express` | backend | HTTP, batch, SSE, WS, stdio | 3 | `tokensafe-backend/certification/node-express.json` |
 | `backend/fastify` | backend | HTTP, batch, SSE, WS, stdio | 3 | `tokensafe-backend/certification/node-fastify.json` |
 | `backend/aspnetcore` | backend | HTTP, SSE, WS | 3 | `tokensafe-backend/certification/dotnet-aspnetcore.json` |
-| `backend/java-spring` | backend | HTTP, stdio | **2** | `tokensafe-backend/certification/java-spring.json` |
-| `backend/php-laravel` | backend | HTTP, stdio | **2** | `tokensafe-backend/certification/php-laravel.json` |
+| `backend/java-spring` | backend | HTTP, stdio | **2, frozen at wire 1.5.0** | `tokensafe-backend/certification/java-spring.json` |
+| `backend/php-laravel` | backend | HTTP, stdio | **2, frozen at wire 1.5.0** | `tokensafe-backend/certification/php-laravel.json` |
 | `frontend/react` | frontend | HTTP, batch, SSE, WS | **3 with a browser tab**, 1 offline | `agent-dom/certification/react-vite-browser.json` (L3), `react-vite.json` (L1 offline) |
 | `frontend/vue` | frontend | HTTP, batch, SSE, WS | **3 with a browser tab** | `agent-dom/certification/vue-vite-browser.json` (L3) |
 
 The two source-level adapters (`java-spring`, `php-laravel`) scan route declarations, apply
 OCC-checked edits and run a real verify command, but they do not boot the framework, so they
 record no live request traces: `observe-l4-returns-recorded-traces` fails and Level 3 is not
-claimed. Their reports name that single gap.
+claimed. Their reports name that single gap. Both are **frozen at wire 1.5.0** on purpose —
+they negotiate `protocolVersion: 1.5.0` in the handshake, so the §4.1 result-versioning cases
+(`minWireVersion: 1.6.0`) never run against them and their reports stay honest at 32/33.
+The wire 1.6.0 surface (§3 correlation/cancel/idempotency, §4.1 versioning, §14 extensions,
+SSE/WS) is deliberately not implemented there until there is demand; new protocol work stops
+multiplying support for these two sidecars rather than growing it.
 
 The optional bindings are certified by reports, not by the matrix. Node Express and
 Fastify, Go net/http, Python FastAPI and ASP.NET Core each have SSE and WS certificates

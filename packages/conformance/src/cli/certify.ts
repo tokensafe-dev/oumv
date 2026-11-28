@@ -259,6 +259,7 @@ export async function certify(options: CertifyOptions): Promise<number> {
     const report = await runFixtureSuite(transport, spec, markers, {
       adapterName: options.adapter,
       framework: options.framework,
+      negotiatedVersion: String((handshake.result as Record<string, unknown> | undefined)?.protocolVersion ?? ''),
       environment: {
         transport: options.sse ? 'sse' : transport.name,
         ...(options.profile ? { profile: options.profile } : {}),

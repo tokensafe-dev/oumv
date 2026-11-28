@@ -13,7 +13,7 @@
       { "code": -32004, "name": "TARGET_NOT_FOUND", "meaning": "Endpoint/component/symbol target does not exist in the runtime.", "reasons": ["target_not_found"] },
       { "code": -32005, "name": "ACTION_NOT_FOUND", "meaning": "Named action/effect is not defined on the target.", "reasons": ["unknown_action"] },
       { "code": -32006, "name": "UNSUPPORTED_CAPABILITY", "meaning": "Method/level/query not implemented (never a silent no-op).", "reasons": ["unsupported_level", "unsupported_query", "unsupported_mode", "capability_not_advertised", "unsupported_protocol_version"] },
-      { "code": -32007, "name": "PERMISSION_DENIED", "meaning": "Policy forbids the operation.", "reasons": ["mutate_disabled", "policy_denied"] },
+      { "code": -32007, "name": "PERMISSION_DENIED", "meaning": "Policy forbids the operation.", "reasons": ["mutate_disabled", "query_disabled", "policy_denied"] },
       { "code": -32008, "name": "RUNTIME_UNAVAILABLE", "meaning": "Runtime or its sandbox is unreachable.", "reasons": ["sandbox_unavailable"] },
       { "code": -32009, "name": "RESOURCE_NOT_FOUND", "meaning": "File/resource does not exist.", "reasons": ["resource_not_found", "file_not_found", "patch_target_not_found"] },
       { "code": -32010, "name": "STALE_RESOURCE_VERSION", "meaning": "A version token carried by the caller no longer matches the versioned resource (static result or OCC token); refetch before retrying.", "reasons": ["stale_version"] },

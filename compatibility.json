@@ -14,7 +14,7 @@
       "@oumv/conformance": "0.2.1"
     },
     "rootPackageVersion": "1.5.1",
-    "fixtureVersionOnDisk": 11,
+    "fixtureVersionOnDisk": 12,
     "protocolVersionOnDisk": "1.6.0"
   },
   "previous": [
