@@ -283,6 +283,8 @@ Two rules that keep reports trustworthy:
 | `backend/fastapi` | backend | HTTP, SSE, WS, stdio | 3 | `tokensafe-backend/certification/python-fastapi.json` |
 | `backend/express` | backend | HTTP, batch, SSE, WS, stdio | 3 | `tokensafe-backend/certification/node-express.json` |
 | `backend/fastify` | backend | HTTP, batch, SSE, WS, stdio | 3 | `tokensafe-backend/certification/node-fastify.json` |
+| `backend/next` | backend | HTTP, SSE | 3 | `tokensafe-backend/certification/next-app-router.json` |
+| `backend/elysia` | backend | HTTP, batch, SSE, WS | 3 | `tokensafe-backend/certification/bun-elysia.json` |
 | `backend/aspnetcore` | backend | HTTP, SSE, WS | 3 | `tokensafe-backend/certification/dotnet-aspnetcore.json` |
 | `backend/java-spring` | backend | HTTP, stdio | **2, frozen at wire 1.5.0** | `tokensafe-backend/certification/java-spring.json` |
 | `backend/php-laravel` | backend | HTTP, stdio | **2, frozen at wire 1.5.0** | `tokensafe-backend/certification/php-laravel.json` |
@@ -300,11 +302,11 @@ SSE/WS) is deliberately not implemented there until there is demand; new protoco
 multiplying support for these two sidecars rather than growing it.
 
 The optional bindings are certified by reports, not by the matrix. Node Express and
-Fastify, Go net/http, Python FastAPI and ASP.NET Core each have SSE and WS certificates
-(`tokensafe-backend/certification/transports/*-sse.json`, `*-ws.json`) at Level 3,
-38/38: the 33-case suite plus the fixture v8 push case, the v9 sandbox capability case
-and the v10 batch and expired-session cases. `stdio` is certified by `node-stdio.json`
-and `python-stdio.json` (Level 3, 33/33). A transport claim without a report is not
+Fastify, Elysia, Go net/http, Python FastAPI and ASP.NET Core each have SSE and WS
+certificates (`tokensafe-backend/certification/transports/*-sse.json`, `*-ws.json`) at
+Level 3: the fixture suite plus the push case, the sandbox/query capability cases and
+(for HTTP/SSE) the three transport-auth refusals. `stdio` is certified by
+`node-stdio.json` and `python-stdio.json`. A transport claim without a report is not
 made.
 
 The `sse`/`ws` certificates are produced by passing the push channel to the
@@ -313,7 +315,7 @@ for WebSocket. Go and Python generate them from a live server:
 `go/certify-transports.sh` (cmd/certserver) and `python/certify-transports.sh`
 (uvicorn + cert_app), both wired into the backend certification job.
 
-Django/Flask, Next and Angular adapters follow.
+Django/Flask and Angular adapters follow.
 
 ---
 
