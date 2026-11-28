@@ -36,6 +36,8 @@ export interface ConformanceCase {
   expectEvidence?: boolean;
   /** `${EDIT_CONTENT}` or literal content whose sha256 must equal `newVersion`. */
   expectVersionMatchesContent?: string;
+  /** Extra headers for this case's request only (merged after the transport's auth headers). */
+  headers?: Record<string, string>;
 }
 
 export interface FixtureSpec {
@@ -49,6 +51,8 @@ export interface FixtureSpec {
   capabilityCases?: CapabilityCase[];
   /** Session-lifecycle cases: handshake with a TTL, wait for it, expect -32011. */
   sessionCases?: SessionCase[];
+  /** Transport-level auth cases (spec §12); run only with `auth: true` on an HTTP transport. */
+  authCases?: AuthCase[];
 }
 
 /** A case that only makes sense when the runtime advertises a capability. */
@@ -67,6 +71,22 @@ export interface SessionCase extends ConformanceCase {
   requiresCapability?: string;
   /** Lifetime requested from the handshake; the runner waits ttl + 300 ms. */
   ttlSeconds: number;
+}
+
+/** Which credential defect an auth case sends (spec §2.2/§12). */
+export type AuthFailureMode = 'missing' | 'invalid' | 'wrong-scheme';
+
+/**
+ * A transport-level auth case (spec §12): the same ordinary request, carrying a
+ * credential the runtime must refuse *before* dispatch. The refusal is an HTTP
+ * status plus a JSON-RPC error envelope, so this family only runs on a transport
+ * that can report a status, against a target started with auth enabled.
+ */
+export interface AuthCase extends ConformanceCase {
+  /** Which credential defect the probe sends. */
+  auth: AuthFailureMode;
+  /** HTTP status the binding must answer before dispatch (401, or 403 for a tokenless non-loopback bind). */
+  expectHttpStatus: number;
 }
 
 /** A pushed event: SSE `event:`/`id:`/`data:`, or a WS notification method/params. */
@@ -180,11 +200,31 @@ export interface JsonRpcResponse {
   error?: JsonRpcError;
 }
 
+/** Per-request controls a case may set; absent means "use the transport defaults". */
+export interface RpcRequestOptions {
+  /** Extra headers for this request only, merged after the transport's own auth headers. */
+  headers?: Record<string, string>;
+  /** Send this request with no credential at all (auth-negative probes). */
+  omitAuth?: boolean;
+}
+
 /** Minimal transport surface the fixture runner needs. */
 export interface RpcTransport {
   name: string;
-  request(request: JsonRpcRequest): Promise<JsonRpcResponse>;
+  request(request: JsonRpcRequest, options?: RpcRequestOptions): Promise<JsonRpcResponse>;
   close?(): Promise<void> | void;
+}
+
+/** A transport that also reports the transport status (auth cases assert it). */
+export interface StatusTransport extends RpcTransport {
+  requestWithStatus(
+    request: JsonRpcRequest,
+    options?: RpcRequestOptions
+  ): Promise<{ status?: number; response: JsonRpcResponse }>;
+}
+
+export function isStatusTransport(transport: RpcTransport): transport is StatusTransport {
+  return typeof (transport as Partial<StatusTransport>).requestWithStatus === 'function';
 }
 
 const MARKER_KEYS: Record<string, keyof CaseMarkers> = {
@@ -414,6 +454,8 @@ export interface RunFixturesOptions {
   capabilities?: undefined | Record<string, unknown>;
   /** The wire version the runtime answered in its handshake: drives minWireVersion skips and the §4.1 token capture. */
   negotiatedVersion?: string;
+  /** Set when the target was started with auth enabled: runs the fixture file's `authCases`. */
+  auth?: boolean;
 }
 
 /** True only when the dotted capability path resolves to literal `true`. */
@@ -603,12 +645,15 @@ export async function runFixtureSuite(
     }
 
     if (!failure) {
-      const response = await transport.request({
-        jsonrpc: '2.0',
-        id: testCase.id,
-        method: testCase.method,
-        params: substituteMarkers(testCase.params, markers),
-      });
+      const response = await transport.request(
+        {
+          jsonrpc: '2.0',
+          id: testCase.id,
+          method: testCase.method,
+          params: substituteMarkers(testCase.params, markers),
+        },
+        testCase.headers ? { headers: testCase.headers } : undefined
+      );
       failure = evaluateCase(testCase, response, markers);
     }
 
@@ -719,6 +764,43 @@ export async function runFixtureSuite(
     }
     results.push(result);
     options.onCase?.(result);
+  }
+
+  // Auth cases (spec §12) are transport-level: an ordinary request carrying a
+  // defective credential must be refused before dispatch. They run only when the
+  // certifier states the target was started with auth enabled (`auth: true`) and
+  // the transport can report a status; a stdio binding has no transport auth.
+  if (options.auth && isStatusTransport(transport)) {
+    for (const authCase of spec.authCases ?? []) {
+      const result: CaseResult = { id: authCase.id, level: authCase.level, status: 'passed' };
+      const request: JsonRpcRequest = {
+        jsonrpc: '2.0',
+        id: authCase.id,
+        method: authCase.method,
+        params: substituteMarkers(authCase.params, markers),
+      };
+      const headers: Record<string, string> =
+        authCase.auth === 'invalid'
+          ? { 'X-OUMV-Session-Token': 'oumv-conformance-invalid-token' }
+          : authCase.auth === 'wrong-scheme'
+            ? { Authorization: 'Basic b3Vtdi1ub3QtdGhlLXNjaGVtZQ==' }
+            : {};
+      const probe = await transport.requestWithStatus(request, {
+        headers,
+        omitAuth: authCase.auth === 'missing',
+      });
+      let failure =
+        probe.status === authCase.expectHttpStatus
+          ? ''
+          : `expected HTTP ${authCase.expectHttpStatus} for auth=${authCase.auth}, got ${probe.status ?? 'no status'}`;
+      if (!failure) failure = evaluateCase(authCase, probe.response, markers);
+      if (failure) {
+        result.status = 'failed';
+        result.error = failure;
+      }
+      results.push(result);
+      options.onCase?.(result);
+    }
   }
 
   const passed = results.filter((r) => r.status === 'passed').length;

@@ -3,6 +3,36 @@
 The wire contract is versioned by `protocolVersion` (currently **1.6.0**); this
 changelog tracks the OUMV specification and its reference tooling.
 
+## v1.5.4 — 2026-11-28 (wire 1.6.0, fixtures v13, revision v1.10)
+
+Transport auth stops being folklore and becomes a certified contract; no wire
+changes.
+
+- **Spec revision v1.10-canonical (§2.2/§12).** The refusal every runtime
+  already implemented is now normative: a missing, invalid or wrong-scheme
+  credential answers **HTTP 401 before dispatch**, a non-loopback bind with no
+  token configured answers **HTTP 403**, and both bodies carry the §5.1 registry
+  envelope with `-32007` (403 adds `data.reason="token_required_non_loopback"`).
+  No method runs for a refused request, so this is not a JSON-RPC method error.
+  SSE/WS endpoints served by an authenticated binding must refuse an
+  unauthenticated connection too.
+- **Fixtures v13 — the `authCases` family.** Three cases send an ordinary
+  `oumv/observe`/`oumv/handshake` request with a deliberately defective
+  credential (`auth: missing | invalid | wrong-scheme`) and assert the HTTP
+  status plus `-32007`. They run only when the certifier passes
+  `oumv-certify --auth` (the target was started with auth enabled) and the
+  transport can report a status; a stdio binding has no transport auth, so the
+  family is absent there and nothing is claimed that was not run. The report's
+  `environment.auth: "required"` records the mode.
+- **Conformance runner.** Transports may now report a transport status
+  (`requestWithStatus`), requests accept per-case controls (`headers`,
+  `omitAuth`), and cases may declare `headers` merged into that single request
+  after the transport's auth headers.
+- **Golden corpus.** `examples/wire/auth/transport-auth.json` freezes the
+  refusals captured from the Express adapter: three 401s carrying `-32007` and a
+  positive control that the same request with the configured token is dispatched.
+- **`compatibility.json`** gains the v1.5.4 row (revision v1.10, fixtures 13).
+
 ## v1.5.3 — 2026-11-28 (wire 1.6.0, fixtures v12)
 
 Patch to v1.5.2: the Go manifests pinned `go@v0.9.1`, which is the previous

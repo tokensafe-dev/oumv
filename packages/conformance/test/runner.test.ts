@@ -10,6 +10,7 @@ import {
   runFixtureSuite,
   type JsonRpcRequest,
   type JsonRpcResponse,
+  type StatusTransport,
 } from '../src/fixtures.js';
 import { httpTransport, memoryTransport, stdioTransport, wsTransport } from '../src/transports.js';
 import {
@@ -51,9 +52,79 @@ describe('fixture-driven conformance runner', () => {
     expect(report.failed).toBe(0);
     expect(report.attainedLevel).toBe(3);
     expect(report.levels).toEqual({ 1: 'passed', 2: 'passed', 3: 'passed' });
-    expect(report.fixtureVersion).toBe(12);
+    expect(report.fixtureVersion).toBe(13);
     expect(report.specVersion).toBe(spec.protocolVersion);
     expect(validateReport(report), reportErrors().join('; ')).toBe(true);
+  });
+
+  it('runs the auth family only on a status-capable transport and proves the refusal', async () => {
+    const spec = loadFixtures(FIXTURES);
+    const seen: string[] = [];
+    const transport: StatusTransport = {
+      name: 'fake-http',
+      request: async (request) => referenceRuntime(request),
+      requestWithStatus: async (_request, options) => {
+        const auth = options?.omitAuth
+          ? 'missing'
+          : options?.headers?.['X-OUMV-Session-Token']
+            ? 'invalid'
+            : 'wrong-scheme';
+        seen.push(auth);
+        return {
+          status: 401,
+          response: { jsonrpc: '2.0', id: null, error: { code: -32007, message: 'PERMISSION_DENIED' } },
+        };
+      },
+    };
+
+    const report = await runFixtureSuite(transport, spec, markers, {
+      adapterName: 'fake-http',
+      negotiatedVersion: '1.6.0',
+      auth: true,
+    });
+
+    const authResults = report.cases.filter((c) => c.id.startsWith('auth-'));
+    expect(authResults.map((c) => c.id).sort()).toEqual([
+      'auth-invalid-token-is-refused',
+      'auth-missing-token-is-refused',
+      'auth-wrong-scheme-is-refused',
+    ]);
+    expect(authResults.every((r) => r.status === 'passed')).toBe(true);
+    expect(seen.sort()).toEqual(['invalid', 'missing', 'wrong-scheme']);
+    // Everything else still goes through the ordinary request path.
+    expect(report.cases.filter((c) => !c.id.startsWith('auth-') && c.status === 'failed')).toEqual([]);
+  });
+
+  it('fails an auth case honestly when the binding answers a non-refusal status', async () => {
+    const spec = loadFixtures(FIXTURES);
+    const transport: StatusTransport = {
+      name: 'leaky-http',
+      request: async (request) => referenceRuntime(request),
+      requestWithStatus: async (request) => ({
+        status: 200,
+        response: referenceRuntime(request),
+      }),
+    };
+
+    const report = await runFixtureSuite(transport, spec, markers, {
+      adapterName: 'leaky-http',
+      negotiatedVersion: '1.6.0',
+      auth: true,
+    });
+
+    const failed = report.cases.filter((c) => c.id.startsWith('auth-') && c.status === 'failed');
+    expect(failed).toHaveLength(3);
+    expect(failed[0].error).toContain('expected HTTP 401');
+  });
+
+  it('omits the auth family when the certifier did not enable it', async () => {
+    const spec = loadFixtures(FIXTURES);
+    const transport = memoryTransport((request) => referenceRuntime(request));
+    const report = await runFixtureSuite(transport, spec, markers, {
+      adapterName: 'reference',
+      negotiatedVersion: '1.6.0',
+    });
+    expect(report.cases.some((c) => c.id.startsWith('auth-'))).toBe(false);
   });
 
   it('caps the attained level when a level-2 case fails and still reports honestly', async () => {

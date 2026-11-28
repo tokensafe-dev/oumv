@@ -22,6 +22,7 @@ const Ajv2020 = (Ajv2020Module as any).default ?? Ajv2020Module;
 
 const EXAMPLES = resolve(__dirname, '../../../examples/wire');
 const SCHEMAS = resolve(__dirname, '../../../schemas');
+const PROFILES = new Set(['backend', 'frontend']);
 
 const METHOD_SCHEMAS: Record<string, { file: string; request: string; response: string }> = {
   'oumv/handshake': { file: 'oumv-handshake.json', request: 'Request', response: 'Response' },
@@ -72,6 +73,8 @@ interface WireCase {
 function exampleFiles(): Array<{ profile: string; name: string; path: string }> {
   const out: Array<{ profile: string; name: string; path: string }> = [];
   for (const profile of readdirSync(EXAMPLES)) {
+    // `auth/` holds transport-level captures (no JSON-RPC method), validated separately.
+    if (!PROFILES.has(profile)) continue;
     const dir = join(EXAMPLES, profile);
     for (const name of readdirSync(dir).filter((file) => file.endsWith('.json'))) {
       out.push({ profile, name, path: join(dir, name) });
@@ -136,5 +139,34 @@ describe('golden wire examples', () => {
     const handshake = JSON.parse(readFileSync(join(EXAMPLES, 'frontend', 'handshake.json'), 'utf-8'));
     expect(handshake.cases[0].response.result.capabilities.observe.levels).toHaveLength(5);
     expect(handshake.cases[1].response.result.capabilities.observe.levels).toEqual(['L0', 'L1']);
+  });
+});
+
+describe('golden transport-auth captures', () => {
+  const AUTH_DIR = join(EXAMPLES, 'auth');
+
+  it('frozen from a real runtime and covers every deliberate credential defect', () => {
+    const capture = JSON.parse(readFileSync(join(AUTH_DIR, 'transport-auth.json'), 'utf-8'));
+    expect(capture.specVersion).toBe(SPEC_VERSION);
+    expect(capture.fixtureVersion).toBe(13);
+    expect(capture.transport).toBe('http');
+    expect(capture.capturedFrom).toBeTruthy();
+    const defects = capture.cases.map((entry: { auth: string }) => entry.auth);
+    expect(defects).toEqual(expect.arrayContaining(['missing', 'invalid', 'wrong-scheme', 'valid']));
+  });
+
+  it('every refusal is a 401 before dispatch carrying -32007', () => {
+    const capture = JSON.parse(readFileSync(join(AUTH_DIR, 'transport-auth.json'), 'utf-8'));
+    for (const entry of capture.cases) {
+      expect(entry.request.method.startsWith('oumv/'), entry.name).toBe(true);
+      if (entry.auth === 'valid') {
+        expect(entry.httpStatus, entry.name).toBe(200);
+        expect(entry.response.result, entry.name).toBeTruthy();
+        continue;
+      }
+      expect(entry.httpStatus, entry.name).toBe(401);
+      expect(validateErrorEnvelope(entry.response), entry.name).toBe(true);
+      expect(entry.response.error.code, entry.name).toBe(-32007);
+    }
   });
 });

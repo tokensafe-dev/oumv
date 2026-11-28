@@ -38,6 +38,8 @@ export interface CertifyOptions {
   minLevel: number;
   timeoutMs?: number;
   quiet?: boolean;
+  /** Target was started with auth enabled: run the fixture file's auth cases. */
+  auth?: boolean;
 }
 
 export function parseCertifyArgs(argv: string[]): CertifyOptions {
@@ -73,6 +75,9 @@ export function parseCertifyArgs(argv: string[]): CertifyOptions {
         break;
       case '--token':
         options.token = next();
+        break;
+      case '--auth':
+        options.auth = true;
         break;
       case '--fixtures':
         options.fixtures = next();
@@ -188,6 +193,7 @@ Options:
   --framework <name>    framework reported in the report (gin, fastapi, react, ...)
   --profile <name>      frontend | backend (recorded in environment)
   --token <token>       X-OUMV-Session-Token / Bearer token
+  --auth                target requires a token: also run the auth refusal cases
   --sse <url>           SSE events endpoint; push cases run over it, requests stay on --url
   --fixtures <path>     fixture file (default: fixtures/conformance-cases.json)
   --markers <json|@f>   marker overrides: fixtureFile, editTarget, l2Target, ...
@@ -263,9 +269,11 @@ export async function certify(options: CertifyOptions): Promise<number> {
       environment: {
         transport: options.sse ? 'sse' : transport.name,
         ...(options.profile ? { profile: options.profile } : {}),
+        ...(options.auth ? { auth: 'required' } : {}),
         node: process.version,
       },
       capabilities,
+      auth: options.auth,
       push,
       pushTimeoutMs: options.timeoutMs,
       onCase: options.quiet

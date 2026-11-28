@@ -1,0 +1,102 @@
+{
+  "transport": "http",
+  "capturedFrom": "node-express",
+  "specVersion": "1.6.0",
+  "fixtureVersion": 13,
+  "note": "Transport-level auth refusals (spec §2.2/§12), captured from the Express adapter started with requireAuth; loopback paths are relative to a temp workspace.",
+  "cases": [
+    {
+      "name": "missing credential",
+      "auth": "missing",
+      "httpStatus": 401,
+      "request": {
+        "jsonrpc": "2.0",
+        "id": "oumv/auth:missing credential",
+        "method": "oumv/observe",
+        "params": {
+          "level": "L0"
+        }
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": null,
+        "error": {
+          "code": -32007,
+          "message": "PERMISSION_DENIED: invalid OUMV session token"
+        }
+      }
+    },
+    {
+      "name": "invalid credential",
+      "auth": "invalid",
+      "httpStatus": 401,
+      "request": {
+        "jsonrpc": "2.0",
+        "id": "oumv/auth:invalid credential",
+        "method": "oumv/observe",
+        "params": {
+          "level": "L0"
+        }
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": null,
+        "error": {
+          "code": -32007,
+          "message": "PERMISSION_DENIED: invalid OUMV session token"
+        }
+      }
+    },
+    {
+      "name": "wrong scheme",
+      "auth": "wrong-scheme",
+      "httpStatus": 401,
+      "request": {
+        "jsonrpc": "2.0",
+        "id": "oumv/auth:wrong scheme",
+        "method": "oumv/handshake",
+        "params": {
+          "protocolVersion": "1.6.0"
+        }
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": null,
+        "error": {
+          "code": -32007,
+          "message": "PERMISSION_DENIED: invalid OUMV session token"
+        }
+      }
+    },
+    {
+      "name": "valid credential is dispatched",
+      "auth": "valid",
+      "httpStatus": 200,
+      "request": {
+        "jsonrpc": "2.0",
+        "id": "oumv/auth:valid",
+        "method": "oumv/observe",
+        "params": {
+          "level": "L0"
+        }
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": "oumv/auth:valid",
+        "result": {
+          "level": "L0",
+          "format": "json",
+          "data": {
+            "status": "HEALTHY",
+            "uptimeSeconds": 0,
+            "activeRoutes": 0,
+            "errorCount1m": 0,
+            "memoryAllocMB": 90
+          },
+          "tokenEstimate": 30,
+          "workspaceVersion": "sha256:d9876958740cdf4db7687b383898932c2c43af7f892e875de05ba1d45482bd1d"
+        }
+      }
+    }
+  ]
+}

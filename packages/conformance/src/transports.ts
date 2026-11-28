@@ -9,7 +9,15 @@ import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process';
 import { connect as netConnect, type Socket } from 'node:net';
 import { randomBytes } from 'node:crypto';
 import { URL } from 'node:url';
-import type { JsonRpcRequest, JsonRpcResponse, PushEvent, PushEventSource, RpcTransport } from './fixtures.js';
+import type {
+  JsonRpcRequest,
+  JsonRpcResponse,
+  PushEvent,
+  PushEventSource,
+  RpcRequestOptions,
+  RpcTransport,
+  StatusTransport,
+} from './fixtures.js';
 
 function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
   return new Promise<T>((resolve, reject) => {
@@ -50,44 +58,71 @@ export interface HttpTransportOptions {
   headers?: Record<string, string>;
 }
 
-/** HTTP binding (spec §2.2): one JSON-RPC object per POST, 200 even for RPC errors. */
-export function httpTransport(options: HttpTransportOptions): RpcTransport {
+const AUTH_HEADER = /^(authorization|x-oumv-session-token)$/i;
+
+/**
+ * HTTP binding (spec §2.2): one JSON-RPC object per POST, 200 even for RPC errors.
+ * Also implements `requestWithStatus`, because the only way to prove an auth
+ * refusal (spec §12) is to observe the 401/403 the binding answers before dispatch.
+ */
+export function httpTransport(options: HttpTransportOptions): StatusTransport {
   const timeoutMs = options.timeoutMs ?? 10_000;
+
+  const send = async (
+    request: JsonRpcRequest,
+    requestOptions: RpcRequestOptions = {}
+  ): Promise<{ status?: number; response: JsonRpcResponse }> => {
+    const headers: Record<string, string> = { 'Content-Type': 'application/json', ...(options.headers ?? {}) };
+    if (!requestOptions.omitAuth) Object.assign(headers, authHeaders(options.token));
+    // A probe must be free to replace the credential it is testing.
+    for (const [key, value] of Object.entries(requestOptions.headers ?? {})) {
+      for (const existing of Object.keys(headers)) {
+        if (AUTH_HEADER.test(existing) && existing.toLowerCase() === key.toLowerCase()) delete headers[existing];
+      }
+      headers[key] = value;
+    }
+    if (requestOptions.omitAuth) {
+      for (const existing of Object.keys(headers)) if (AUTH_HEADER.test(existing)) delete headers[existing];
+    }
+    try {
+      const response = await withTimeout(
+        fetch(options.url, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify(request),
+        }),
+        timeoutMs,
+        'http'
+      );
+      const text = await response.text();
+      let payload: any = undefined;
+      try {
+        payload = text ? JSON.parse(text) : undefined;
+      } catch {
+        return {
+          status: response.status,
+          response: transportError(`HTTP ${response.status} returned non-JSON body: ${text.slice(0, 200)}`),
+        };
+      }
+      if (!payload || typeof payload !== 'object') {
+        return {
+          status: response.status,
+          response: transportError(`HTTP ${response.status} returned no JSON-RPC response`),
+        };
+      }
+      if (payload.jsonrpc === undefined && payload.error === undefined) {
+        payload = { jsonrpc: '2.0', id: request.id, ...payload };
+      }
+      return { status: response.status, response: payload as JsonRpcResponse };
+    } catch (err: any) {
+      return { response: transportError(err.message) };
+    }
+  };
+
   return {
     name: 'http',
-    request: async (request) => {
-      try {
-        const response = await withTimeout(
-          fetch(options.url, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              ...authHeaders(options.token),
-              ...(options.headers ?? {}),
-            },
-            body: JSON.stringify(request),
-          }),
-          timeoutMs,
-          'http'
-        );
-        const text = await response.text();
-        let payload: any = undefined;
-        try {
-          payload = text ? JSON.parse(text) : undefined;
-        } catch {
-          return transportError(`HTTP ${response.status} returned non-JSON body: ${text.slice(0, 200)}`);
-        }
-        if (!payload || typeof payload !== 'object') {
-          return transportError(`HTTP ${response.status} returned no JSON-RPC response`);
-        }
-        if (payload.jsonrpc === undefined && payload.error === undefined) {
-          payload = { jsonrpc: '2.0', id: request.id, ...payload };
-        }
-        return payload as JsonRpcResponse;
-      } catch (err: any) {
-        return transportError(err.message);
-      }
-    },
+    request: async (request, requestOptions) => (await send(request, requestOptions)).response,
+    requestWithStatus: send,
   };
 }
 

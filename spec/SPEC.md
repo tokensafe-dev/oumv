@@ -1,7 +1,7 @@
-# The OUMV Protocol Specification (v1.9-canonical)
+# The OUMV Protocol Specification (v1.10-canonical)
 **The Universal Agent-Runtime Protocol (UARP)**
 
-- **Date**: 2026-11-22 (v1.0 draft) · 2026-11-26 (v1.0.0 frozen; document revision v1.4-canonical) · 2026-11-26 (v1.1.0; revision v1.5-canonical, wire `protocolVersion` 1.2.0) · 2026-11-27 (v1.2.0; revision v1.6-canonical, wire `protocolVersion` 1.3.0) · 2026-11-27 (v1.3.0; revision v1.7-canonical, wire `protocolVersion` 1.4.0) · 2026-11-27 (v1.4.0; revision v1.8-canonical, wire `protocolVersion` 1.5.0) · 2026-11-27 (v1.5.0; revision v1.9-canonical, wire `protocolVersion` 1.6.0)  
+- **Date**: 2026-11-22 (v1.0 draft) · 2026-11-26 (v1.0.0 frozen; document revision v1.4-canonical) · 2026-11-26 (v1.1.0; revision v1.5-canonical, wire `protocolVersion` 1.2.0) · 2026-11-27 (v1.2.0; revision v1.6-canonical, wire `protocolVersion` 1.3.0) · 2026-11-27 (v1.3.0; revision v1.7-canonical, wire `protocolVersion` 1.4.0) · 2026-11-27 (v1.4.0; revision v1.8-canonical, wire `protocolVersion` 1.5.0) · 2026-11-27 (v1.5.0; revision v1.9-canonical, wire `protocolVersion` 1.6.0) · 2026-11-28 (revision v1.10-canonical: transport auth contract codified, wire `protocolVersion` 1.6.0 unchanged)  
 - **Status**: Stable — v1.5.0  
 - **Author**: Oleg Savelev  
 - **Repository**: [github.com/tokensafe-dev/oumv](https://github.com/tokensafe-dev/oumv)
@@ -89,7 +89,12 @@ Error Response:
   (`error` field carries the code). 4xx is reserved for transport failures:
   401/403 auth, 405 wrong method, 413 body too large.
 * Auth: `X-OUMV-Session-Token` or `Authorization: Bearer <token>`. Loopback development
-  MAY leave it empty; a non-loopback bind MUST require it.
+  MAY leave it empty; a non-loopback bind MUST require it. A refused request is answered
+  **before dispatch** with HTTP 401 (missing, invalid, or wrong-scheme credential) or
+  HTTP 403 (a non-loopback bind that has no token configured), and the body carries the
+  §5.1 registry envelope `{"jsonrpc":"2.0","id":null,"error":{"code":-32007,…}}`; no
+  JSON-RPC method runs for it. The refusal semantics are certified by the `authCases`
+  family (§10.2).
 * Bodies above `maxBodyBytes` (default 8 MiB) → HTTP 413.
 
 ### 2.3 SSE binding (optional, MUST be advertised)
@@ -743,11 +748,11 @@ Conformance is **per adapter and per profile**, and it is a claim that MUST be b
 
 ### 10.2 Language-neutral fixtures
 
-Cases live in `fixtures/conformance-cases.json` (`fixtureVersion` 12). Every case declares the `level` it certifies and may declare `preconditions` such as `verify` (which establishes the runtime evidence that L4/causality cases assert on). Each runtime executes the same file with its native toolchain — no TypeScript required for Go or Python certification.
+Cases live in `fixtures/conformance-cases.json` (`fixtureVersion` 13). Every case declares the `level` it certifies and may declare `preconditions` such as `verify` (which establishes the runtime evidence that L4/causality cases assert on). Each runtime executes the same file with its native toolchain — no TypeScript required for Go or Python certification.
 
-Besides the ordered `cases`, the file carries three gated families: `pushCases` (run only by the SSE/WS certificate whose `transport` matches), `capabilityCases` (run only when the runtime's handshake advertises `requiresCapability`, and dropped from the report otherwise, so no claim is ever certified by a skipped case) and `sessionCases` (handshake with `sessionTtlSeconds: ttlSeconds`, wait the granted lifetime, then assert `-32011` + `data.reason="session_expired"`). A capability case may name `cleanup` paths removed before it runs and a `followUp` call whose expectations it also asserts — the second half of an atomicity proof. Any case may also declare `minWireVersion`: it is skipped, and dropped from the report, when the runtime negotiates an older wire version — that is how the §4.1 result-versioning cases stay Level-2 assertions for wire 1.6.0 runtimes without penalizing runtimes frozen on 1.5.0.
+Besides the ordered `cases`, the file carries four gated families: `pushCases` (run only by the SSE/WS certificate whose `transport` matches), `capabilityCases` (run only when the runtime's handshake advertises `requiresCapability`, and dropped from the report otherwise, so no claim is ever certified by a skipped case), `sessionCases` (handshake with `sessionTtlSeconds: ttlSeconds`, wait the granted lifetime, then assert `-32011` + `data.reason="session_expired"`) and `authCases` (spec §12: the same ordinary request with a deliberately defective credential — `auth: "missing" | "invalid" | "wrong-scheme"` — must be refused with the declared `expectHttpStatus` and `expectError.code` before dispatch; run only by an HTTP certifier whose target was started with auth enabled, since a stdio binding has no transport auth and a tokenless loopback target has nothing to refuse). A capability case may name `cleanup` paths removed before it runs and a `followUp` call whose expectations it also asserts — the second half of an atomicity proof. Any case may also declare `minWireVersion`: it is skipped, and dropped from the report, when the runtime negotiates an older wire version — that is how the §4.1 result-versioning cases stay Level-2 assertions for wire 1.6.0 runtimes without penalizing runtimes frozen on 1.5.0.
 
-A case declares its expectations declaratively: `expectResultFields`, `expectValues` (JSON-path equality on the result), `expectError.code` (with optional `expectError.data`), `expectLevelEquals`, `expectSha256Field`, `expectArrayField`, `expectEvidence`, `expectVersionMatchesContent`. The reference runners are the Go/Python packages in `tokensafe-backend` and `@oumv/conformance` (CLI `oumv-certify`); a certification claim is reproduced in CI by re-running one of them.
+A case declares its expectations declaratively: `expectResultFields`, `expectValues` (JSON-path equality on the result), `expectError.code` (with optional `expectError.data`), `expectLevelEquals`, `expectSha256Field`, `expectArrayField`, `expectEvidence`, `expectVersionMatchesContent`. A case may also declare `headers`, merged into that single request after the transport's own auth headers. The reference runners are the Go/Python packages in `tokensafe-backend` and `@oumv/conformance` (CLI `oumv-certify`); a certification claim is reproduced in CI by re-running one of them.
 
 **OCC is mandatory.** Exactly one case (`apply-edit-without-version-rejected`) omits `expectedVersion`, and it asserts `-32011 VALIDATION_FAILED`. A runtime that accepts an unversioned edit of an existing file cannot pass Level 2.
 
@@ -760,7 +765,7 @@ A level claim MUST be accompanied by a report (schema: `schemas/conformance-repo
   "adapterName": "go-gin",
   "framework": "gin",
   "specVersion": "1.6.0",
-  "fixtureVersion": 12,
+  "fixtureVersion": 13,
   "total": 36, "passed": 36, "failed": 0,
   "attainedLevel": 3,
   "levels": { "1": "passed", "2": "passed", "3": "passed" },
@@ -810,6 +815,14 @@ Reports are committed per adapter (e.g. `tokensafe-backend/certification/*.json`
   `data.since`/`data.useInstead` when known) in its successful response — the answer stays
   correct, the agent learns the deadline. Runtimes MUST NOT fail a deprecated-but-accepted
   call.
+* **Transport auth contract (revision v1.10, wire 1.6.0 unchanged, fixtures v13).** The
+  §2.2/§12 refusal is now normative and certified: a defective credential answers HTTP
+  401 before dispatch, a non-loopback bind with no token answers HTTP 403, and both bodies
+  carry the registry envelope with `-32007`. This codifies what every shipped runtime
+  already did — it adds no field, method or wire version — so a wire 1.6.0 adapter stays
+  valid. Fixtures gain the gated `authCases` family plus per-case `headers`; a certificate
+  produced with `oumv-certify --auth` records `environment.auth: "required"`, and one
+  produced without it simply has no auth cases (nothing is claimed that was not run).
 
 ---
 
@@ -820,7 +833,13 @@ baseline rules:
 
 * **Authentication.** The RPC endpoint accepts `X-OUMV-Session-Token` or
   `Authorization: Bearer <token>` (§2.2). Loopback development MAY run without a token;
-  every non-loopback binding MUST require one and answer `401`/`403` before dispatch.
+  every non-loopback binding MUST require one and answer `401`/`403` before dispatch. The
+  refusal is HTTP 401 with the §5.1 envelope `{"jsonrpc":"2.0","id":null,"error":
+  {"code":-32007,"message":"PERMISSION_DENIED: …"}}` for a missing, invalid or wrong-scheme
+  credential, and HTTP 403 with `-32007` (`data.reason="token_required_non_loopback"`) when
+  a non-loopback bind has no token configured — never a JSON-RPC *method* error, because no
+  method runs. Optional transports follow the same rule: an SSE/WS endpoint served by an
+  authenticated binding MUST refuse an unauthenticated connection too.
   Adapters MUST fail closed in production: disabled unless explicitly enabled, no
   descriptor, no source reads, no mutations.
 * **Path jail.** Every path is resolved (symlinks included) and must stay inside the
@@ -954,6 +973,8 @@ Request: `{ "command"?: string, "target"?: string, "timeoutMs"?: integer }` →
 ---
 
 ## Changelog
+
+- **Revision v1.10 (2026-11-28, wire 1.6.0 unchanged, `fixtureVersion` 13)**: the transport auth refusal is codified (§2.2, §12) — HTTP 401 before dispatch for a missing/invalid/wrong-scheme credential, HTTP 403 (`data.reason="token_required_non_loopback"`) for a non-loopback bind with no token, both carrying the §5.1 envelope with `-32007`; SSE/WS under an authenticated binding must refuse unauthenticated connections too. Fixtures gain the gated `authCases` family and per-case `headers`; `oumv-certify --auth` runs the family and records `environment.auth: "required"`. Additive documentation of behavior every shipped runtime already implemented — no field, method or wire version changes, so wire 1.6.0 adapters stay valid.
 
 - **v1.5.0 release (2026-11-27)**: wire `protocolVersion` **1.6.0**, document revision `v1.9-canonical`, `fixtureVersion` **11**. New methods: `oumv/previewEdit` (§4.4 — applyEdit's guard order as a dry-run with per-file `wouldApply`/`newVersion`/`diff`, never writing), `oumv/cancel` (§3 — best-effort cooperative cancellation by `requestId` or `target:"last"`), `oumv/index` (§14.1 — repo-wide symbol search, ranked exact > prefix > qualified-suffix > substring with reverse-edge counts), `observe.query` (§14.2 — runtime-enforced read-only SQL access, opt-in capability), `oumv/build` (§14.3 — run the build/test command and return structured `diagnostics`). Envelope gains `params.requestId` (echoed in replies; §2.1) and per-method `timeoutMs`; mutations accept `idempotencyKey` with first-result-wins replay (§3). Push transports gain the `diagnostic` event / `notifications/oumv.diagnostic` (§2.6) with `capabilities.events.diagnostic`. Error model: `-32010` activated as `STALE_RESOURCE_VERSION`, new `-32012 RATE_LIMITED`, and the whole code set is now generated from the canonical registry `schemas/errors.json` (errors.ts generated, spec/README tables checked 1:1 by the conformance suite). §11 adds `compatibility.json` (generated cross-repo compat matrix) and a deprecation-notice field; §12 formalizes non-loopback bindings (token required, TLS/tunnel, explicit-URL discovery, registry stays loopback-only). Handshake capabilities grow `mutate.preview`, `verify.build`, `index.symbols`, `observeQuery.readOnly`, `events.diagnostic`, `sessions.cancel`.
 

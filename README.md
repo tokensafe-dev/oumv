@@ -132,15 +132,15 @@ ships which wire version and fixture set" — when in doubt, trust it over this 
 
 | Axis | Current | Meaning |
 | :--- | :--- | :--- |
-| Standard release | `v1.5.2` (2026-11-28) | Fixtures v12 (the §4.1 handshake as ordered, `minWireVersion`-gated cases), the ASP.NET Core manifest, wire 1.6.0 capability claims backed by certification, Java/PHP explicitly frozen at wire 1.5.0. |
-| Previous release | `v1.5.0` (2026-11-27) | Agent-UX MINOR: `oumv/previewEdit` dry-run, `requestId`/`timeoutMs`/cancel/idempotency (§3), `oumv/index`, `oumv/query`, `oumv/build` (§14), `diagnostic` events (§2.6), canonical error registry. |
-| Earlier | `v1.4.0` (2026-11-27) | Multi-file atomic `applyEdit` (`mutate.multiFile`), handshake `sessionTtlSeconds` + `sessions.ttlSeconds`, fixture v10 batch and expired-session cases. |
-| Document revision | `v1.9-canonical` | The revision of `spec/SPEC.md`; see the changelog in that file. |
+| Standard release | `v1.5.4` (2026-11-28) | Fixtures v13 (the certified transport-auth contract, §12), per-case request headers, `oumv-certify --auth`; no wire changes since 1.6.0. |
+| Previous release | `v1.5.2` (2026-11-28) | Fixtures v12 (the §4.1 handshake as ordered, `minWireVersion`-gated cases), the ASP.NET Core manifest, wire 1.6.0 capability claims backed by certification, Java/PHP explicitly frozen at wire 1.5.0. |
+| Earlier | `v1.5.0` (2026-11-27) | Agent-UX MINOR: `oumv/previewEdit` dry-run, `requestId`/`timeoutMs`/cancel/idempotency (§3), `oumv/index`, `oumv/query`, `oumv/build` (§14), `diagnostic` events (§2.6), canonical error registry. |
+| Document revision | `v1.10-canonical` | The revision of `spec/SPEC.md`; see the changelog in that file. |
 | Wire `protocolVersion` | `1.6.0` | Sent in `oumv/handshake`. A runtime MUST echo the version it actually serves; clients accept a matching MAJOR. |
-| Fixtures | `fixtureVersion 12` (37 ordered + 2 push + 10 capability + 1 session cases) | `fixtures/conformance-cases.json`; every report records the revision it ran. |
+| Fixtures | `fixtureVersion 13` (37 ordered + 2 push + 10 capability + 1 session + 3 auth cases) | `fixtures/conformance-cases.json`; every report records the revision it ran. |
 
-These axes move independently by design: v1.5.0 ships document revision v1.9-canonical,
-wire version 1.6.0 and fixture set v11. A v1.0 adapter stays valid for the capabilities it
+These axes move independently by design: v1.5.4 ships document revision v1.10-canonical,
+wire version 1.6.0 and fixture set v13. A v1.0 adapter stays valid for the capabilities it
 declares — new methods answer `-32601` where unimplemented. Implementations negotiate the
 **wire** version, never the document revision.
 

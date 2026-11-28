@@ -133,6 +133,13 @@
       "type": "object",
       "description": "JSON-path -> expected value (dotted paths, e.g. data.hasMore)",
       "additionalProperties": true
+     },
+     "headers": {
+      "type": "object",
+      "description": "Extra headers for this case's request only, merged after the transport's auth headers.",
+      "additionalProperties": {
+       "type": "string"
+      }
      }
     }
    }
@@ -400,6 +407,77 @@
         "type": "object",
         "additionalProperties": true
        }
+      }
+     }
+    }
+   }
+  },
+  "authCases": {
+   "type": "array",
+   "description": "Transport-level auth cases (spec §12): the same ordinary request with a defective credential must be refused before dispatch. Run only by an HTTP certifier against a target started with auth enabled (`oumv-certify --auth`).",
+   "items": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+     "id",
+     "level",
+     "auth",
+     "method",
+     "params",
+     "expectHttpStatus"
+    ],
+    "properties": {
+     "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9-]+$"
+     },
+     "level": {
+      "enum": [
+       1,
+       2,
+       3
+      ]
+     },
+     "auth": {
+      "enum": [
+       "missing",
+       "invalid",
+       "wrong-scheme"
+      ],
+      "description": "The credential defect the probe sends."
+     },
+     "method": {
+      "type": "string",
+      "pattern": "^oumv/"
+     },
+     "params": {
+      "type": "object"
+     },
+     "expectHttpStatus": {
+      "type": "integer",
+      "minimum": 400,
+      "maximum": 499,
+      "description": "HTTP status the binding must answer before dispatch (401, or 403 for a tokenless non-loopback bind)."
+     },
+     "expectError": {
+      "type": "object",
+      "required": [
+       "code"
+      ],
+      "properties": {
+       "code": {
+        "type": "integer"
+       },
+       "data": {
+        "type": "object",
+        "additionalProperties": true
+       }
+      }
+     },
+     "headers": {
+      "type": "object",
+      "additionalProperties": {
+       "type": "string"
       }
      }
     }

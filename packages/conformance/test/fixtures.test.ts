@@ -59,7 +59,7 @@ describe('language-neutral conformance fixtures', () => {
   it('references the OUMV spec, protocol version and fixture version', () => {
     const data = loadFixture();
     expect(data.protocolVersion).toBe('1.6.0');
-    expect(data.fixtureVersion).toBe(12);
+    expect(data.fixtureVersion).toBe(13);
     expect(data.spec).toContain('SPEC.md');
   });
 
@@ -154,5 +154,30 @@ describe('language-neutral conformance fixtures', () => {
     expect(codes).toContain(-32002); // SYNTAX_ERROR
     expect(codes).toContain(-32009); // RESOURCE_NOT_FOUND
     expect(codes).toContain(-32011); // VALIDATION_FAILED
+  });
+
+  it('carries the auth refusal family (spec §12)', () => {
+    const data = loadFixture() as unknown as {
+      authCases?: Array<{
+        id: string;
+        level: number;
+        auth: string;
+        method: string;
+        params: Record<string, unknown>;
+        expectHttpStatus: number;
+        expectError?: { code: number };
+      }>;
+    };
+    const authCases = data.authCases ?? [];
+    expect(authCases.map((c) => c.auth).sort()).toEqual(['invalid', 'missing', 'wrong-scheme']);
+    for (const c of authCases) {
+      expect([1, 2, 3], `${c.id}: level`).toContain(c.level);
+      expect(c.method.startsWith('oumv/'), `${c.id}: method`).toBe(true);
+      // Loopback refusal is 401; 403 is reserved for a tokenless non-loopback bind,
+      // which a probe over loopback cannot produce — so the fixture asserts 401.
+      expect([401, 403], `${c.id}: status`).toContain(c.expectHttpStatus);
+      expect(c.expectError?.code, `${c.id}: refusal carries -32007`).toBe(-32007);
+      expect(NORMATIVE_CODES.has(-32007), 'auth code must be in the registry').toBe(true);
+    }
   });
 });
