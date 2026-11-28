@@ -25,7 +25,7 @@ const errors = readJSON('schemas/errors.json');
 /** Release history (append the next release on top; keep past rows frozen). */
 const REVISIONS = [
   {
-    release: 'v1.5.2',
+    release: 'v1.5.3',
     date: '2026-11-27',
     specRevision: 'v1.9-canonical',
     wireProtocolVersion: '1.6.0',

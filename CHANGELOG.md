@@ -3,6 +3,12 @@
 The wire contract is versioned by `protocolVersion` (currently **1.6.0**); this
 changelog tracks the OUMV specification and its reference tooling.
 
+## v1.5.3 — 2026-11-28 (wire 1.6.0, fixtures v12)
+
+Patch to v1.5.2: the Go manifests pinned `go@v0.9.1`, which is the previous
+backend release (the Go module tag that carries the permissions policy and the
+fixtures-v12 work is `go/v0.9.2`). Install commands corrected; no other change.
+
 ## v1.5.2 — 2026-11-28 (wire 1.6.0, fixtures v12)
 
 Fixtures v12 makes §4.1 result versioning testable and the adapter catalog
