@@ -2,7 +2,7 @@
   "identity": {
     "id": "backend/elysia",
     "name": "TokenSafe OUMV adapter for Elysia (Bun)",
-    "version": "0.11.0",
+    "version": "0.12.0",
     "description": "OUMV adapter for Elysia on Bun (HTTP + SSE + WebSocket; server profile)",
     "repo": "https://github.com/tokensafe-dev/tokensafe-backend"
   },

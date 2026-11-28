@@ -37,6 +37,10 @@ const CAPABILITY_CASES = {
   // Spec §8.5 (revision v1.11): the read-only deployment shape, proven by the
   // capability case that asserts -32601 for the writing methods on such a runtime.
   'deployment.read_only': 'read-only-handshake-declares',
+  // Spec §7.4 (revision v1.12): the browser bridge, proven by the gated
+  // browserCases family (run only with a page attached).
+  'mutate.ephemeralDispatch': 'browser-verify-dispatches-a-dom-action',
+  'verify.surfaceDiff': 'browser-verify-dispatches-a-dom-action',
 };
 
 const fixtures = JSON.parse(readFileSync(FIXTURES, 'utf-8'));
@@ -45,6 +49,7 @@ const casesById = new Map(
     ...fixtures.cases,
     ...(fixtures.capabilityCases ?? []),
     ...(fixtures.sessionCases ?? []),
+    ...(fixtures.browserCases ?? []),
   ].map((c) => [c.id, c])
 );
 

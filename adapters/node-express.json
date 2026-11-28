@@ -2,7 +2,7 @@
   "identity": {
     "id": "backend/express",
     "name": "TokenSafe OUMV adapter for Express",
-    "version": "0.11.0",
+    "version": "0.12.0",
     "description": "OUMV adapter for Express (HTTP, SSE, WebSocket)",
     "repo": "https://github.com/tokensafe-dev/tokensafe-backend"
   },

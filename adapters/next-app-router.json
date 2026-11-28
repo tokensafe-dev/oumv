@@ -2,8 +2,8 @@
   "identity": {
     "id": "backend/next",
     "name": "TokenSafe OUMV adapter for Next.js (App Router)",
-    "version": "0.11.0",
-    "description": "OUMV adapter for the Next.js App Router (Route Handler: HTTP + SSE; server profile)",
+    "version": "0.12.0",
+    "description": "OUMV adapter for the Next.js App Router (Route Handler: HTTP + SSE; server profile plus the client-component browser bridge)",
     "repo": "https://github.com/tokensafe-dev/tokensafe-backend"
   },
   "technology": {
@@ -79,7 +79,8 @@
           "file"
         ],
         "limitations": [
-          "requires the adopter to pass verifyFetch (a Web handler routing to its own Route Handler modules)"
+          "server traces require the adopter to pass verifyFetch (a Web handler routing to its own Route Handler modules)",
+          "with the browser bridge enabled, L4 also carries the page's traces (handler browser:<event>:<target>)"
         ]
       },
       "conformanceLevel": 3
@@ -147,6 +148,35 @@
         ]
       },
       "conformanceLevel": 3
+    },
+    {
+      "name": "mutate.ephemeralDispatch",
+      "constraints": {
+        "developmentOnly": true,
+        "resourceTypes": [
+          "component",
+          "element"
+        ],
+        "limitations": [
+          "requires the Bridge Route Handler plus instrumentation-client (Next >= 15.3); with no page attached a DOM target answers -32008",
+          "dispatch writes no files and consumes no OCC token"
+        ]
+      },
+      "conformanceLevel": 2
+    },
+    {
+      "name": "verify.surfaceDiff",
+      "constraints": {
+        "developmentOnly": true,
+        "resourceTypes": [
+          "component",
+          "element"
+        ],
+        "limitations": [
+          "emitted only when the verify ran against the attached page (surface before/after the dispatched action)"
+        ]
+      },
+      "conformanceLevel": 2
     },
     {
       "name": "sessions.ttlSeconds",
