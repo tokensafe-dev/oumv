@@ -2,7 +2,7 @@
   "identity": {
     "id": "backend/aspnetcore",
     "name": "TokenSafe OUMV adapter for ASP.NET Core",
-    "version": "0.2.0",
+    "version": "0.3.0",
     "description": "OUMV adapter for ASP.NET Core (minimal APIs + MVC, EF Core rollback sandbox)",
     "repo": "https://github.com/tokensafe-dev/tokensafe-backend"
   },
@@ -158,6 +158,70 @@
         ]
       },
       "conformanceLevel": 2
+    },
+    {
+      "name": "mutate.preview",
+      "constraints": {
+        "developmentOnly": true,
+        "resourceTypes": [
+          "file"
+        ],
+        "limitations": [
+          "§4.4 dry-run: the full applyEdit guard chain (jail, existence, OCC, hunks, Roslyn pre-flight) runs without any write"
+        ]
+      },
+      "conformanceLevel": 3
+    },
+    {
+      "name": "sessions.cancel",
+      "constraints": {
+        "developmentOnly": false,
+        "resourceTypes": [],
+        "limitations": [
+          "cooperative requestId cancellation; unknown or finished ids answer cancelled:false, never an error"
+        ]
+      },
+      "conformanceLevel": 1
+    },
+    {
+      "name": "index.symbols",
+      "constraints": {
+        "developmentOnly": true,
+        "resourceTypes": [
+          "file",
+          "symbol"
+        ],
+        "limitations": [
+          "ranked exact > prefix > suffix > substring over source files"
+        ]
+      },
+      "conformanceLevel": 3
+    },
+    {
+      "name": "verify.build",
+      "constraints": {
+        "developmentOnly": true,
+        "resourceTypes": [
+          "file"
+        ],
+        "limitations": [
+          "runs OumvOptions.BuildCommand or params.command; no command keeps an honest skipped with a reason"
+        ]
+      },
+      "conformanceLevel": 3
+    },
+    {
+      "name": "observeQuery.readOnly",
+      "constraints": {
+        "developmentOnly": true,
+        "resourceTypes": [
+          "database"
+        ],
+        "limitations": [
+          "one SELECT/EXPLAIN/PRAGMA/WITH/VALUES/SHOW/DESCRIBE per call over the discovered DbContext connection, inside a rolled-back transaction; writes answer -32003 query_forbidden"
+        ]
+      },
+      "conformanceLevel": 3
     }
   ],
   "security": {

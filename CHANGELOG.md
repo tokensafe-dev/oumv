@@ -3,6 +3,13 @@
 The wire contract is versioned by `protocolVersion` (currently **1.6.0**); this
 changelog tracks the OUMV specification and its reference tooling.
 
+## v1.5.7 — 2026-11-28 (wire 1.6.0, fixtures v13, revision v1.10)
+
+Adapter catalog: `TokenSafe.Oumv.AspNetCore` reaches the full wire 1.6.0 surface.
+The manifest moves to 0.3.0 and claims `mutate.preview`, `index.symbols`,
+`verify.build`, `observeQuery.readOnly` and `sessions.cancel`, each backed by a
+capability case in the dotnet certificates (HTTP 50/50, SSE 51/51, WS 48/48).
+
 ## v1.5.6 — 2026-11-28 (wire 1.6.0, fixtures v13, revision v1.10)
 
 Pin fix: the React/Vue manifests tracked `tokensafe-ui` 0.1.33, a version that

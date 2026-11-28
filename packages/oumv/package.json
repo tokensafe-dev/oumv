@@ -1,6 +1,6 @@
 {
   "name": "tokensafe-oumv",
-  "version": "1.5.6",
+  "version": "1.5.7",
   "license": "Apache-2.0",
   "description": "OUMV: The Universal Agent-Runtime Protocol (UARP) (Observe \u00b7 Understand \u00b7 Mutate \u00b7 Verify) reference implementation and conformance engine",
   "type": "module",
