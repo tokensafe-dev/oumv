@@ -555,11 +555,12 @@ export async function runFixtureSuite(
 ): Promise<FixtureReport> {
   const results: CaseResult[] = [];
 
-  // §4.1 result versioning (wire 1.6.0): capture the runtime's workspace token
-  // once, so the ifVersion cases can assert both the unchanged envelope and
-  // -32010 without a cross-case capture mechanism. Skipped for older wire
-  // versions, where the token does not exist.
-  if (wireVersionAtLeast(options.negotiatedVersion, '1.6.0')) {
+  // §4.1 result versioning (wire 1.6.0): the ifVersion cases need the runtime's
+  // CURRENT token, and earlier cases legitimately mutate the workspace, so it is
+  // captured just in time (right before a case that references it) rather than
+  // once up front. Skipped for older wire versions, where the token does not exist.
+  const captureWorkspaceVersion = async (): Promise<void> => {
+    if (!wireVersionAtLeast(options.negotiatedVersion, '1.6.0')) return;
     const probe = await transport.request({
       jsonrpc: '2.0',
       id: 'workspace-version-probe',
@@ -567,13 +568,20 @@ export async function runFixtureSuite(
       params: { level: 'L0' },
     });
     const token = (probe.result as Record<string, unknown> | undefined)?.workspaceVersion;
-    if (typeof token === 'string' && token) {
-      markers.workspaceVersion = token;
+    if (typeof token === 'string' && token) markers.workspaceVersion = token;
+  };
+  const needsWorkspaceVersion = (value: unknown): boolean => {
+    if (typeof value === 'string') return value.includes('${WORKSPACE_VERSION}');
+    if (Array.isArray(value)) return value.some(needsWorkspaceVersion);
+    if (value && typeof value === 'object') {
+      return Object.values(value as Record<string, unknown>).some(needsWorkspaceVersion);
     }
-  }
+    return false;
+  };
 
   for (const testCase of spec.cases) {
     if (testCase.minWireVersion && !wireVersionAtLeast(options.negotiatedVersion, testCase.minWireVersion)) continue;
+    if (needsWorkspaceVersion(testCase.params)) await captureWorkspaceVersion();
     const result: CaseResult = { id: testCase.id, level: testCase.level, status: 'passed' };
     let failure = '';
 
@@ -640,6 +648,7 @@ export async function runFixtureSuite(
     for (const capabilityCase of spec.capabilityCases ?? []) {
       if (!capabilityAdvertised(options.capabilities, capabilityCase.requiresCapability)) continue;
       const result: CaseResult = { id: capabilityCase.id, level: capabilityCase.level, status: 'passed' };
+      if (needsWorkspaceVersion(capabilityCase.params)) await captureWorkspaceVersion();
       await cleanupPaths(transport, capabilityCase.cleanup ?? [], markers);
       const response = await transport.request({
         jsonrpc: '2.0',
