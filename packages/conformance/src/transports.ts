@@ -73,14 +73,13 @@ export function httpTransport(options: HttpTransportOptions): StatusTransport {
     requestOptions: RpcRequestOptions = {}
   ): Promise<{ status?: number; response: JsonRpcResponse }> => {
     const headers: Record<string, string> = { 'Content-Type': 'application/json', ...(options.headers ?? {}) };
-    if (!requestOptions.omitAuth) Object.assign(headers, authHeaders(options.token));
-    // A probe must be free to replace the credential it is testing.
-    for (const [key, value] of Object.entries(requestOptions.headers ?? {})) {
-      for (const existing of Object.keys(headers)) {
-        if (AUTH_HEADER.test(existing) && existing.toLowerCase() === key.toLowerCase()) delete headers[existing];
-      }
-      headers[key] = value;
-    }
+    // A probe must replace the credential it is testing, not stack on top of the
+    // transport's valid one: an auth case that still carries the configured token
+    // would be dispatched and prove nothing.
+    const overrides = requestOptions.headers ?? {};
+    const replacesCredential = Object.keys(overrides).some((key) => AUTH_HEADER.test(key));
+    if (!requestOptions.omitAuth && !replacesCredential) Object.assign(headers, authHeaders(options.token));
+    for (const [key, value] of Object.entries(overrides)) headers[key] = value;
     if (requestOptions.omitAuth) {
       for (const existing of Object.keys(headers)) if (AUTH_HEADER.test(existing)) delete headers[existing];
     }
