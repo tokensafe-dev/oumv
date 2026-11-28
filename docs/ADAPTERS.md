@@ -283,7 +283,7 @@ Two rules that keep reports trustworthy:
 | `backend/fastapi` | backend | HTTP, SSE, WS, stdio | 3 | `tokensafe-backend/certification/python-fastapi.json` |
 | `backend/express` | backend | HTTP, batch, SSE, WS, stdio | 3 | `tokensafe-backend/certification/node-express.json` |
 | `backend/fastify` | backend | HTTP, batch, SSE, WS, stdio | 3 | `tokensafe-backend/certification/node-fastify.json` |
-| `backend/next` | backend | HTTP, SSE | 3 | `tokensafe-backend/certification/next-app-router.json` |
+| `backend/next` | backend + browser | HTTP, SSE, browser bridge | 3 | `tokensafe-backend/certification/next-app-router-bridge-sim.json` (51/51; Chrome: `certification/browser/next-app-router-browser.json`, 48/48) |
 | `backend/elysia` | backend | HTTP, batch, SSE, WS | 3 | `tokensafe-backend/certification/bun-elysia.json` |
 | `backend/aspnetcore` | backend | HTTP, SSE, WS | 3 | `tokensafe-backend/certification/dotnet-aspnetcore.json` |
 | `backend/java-spring` | backend | HTTP, stdio | **2, frozen at wire 1.5.0** | `tokensafe-backend/certification/java-spring.json` |

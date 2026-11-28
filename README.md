@@ -60,7 +60,7 @@ instead of inflating it (spec §10.1).
 | Backend | Go (Gin / Chi / net/http) | `tokensafe-backend/go/pkg/adapters/*` | Level 3 (all cases) |
 | Backend | Python / FastAPI | `tokensafe-backend-python` (`mount_tokensafe`) | Level 3 (all cases) |
 | Backend | Node.js / Express, Fastify | `tokensafe-backend/node` | Level 3 (all cases) |
-| Backend | Next.js App Router (Route Handlers) | `tokensafe-backend/node` (`createNextRouteHandlers`) | Level 3 (48/48) |
+| Backend | Next.js App Router (Route Handlers + browser bridge) | `tokensafe-backend/node` (`createNextRouteHandlers`, `createNextBridgeHandlers`, `installNextBridge`) | Level 3 (51/51 with a page; 48/48 in real Chrome) |
 | Backend | Elysia (Bun) | `tokensafe-backend-node/elysia` (`oumv()`) | Level 3 (51/51: HTTP+SSE+WS) |
 | Backend | ASP.NET Core (minimal APIs + MVC, EF Core) | `tokensafe-backend/dotnet` (`TokenSafe.Oumv.AspNetCore`) | Level 3 (all cases) |
 | Backend | Spring Boot (JDK-only sidecar, frozen at wire 1.5.0) | `tokensafe-backend/java` | Level 2 (32/33: no live traces) |
