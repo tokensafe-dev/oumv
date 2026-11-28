@@ -132,8 +132,8 @@ ships which wire version and fixture set" — when in doubt, trust it over this 
 
 | Axis | Current | Meaning |
 | :--- | :--- | :--- |
-| Standard release | `v1.5.5` (2026-11-28) | Twelve adapter manifests (Next.js App Router joins at Level 3), pins on backend v0.11.0 / node 0.9.0 / tokensafe-ui 0.1.33 / NuGet 0.2.0; fixtures v13 and the certified transport-auth contract unchanged. |
-| Previous release | `v1.5.4` (2026-11-28) | Fixtures v12 (the §4.1 handshake as ordered, `minWireVersion`-gated cases), the ASP.NET Core manifest, wire 1.6.0 capability claims backed by certification, Java/PHP explicitly frozen at wire 1.5.0. |
+| Standard release | `v1.5.6` (2026-11-28) | Twelve adapter manifests (Next.js App Router joins at Level 3), pins on backend v0.11.0 / node 0.9.0 / tokensafe-ui 0.1.34 / NuGet 0.2.0; fixtures v13 and the certified transport-auth contract. |
+| Previous release | `v1.5.5` (2026-11-28) | Fixtures v12 (the §4.1 handshake as ordered, `minWireVersion`-gated cases), the ASP.NET Core manifest, wire 1.6.0 capability claims backed by certification, Java/PHP explicitly frozen at wire 1.5.0. |
 | Earlier | `v1.5.0` (2026-11-27) | Agent-UX MINOR: `oumv/previewEdit` dry-run, `requestId`/`timeoutMs`/cancel/idempotency (§3), `oumv/index`, `oumv/query`, `oumv/build` (§14), `diagnostic` events (§2.6), canonical error registry. |
 | Document revision | `v1.10-canonical` | The revision of `spec/SPEC.md`; see the changelog in that file. |
 | Wire `protocolVersion` | `1.6.0` | Sent in `oumv/handshake`. A runtime MUST echo the version it actually serves; clients accept a matching MAJOR. |

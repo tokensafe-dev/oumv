@@ -3,6 +3,13 @@
 The wire contract is versioned by `protocolVersion` (currently **1.6.0**); this
 changelog tracks the OUMV specification and its reference tooling.
 
+## v1.5.6 — 2026-11-28 (wire 1.6.0, fixtures v13, revision v1.10)
+
+Pin fix: the React/Vue manifests tracked `tokensafe-ui` 0.1.33, a version that
+was never published (the npm package is `packages/tokensafe-ui`, which shipped
+the multi-file batch build as 0.1.34). The manifests now name the version that
+actually exists; no other change.
+
 ## v1.5.5 — 2026-11-28 (wire 1.6.0, fixtures v13, revision v1.10)
 
 Adapter catalog sync after the backend v0.11.0 release; no protocol change.
