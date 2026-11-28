@@ -25,7 +25,7 @@
         "result": {
           "protocolVersion": "1.6.0",
           "profile": "frontend",
-          "sessionId": "sess-b8684473f0f18c4a",
+          "sessionId": "sess-3e45ef03751616dc",
           "ttlSeconds": 3600,
           "runtimeInfo": {
             "name": "react",
@@ -61,6 +61,9 @@
               "multiMetric": true,
               "surfaceDiff": true
             },
+            "index": {
+              "symbols": true
+            },
             "sessions": {
               "ttlSeconds": true,
               "cancel": true,
@@ -94,7 +97,7 @@
         "result": {
           "protocolVersion": "1.6.0",
           "profile": "frontend",
-          "sessionId": "sess-389f1a2de3c07826",
+          "sessionId": "sess-1072ab2b68013164",
           "ttlSeconds": 3600,
           "runtimeInfo": {
             "name": "react",
@@ -126,6 +129,9 @@
             "verify": {
               "multiMetric": true,
               "surfaceDiff": true
+            },
+            "index": {
+              "symbols": true
             },
             "sessions": {
               "ttlSeconds": true,

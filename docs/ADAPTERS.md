@@ -265,8 +265,8 @@ Two rules that keep reports trustworthy:
 | `backend/aspnetcore` | backend | HTTP, SSE, WS | 3 | `tokensafe-backend/certification/dotnet-aspnetcore.json` |
 | `backend/java-spring` | backend | HTTP, stdio | **2, frozen at wire 1.5.0** | `tokensafe-backend/certification/java-spring.json` |
 | `backend/php-laravel` | backend | HTTP, stdio | **2, frozen at wire 1.5.0** | `tokensafe-backend/certification/php-laravel.json` |
-| `frontend/react` | frontend | HTTP, batch, SSE, WS | **3 with a browser tab**, 1 offline | `agent-dom/certification/react-vite-browser.json` (L3), `react-vite.json` (L1 offline) |
-| `frontend/vue` | frontend | HTTP, batch, SSE, WS | **3 with a browser tab** | `agent-dom/certification/vue-vite-browser.json` (L3) |
+| `frontend/react` | frontend | HTTP, batch, SSE, WS | **3 with a browser tab** | `agent-dom/certification/react-vite-browser.json` (42/42) |
+| `frontend/vue` | frontend | HTTP, batch, SSE, WS | **3 with a browser tab** | `agent-dom/certification/vue-vite-browser.json` (42/42) |
 
 The two source-level adapters (`java-spring`, `php-laravel`) scan route declarations, apply
 OCC-checked edits and run a real verify command, but they do not boot the framework, so they

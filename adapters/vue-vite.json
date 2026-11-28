@@ -150,6 +150,57 @@
         ]
       },
       "conformanceLevel": 3
+    },
+    {
+      "name": "mutate.preview",
+      "constraints": {
+        "developmentOnly": true,
+        "resourceTypes": [
+          "component",
+          "file"
+        ],
+        "limitations": [
+          "§4.4 dry-run: the full applyEdit guard order runs without any write"
+        ]
+      },
+      "conformanceLevel": 3
+    },
+    {
+      "name": "sessions.cancel",
+      "constraints": {
+        "developmentOnly": false,
+        "resourceTypes": [],
+        "limitations": [
+          "best-effort (§3): unknown request ids and finished requests answer as results, never errors"
+        ]
+      },
+      "conformanceLevel": 1
+    },
+    {
+      "name": "sessions.idempotency",
+      "constraints": {
+        "developmentOnly": false,
+        "resourceTypes": [],
+        "limitations": [
+          "per-session first-result-wins replay: a retried mutation returns the original result"
+        ]
+      },
+      "conformanceLevel": 3
+    },
+    {
+      "name": "index.symbols",
+      "constraints": {
+        "developmentOnly": true,
+        "resourceTypes": [
+          "component",
+          "route",
+          "file"
+        ],
+        "limitations": [
+          "served from the static discovery index (components + routes); a live tab may union mounted components"
+        ]
+      },
+      "conformanceLevel": 3
     }
   ],
   "security": {

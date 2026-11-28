@@ -38,7 +38,8 @@
               "sourceAdapter": "tokensafe-ui-react-vite",
               "confidence": "probable"
             }
-          }
+          },
+          "workspaceVersion": "sha256:1db5921cf4cd6e96471ffc38716eeb38392f8de9e707079f9b5e6592d2621dfb"
         }
       }
     }

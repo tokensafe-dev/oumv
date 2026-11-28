@@ -6,22 +6,35 @@
   "note": "captured from the React/Vite controller without a browser tab; verify answers -32008 and L4 has no traces, which is the honest offline shape",
   "cases": [
     {
-      "name": "frontend runtime answers -32601",
+      "name": "ranked component search",
       "request": {
         "jsonrpc": "2.0",
-        "id": "oumv/index:frontend runtime answers -32601",
+        "id": "oumv/index:ranked component search",
         "method": "oumv/index",
         "params": {
-          "query": "TaskManager",
-          "limit": 10
+          "query": "Task",
+          "limit": 5
         }
       },
       "response": {
         "jsonrpc": "2.0",
-        "id": "oumv/index:frontend runtime answers -32601",
-        "error": {
-          "code": -32601,
-          "message": "Method not found: oumv/index"
+        "id": "oumv/index:ranked component search",
+        "result": {
+          "matches": [
+            {
+              "resourceId": "frontend.component:ReactTaskManager",
+              "name": "ReactTaskManager",
+              "kind": "component",
+              "file": "src/TaskManager.tsx",
+              "lines": [
+                16,
+                118
+              ],
+              "match": "substring"
+            }
+          ],
+          "truncated": false,
+          "totalMatches": 1
         }
       }
     }

@@ -38,14 +38,15 @@
               "confidence": "confirmed"
             },
             "payload": "level: L0\nframework: react\nbrowserConnected: false\nroute: /\nmounted: []\nelements: 0\nerrors: 0\nstaticComponents: 1\n",
-            "timestamp": 1795812060429
+            "timestamp": 1795829497382
           },
           "tokenEstimate": 29,
           "evidence": {
             "provenance": "static",
             "sourceAdapter": "tokensafe-ui-react-vite",
             "confidence": "confirmed"
-          }
+          },
+          "workspaceVersion": "sha256:1db5921cf4cd6e96471ffc38716eeb38392f8de9e707079f9b5e6592d2621dfb"
         }
       }
     },
@@ -83,14 +84,15 @@
               "confidence": "confirmed"
             },
             "payload": "{\"level\":\"L0\",\"framework\":\"react\",\"browserConnected\":false,\"route\":\"/\",\"mounted\":[],\"elements\":0,\"errors\":0,\"staticComponentsCount\":1,\"staticFilesScanned\":3,\"note\":\"Vite React DevServer is online; open the app in a browser tab for live DOM/Fiber telemetry.\",\"evidence\":{\"provenance\":\"static\",\"sourceAdapter\":\"tokensafe-ui-react-vite\",\"confidence\":\"confirmed\"}}",
-            "timestamp": 1795812060448
+            "timestamp": 1795829497400
           },
           "tokenEstimate": 90,
           "evidence": {
             "provenance": "static",
             "sourceAdapter": "tokensafe-ui-react-vite",
             "confidence": "confirmed"
-          }
+          },
+          "workspaceVersion": "sha256:1db5921cf4cd6e96471ffc38716eeb38392f8de9e707079f9b5e6592d2621dfb"
         }
       }
     },
@@ -121,7 +123,7 @@
               "external": 0
             },
             "payload": "{\"resources\":[{\"id\":\"frontend.component:ReactTaskManager\",\"type\":\"frontend.component\",\"name\":\"ReactTaskManager\",\"sourceLocation\":{\"filePath\":\"src/TaskManager.tsx\",\"lineStart\":16,\"lineEnd\":118},\"evidence\":{\"provenance\":\"static\",\"sourceAdapter\":\"tokensafe-ui-react-vite\",\"confidence\":\"probable\",\"filePath\":\"src/TaskManager.tsx\",\"lineRange\":[16,118]},\"availableOperations\":[\"observe\",\"understand\",\"getSource\",\"applyEdit\"]}],\"total\":1,\"provenanceSummary\":{\"static\":1,\"runtime\":0,\"contract\":0,\"inferred\":0,\"external\":0}}",
-            "timestamp": 1795812060452,
+            "timestamp": 1795829497405,
             "framework": "react",
             "browserConnected": false,
             "elements": [],
@@ -176,7 +178,8 @@
             "provenance": "static",
             "sourceAdapter": "tokensafe-ui-react-vite",
             "confidence": "probable"
-          }
+          },
+          "workspaceVersion": "sha256:1db5921cf4cd6e96471ffc38716eeb38392f8de9e707079f9b5e6592d2621dfb"
         }
       }
     },
@@ -224,7 +227,7 @@
               "confidence": "probable"
             },
             "payload": "{\"target\":\"TaskManager\",\"componentId\":\"TaskManager\",\"liveComponent\":null,\"registeredState\":null,\"staticMatches\":[{\"id\":\"frontend.component:ReactTaskManager\",\"name\":\"ReactTaskManager\",\"filePath\":\"src/TaskManager.tsx\",\"lineStart\":16,\"lineEnd\":118,\"actionTriggers\":[\"onClick\",\"onChange\"],\"isDefaultExport\":false}],\"contracts\":[],\"evidence\":{\"provenance\":\"static\",\"sourceAdapter\":\"tokensafe-ui-react-vite\",\"confidence\":\"probable\"}}",
-            "timestamp": 1795812060457,
+            "timestamp": 1795829497410,
             "framework": "react"
           },
           "tokenEstimate": 107,
@@ -232,7 +235,8 @@
             "provenance": "static",
             "sourceAdapter": "tokensafe-ui-react-vite",
             "confidence": "probable"
-          }
+          },
+          "workspaceVersion": "sha256:1db5921cf4cd6e96471ffc38716eeb38392f8de9e707079f9b5e6592d2621dfb"
         }
       }
     },
@@ -266,14 +270,15 @@
               "confidence": "confirmed"
             },
             "payload": "{\"target\":\"src/TaskManager.tsx\",\"filePath\":\"src/TaskManager.tsx\",\"version\":\"sha256:ff478b99c1cfd9d0194161a751dea79f198d501cf93bf513b7039ab3c5cc8102\",\"source\":\"1 | import React, { useSyncExternalStore } from 'react';\\n2 | import type { TaskItem } from '../../../src/types.js';\\n3 | import { TaskManagerStore, selectFilteredTasks, type TaskManagerState } from './store.js';\\n4 | \\n5 | export interface ReactTaskManagerProps {\\n6 |   store: TaskManagerStore;\\n7 | }\\n8 | \\n9 | /**\\n10 |  * Real React view over a synchronous store.\\n11 |  *\\n12 |  * Rendering goes through React (reconciliation, hooks, event handlers); the state\\n13 |  * itself lives in `TaskManagerStore` so a test/agent adapter can read it\\n14 |  * deterministically right after dispatching an action.\\n15 |  */\\n16 | export const ReactTaskManager: React.FC<ReactTaskManagerProps> = ({ store }) => {\\n17 |   const state: TaskManagerState = useSyncExternalStore(store.subscribe, store.getSnapshot, store.getSnapshot);\\n18 |   const visible: TaskItem[] = selectFilteredTasks(state);\\n19 | \\n20 |   return (\\n21 |     <div className=\\\"task-manager\\\" data-agent-id=\\\"task-manager:root\\\">\\n22 |       <header>\\n23 |         <h1>Task Manager (React)</h1>\\n24 |         <span data-agent-id=\\\"task-manager:count\\\">Total: {state.tasks.length}</span>\\n25 |       </header>\\n26 | \\n27 |       {state.errorMessage && (\\n28 |         <div role=\\\"alert\\\" className=\\\"error-banner\\\" data-agent-id=\\\"task-manager:error-banner\\\">\\n29 |           <span>{state.errorMessage}</span>\\n30 |           <button\\n31 |             data-agent-id=\\\"task-manager:retry-btn\\\"\\n32 |             data-testid=\\\"retry-btn\\\"\\n33 |             onClick={() => {\\n34 |               void store.retrySave().catch(() => undefined);\\n35 |             }}\\n36 |           >\\n37 |             Retry\\n38 |           </button>\\n39 |         </div>\\n40 |       )}\\n41 | \\n42 |       {state.successMessage && (\\n43 |         <div className=\\\"success-banner\\\" data-agent-id=\\\"task-manager:success-banner\\\">\\n44 |           {state.successMessage}\\n45 |         </div>\\n46 |       )}\\n47 | \\n48 |       <section className=\\\"controls\\\">\\n49 |         <input\\n50 |           type=\\\"text\\\"\\n51 |           placeholder=\\\"Search tasks or tags...\\\"\\n52 |           value={state.searchQuery}\\n53 |           onChange={(e) => store.setSearchQuery(e.target.value)}\\n54 |           data-agent-id=\\\"task-manager:search\\\"\\n55 |           data-testid=\\\"search-input\\\"\\n56 |         />\\n57 | \\n58 |         <select\\n59 |           value={state.filterStatus}\\n60 |           onChange={(e) => store.setFilterStatus(e.target.value)}\\n61 |           data-agent-id=\\\"task-manager:status-filter\\\"\\n62 |           data-testid=\\\"status-filter\\\"\\n63 |         >\\n64 |           <option value=\\\"All\\\">All Status</option>\\n65 |           <option value=\\\"Active\\\">Active</option>\\n66 |           <option value=\\\"Completed\\\">Completed</option>\\n67 |         </select>\\n68 | \\n69 |         <select\\n70 |           value={state.filterPriority}\\n71 |           onChange={(e) => store.setFilterPriority(e.target.value)}\\n72 |           data-agent-id=\\\"task-manager:priority-filter\\\"\\n73 |         >\\n74 |           <option value=\\\"All\\\">All Priorities</option>\\n75 |           <option value=\\\"High\\\">High</option>\\n76 |           <option value=\\\"Medium\\\">Medium</option>\\n77 |           <option value=\\\"Low\\\">Low</option>\\n78 |         </select>\\n79 | \\n80 |         <button\\n81 |           disabled={state.isSaving}\\n82 |           onClick={() => {\\n83 |             void store.saveTasks().catch(() => undefined);\\n84 |           }}\\n85 |           data-agent-id=\\\"task-manager:save-btn\\\"\\n86 |           data-testid=\\\"save-btn\\\"\\n87 |         >\\n88 |           {state.isSaving ? 'Saving...' : 'Save Tasks'}\\n89 |         </button>\\n90 |       </section>\\n91 | \\n92 |       <ul className=\\\"task-list\\\" data-agent-id=\\\"task-manager:list\\\">\\n93 |         {visible.map((task) => (\\n94 |           <li\\n95 |             key={task.id}\\n96 |             className={`task-item ${task.status.toLowerCase()}`}\\n97 |             data-agent-id={`task-item:${task.id}`}\\n98 |           >\\n99 |             <input\\n100 |               type=\\\"checkbox\\\"\\n101 |               checked={task.status === 'Completed'}\\n102 |               onChange={() => store.toggleTask(task.id)}\\n103 |             />\\n104 |             <span className=\\\"title\\\">{task.title}</span>\\n105 |             <span className={`badge ${task.priority.toLowerCase()}`}>{task.priority}</span>\\n106 |             <div className=\\\"tags\\\">\\n107 |               {task.tags?.map((tag) => (\\n108 |                 <span key={tag} className=\\\"tag\\\">\\n109 |                   #{tag}\\n110 |                 </span>\\n111 |               ))}\\n112 |             </div>\\n113 |           </li>\\n114 |         ))}\\n115 |       </ul>\\n116 |     </div>\\n117 |   );\\n118 | };\\n119 | \",\"contracts\":[],\"evidence\":{\"provenance\":\"static\",\"sourceAdapter\":\"tokensafe-ui-react-vite\",\"confidence\":\"confirmed\"}}",
-            "timestamp": 1795812060460
+            "timestamp": 1795829497413
           },
           "tokenEstimate": 1257,
           "evidence": {
             "provenance": "static",
             "sourceAdapter": "tokensafe-ui-react-vite",
             "confidence": "confirmed"
-          }
+          },
+          "workspaceVersion": "sha256:1db5921cf4cd6e96471ffc38716eeb38392f8de9e707079f9b5e6592d2621dfb"
         }
       }
     },
@@ -305,7 +310,7 @@
               "confidence": "unknown"
             },
             "payload": "[]",
-            "timestamp": 1795812060462,
+            "timestamp": 1795829497416,
             "framework": "react"
           },
           "tokenEstimate": 1,
@@ -313,7 +318,8 @@
             "provenance": "runtime",
             "sourceAdapter": "tokensafe-ui-react-vite",
             "confidence": "unknown"
-          }
+          },
+          "workspaceVersion": "sha256:1db5921cf4cd6e96471ffc38716eeb38392f8de9e707079f9b5e6592d2621dfb"
         }
       }
     }
