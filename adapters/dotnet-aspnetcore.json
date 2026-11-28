@@ -2,7 +2,7 @@
   "identity": {
     "id": "backend/aspnetcore",
     "name": "TokenSafe OUMV adapter for ASP.NET Core",
-    "version": "0.1.2",
+    "version": "0.1.3",
     "description": "OUMV adapter for ASP.NET Core (minimal APIs + MVC, EF Core rollback sandbox)",
     "repo": "https://github.com/tokensafe-dev/tokensafe-backend"
   },

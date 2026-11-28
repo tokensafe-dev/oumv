@@ -25,11 +25,11 @@ const errors = readJSON('schemas/errors.json');
 /** Release history (append the next release on top; keep past rows frozen). */
 const REVISIONS = [
   {
-    release: 'v1.5.1',
+    release: 'v1.5.2',
     date: '2026-11-27',
     specRevision: 'v1.9-canonical',
     wireProtocolVersion: '1.6.0',
-    fixtureVersion: 11,
+    fixtureVersion: 12,
     errorRegistryVersion: errors.registryVersion,
     packages: {
       'tokensafe-oumv': oumvPkg.version,

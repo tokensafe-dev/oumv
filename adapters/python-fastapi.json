@@ -2,7 +2,7 @@
   "identity": {
     "id": "backend/fastapi",
     "name": "TokenSafe OUMV adapter for FastAPI",
-    "version": "0.3.0",
+    "version": "0.11.1",
     "description": "OUMV adapter for FastAPI/Starlette (HTTP, SSE, WebSocket, stdio)",
     "repo": "https://github.com/tokensafe-dev/tokensafe-backend"
   },

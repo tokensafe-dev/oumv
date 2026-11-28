@@ -3,6 +3,32 @@
 The wire contract is versioned by `protocolVersion` (currently **1.6.0**); this
 changelog tracks the OUMV specification and its reference tooling.
 
+## v1.5.2 — 2026-11-28 (wire 1.6.0, fixtures v12)
+
+Fixtures v12 makes §4.1 result versioning testable and the adapter catalog
+truthful; no wire changes.
+
+- **Fixtures v12 — the §4.1 handshake as ordered cases.** `observe` and
+  `understand` must carry `workspaceVersion`, a matching `ifVersion` must answer
+  the short `{unchanged, workspaceVersion}` envelope, and a stale token must be
+  rejected with `-32010` + `data.reason="stale_version"`. They are gated by a new
+  case field, `minWireVersion`, so a runtime frozen on wire 1.5.0 skips them
+  instead of failing them — the honest alternative to a capability gate for a
+  normative-core feature.
+- **Conformance runner.** `minWireVersion` gating and a `${WORKSPACE_VERSION}`
+  marker captured just in time: earlier cases legitimately mutate the workspace,
+  so a token captured up front would already be stale.
+- **Adapter manifests.** `dotnet-aspnetcore.json` added (the adapter shipped on
+  NuGet without a manifest, so the CI capability gate never saw it); the Go, Node,
+  Python, React and Vue manifests now declare the wire 1.6.0 capabilities their
+  certifications prove (157 claims across 11 manifests).
+- **Java and PHP sidecars are frozen at wire 1.5.0 on purpose** — the handshake
+  negotiates `1.5.0` instead of claiming a core they do not implement. Their
+  reports stay at 32/33 with the documented L4 gap.
+- `-32007` gains the `query_disabled` reason for §14.2 `permissions.query`.
+- Spec fixes: §14.2 capability name harmonised to `observeQuery.readOnly`, §10.2
+  documents `minWireVersion`, stale fixture pins and adapter counts corrected.
+
 ## v1.5.1 — 2026-11-27 (wire 1.6.0, fixtures v11)
 
 Patch follow-up to v1.5.0, no wire changes: the golden wire corpus now covers
