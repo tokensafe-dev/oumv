@@ -55,7 +55,7 @@ describe('fixture-driven conformance runner', () => {
     expect(report.failed).toBe(0);
     expect(report.attainedLevel).toBe(3);
     expect(report.levels).toEqual({ 1: 'passed', 2: 'passed', 3: 'passed' });
-    expect(report.fixtureVersion).toBe(14);
+    expect(report.fixtureVersion).toBe(15);
     expect(report.specVersion).toBe(spec.protocolVersion);
     expect(validateReport(report), reportErrors().join('; ')).toBe(true);
   });
@@ -96,6 +96,59 @@ describe('fixture-driven conformance runner', () => {
     expect(seen.sort()).toEqual(['invalid', 'missing', 'wrong-scheme']);
     // Everything else still goes through the ordinary request path.
     expect(report.cases.filter((c) => !c.id.startsWith('auth-') && c.status === 'failed')).toEqual([]);
+  });
+
+  it('runs the browser family only when a page is attached, and drops it otherwise', async () => {
+    const spec = loadFixtures(FIXTURES);
+    const capabilities = {
+      mutate: { ephemeralDispatch: true },
+      verify: { surfaceDiff: true },
+    };
+    const transport = memoryTransport((request) => {
+      if (request.method === 'oumv/observe' && request.params?.level === 'L1') {
+        return {
+          jsonrpc: '2.0' as const,
+          id: request.id,
+          result: { level: 'L1', format: 'json', data: { elements: [{ id: 'btn-inc', tag: 'button' }] } },
+        };
+      }
+      if (request.method === 'oumv/observe' && request.params?.level === 'L4') {
+        return {
+          jsonrpc: '2.0' as const,
+          id: request.id,
+          result: { level: 'L4', format: 'json', data: { browserConnected: true, traces: [{ type: 'click' }] } },
+        };
+      }
+      if (request.method === 'oumv/verify') {
+        return {
+          jsonrpc: '2.0' as const,
+          id: request.id,
+          result: { status: 'passed', surfaceDiff: [], timings: { t_total_ms: 1 }, scope: { checked: ['dom'] } },
+        };
+      }
+      return referenceRuntime(request);
+    });
+
+    const withoutPage = await runFixtureSuite(transport, spec, markers, {
+      adapterName: 'no-page',
+      negotiatedVersion: '1.6.0',
+      capabilities,
+    });
+    expect(withoutPage.cases.filter((c) => c.id.startsWith('browser-'))).toEqual([]);
+
+    const withPage = await runFixtureSuite(transport, spec, markers, {
+      adapterName: 'with-page',
+      negotiatedVersion: '1.6.0',
+      capabilities,
+      browser: true,
+    });
+    const browserResults = withPage.cases.filter((c) => c.id.startsWith('browser-'));
+    expect(browserResults.map((c) => c.id).sort()).toEqual([
+      'browser-l4-records-dom-traces',
+      'browser-observe-l1-lists-elements',
+      'browser-verify-dispatches-a-dom-action',
+    ]);
+    expect(browserResults.every((r) => r.status === 'passed')).toBe(true);
   });
 
   it('fails an auth case honestly when the binding answers a non-refusal status', async () => {

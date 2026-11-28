@@ -60,6 +60,12 @@ export interface FixtureSpec {
   sessionCases?: SessionCase[];
   /** Transport-level auth cases (spec §12); run only with `auth: true` on an HTTP transport. */
   authCases?: AuthCase[];
+  /**
+   * Browser-attached cases (spec §10.2, revision v1.12): an observe/verify call the
+   * runtime can only answer while a live page is attached through its browser
+   * bridge. Run only with `browser: true`.
+   */
+  browserCases?: CapabilityCase[];
 }
 
 /** A case that only makes sense when the runtime advertises a capability. */
@@ -162,6 +168,9 @@ export interface CaseMarkers {
   batchContent: string;
   // fixtures v12: the §4.1 freshness token captured from the runtime's observe
   workspaceVersion: string;
+  // fixtures v15: the live element and action a browser-attached case drives
+  browserTarget: string;
+  browserAction: string;
 }
 
 export interface CaseResult {
@@ -264,6 +273,8 @@ const MARKER_KEYS: Record<string, keyof CaseMarkers> = {
   '${BATCH_FILE_B}': 'batchFileB',
   '${BATCH_CONTENT}': 'batchContent',
   '${WORKSPACE_VERSION}': 'workspaceVersion',
+  '${BROWSER_TARGET}': 'browserTarget',
+  '${BROWSER_ACTION}': 'browserAction',
 };
 
 /** Substitutes every `${MARKER}` in a string (params and expectations). */
@@ -306,6 +317,8 @@ export function defaultMarkers(overrides: Partial<CaseMarkers> = {}): CaseMarker
     batchFileB: '__oumv_conformance_batch_b.py',
     batchContent: 'value = 7\n',
     workspaceVersion: '',
+    browserTarget: 'btn-inc',
+    browserAction: 'click',
     ...overrides,
   };
 }
@@ -463,6 +476,11 @@ export interface RunFixturesOptions {
   negotiatedVersion?: string;
   /** Set when the target was started with auth enabled: runs the fixture file's `authCases`. */
   auth?: boolean;
+  /**
+   * Set when a live browser page is attached (Vite dev tab, Next instrumentation
+   * client): runs the fixture file's `browserCases`.
+   */
+  browser?: boolean;
 }
 
 /** True only when the dotted capability path resolves to literal `true`. */
@@ -828,6 +846,47 @@ export async function runFixtureSuite(
           ? ''
           : `expected HTTP ${authCase.expectHttpStatus} for auth=${authCase.auth}, got ${probe.status ?? 'no status'}`;
       if (!failure) failure = evaluateCase(authCase, probe.response, markers);
+      if (failure) {
+        result.status = 'failed';
+        result.error = failure;
+      }
+      results.push(result);
+      options.onCase?.(result);
+    }
+  }
+
+  // Browser-attached cases (spec §10.2, revision v1.12) prove the one claim a
+  // server runtime cannot make about itself: that a live page is attached and
+  // answered through the browser bridge. Like auth cases, they are opt-in — a
+  // certificate produced without a page must not carry a browser verdict.
+  if (options.browser) {
+    for (const browserCase of spec.browserCases ?? []) {
+      if (
+        browserCase.requiresCapability &&
+        !capabilityAdvertised(options.capabilities, browserCase.requiresCapability)
+      ) {
+        continue;
+      }
+      const result: CaseResult = { id: browserCase.id, level: browserCase.level, status: 'passed' };
+      await cleanupPaths(transport, browserCase.cleanup ?? [], markers);
+      const response = await transport.request({
+        jsonrpc: '2.0',
+        id: browserCase.id,
+        method: browserCase.method,
+        params: substituteMarkers(browserCase.params, markers),
+      });
+      let failure = evaluateCase(browserCase, response, markers);
+      if (!failure && browserCase.followUp) {
+        const followUp = browserCase.followUp;
+        const followResponse = await transport.request({
+          jsonrpc: '2.0',
+          id: `${browserCase.id}-follow-up`,
+          method: followUp.method,
+          params: substituteMarkers(followUp.params, markers),
+        });
+        const followFailure = evaluateCase(followUp, followResponse, markers);
+        if (followFailure) failure = `follow-up: ${followFailure}`;
+      }
       if (failure) {
         result.status = 'failed';
         result.error = failure;

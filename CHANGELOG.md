@@ -3,6 +3,26 @@
 The wire contract is versioned by `protocolVersion` (currently **1.6.0**); this
 changelog tracks the OUMV specification and its reference tooling.
 
+## v1.8.0 — 2026-11-28 (wire 1.6.0, fixtures v15, revision v1.12)
+
+The browser bridge becomes part of the protocol (§7.4). A server runtime — Next.js is
+the first — can now serve what only a page knows: a dev-only, same-origin channel
+registers a live tab for a short-lived session token, the tab publishes snapshots and
+traces, and `oumv/verify` can dispatch a synthetic DOM event or a registered action
+into it. Two optional capabilities describe the surface: `mutate.ephemeralDispatch`
+(dispatch writes no files and consumes no OCC token) and `verify.surfaceDiff` (the
+interactive-surface diff). Both are advertised only while a bridge is enabled; with no
+page attached, a browser-only target answers `-32008`, and `surfaceDiff` is no longer
+described as frontend-only.
+
+Fixtures v15 add the gated `browserCases` family (L1 surface listing, a DOM dispatch
+with `surfaceDiff`, L4 traces from the page), driven by `${BROWSER_TARGET}` /
+`${BROWSER_ACTION}` and run only with `oumv-certify --browser`, which records
+`environment.browser`. Both frontend certificates are regenerated on v15: React and
+Vue 47/47 at Level 3 in real headless Chrome. The React and Vue bridges are now one
+shared core (`bridge-core.ts`) with per-framework collectors; the Vite output is
+behaviour-compatible and the Vue L4 payload gained `browserConnected`.
+
 ## v1.7.0 — 2026-11-28 (wire 1.6.0, fixtures v14, revision v1.11)
 
 The thirteenth adapter: **Elysia on Bun** (`backend/elysia`). Elysia handlers are Web

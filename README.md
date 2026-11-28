@@ -137,12 +137,12 @@ ships which wire version and fixture set" — when in doubt, trust it over this 
 | Standard release | `v1.6.0` (2026-11-28) | Read-only deployments become method absence (spec §8.5): a runtime without `capabilities.mutate`/`verify` does not register those methods and answers `-32601`, advertises `capabilities.readOnly`, and certifies on the cases it serves because any fixture may carry `requiresCapability`. Twelve manifests re-pinned; wire stays 1.6.0. |
 | Previous release | `v1.5.7` (2026-11-28) | Twelve adapter manifests; ASP.NET Core reaches the full wire 1.6.0 surface (NuGet 0.3.0, HTTP 50/50 / SSE 51/51 / WS 48/48), pins on backend v0.12.0 / node 0.9.0 / tokensafe-ui 0.1.34; fixtures v13 and the certified transport-auth contract. |
 | Earlier | `v1.5.0` (2026-11-27) | Agent-UX MINOR: `oumv/previewEdit` dry-run, `requestId`/`timeoutMs`/cancel/idempotency (§3), `oumv/index`, `oumv/query`, `oumv/build` (§14), `diagnostic` events (§2.6), canonical error registry. |
-| Document revision | `v1.11-canonical` | The revision of `spec/SPEC.md`; see the changelog in that file. |
+| Document revision | `v1.12-canonical` | The revision of `spec/SPEC.md`; see the changelog in that file. |
 | Wire `protocolVersion` | `1.6.0` | Sent in `oumv/handshake`. A runtime MUST echo the version it actually serves; clients accept a matching MAJOR. |
-| Fixtures | `fixtureVersion 14` (37 ordered + 2 push + 16 capability + 1 session + 3 auth cases) | `fixtures/conformance-cases.json`; every report records the revision it ran. |
+| Fixtures | `fixtureVersion 15` (37 ordered + 2 push + 16 capability + 1 session + 3 auth + 3 browser cases) | `fixtures/conformance-cases.json`; every report records the revision it ran. |
 
-These axes move independently by design: v1.6.0 ships document revision v1.11-canonical,
-wire version 1.6.0 and fixture set v14. A v1.0 adapter stays valid for the capabilities it
+These axes move independently by design: v1.6.0 ships document revision v1.12-canonical,
+wire version 1.6.0 and fixture set v15. A v1.0 adapter stays valid for the capabilities it
 declares — new methods answer `-32601` where unimplemented. Implementations negotiate the
 **wire** version, never the document revision.
 

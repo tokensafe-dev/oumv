@@ -1,7 +1,7 @@
-# The OUMV Protocol Specification (v1.11-canonical)
+# The OUMV Protocol Specification (v1.12-canonical)
 **The Universal Agent-Runtime Protocol (UARP)**
 
-- **Date**: 2026-11-22 (v1.0 draft) · 2026-11-26 (v1.0.0 frozen; document revision v1.4-canonical) · 2026-11-26 (v1.1.0; revision v1.5-canonical, wire `protocolVersion` 1.2.0) · 2026-11-27 (v1.2.0; revision v1.6-canonical, wire `protocolVersion` 1.3.0) · 2026-11-27 (v1.3.0; revision v1.7-canonical, wire `protocolVersion` 1.4.0) · 2026-11-27 (v1.4.0; revision v1.8-canonical, wire `protocolVersion` 1.5.0) · 2026-11-27 (v1.5.0; revision v1.9-canonical, wire `protocolVersion` 1.6.0) · 2026-11-28 (revision v1.10-canonical: transport auth contract codified, wire `protocolVersion` 1.6.0 unchanged) · 2026-11-28 (revision v1.11-canonical: read-only deployments drop mutating methods from the registry instead of refusing them, wire `protocolVersion` 1.6.0 unchanged)  
+- **Date**: 2026-11-22 (v1.0 draft) · 2026-11-26 (v1.0.0 frozen; document revision v1.4-canonical) · 2026-11-26 (v1.1.0; revision v1.5-canonical, wire `protocolVersion` 1.2.0) · 2026-11-27 (v1.2.0; revision v1.6-canonical, wire `protocolVersion` 1.3.0) · 2026-11-27 (v1.3.0; revision v1.7-canonical, wire `protocolVersion` 1.4.0) · 2026-11-27 (v1.4.0; revision v1.8-canonical, wire `protocolVersion` 1.5.0) · 2026-11-27 (v1.5.0; revision v1.9-canonical, wire `protocolVersion` 1.6.0) · 2026-11-28 (revision v1.10-canonical: transport auth contract codified, wire `protocolVersion` 1.6.0 unchanged) · 2026-11-28 (revision v1.11-canonical: read-only deployments drop mutating methods from the registry instead of refusing them, wire `protocolVersion` 1.6.0 unchanged) · 2026-11-28 (revision v1.12-canonical: the browser bridge — `mutate.ephemeralDispatch` and `verify.surfaceDiff` for server runtimes with a live page attached, wire `protocolVersion` 1.6.0 unchanged)  
 - **Status**: Stable — v1.5.0  
 - **Author**: Oleg Savelev  
 - **Repository**: [github.com/tokensafe-dev/oumv](https://github.com/tokensafe-dev/oumv)
@@ -212,7 +212,7 @@ Upon establishing a connection, the agent and runtime exchange capabilities:
   "requestedCapabilities": {
     "observe": { "levels": ["L0", "L1", "L2", "L3", "L4"], "formats": ["yaml", "json"] },
     "understand": { "causality": true, "signalsGraph": true },
-    "mutate": { "occ": true, "syntaxGuard": true, "multiFile": true, "preview": true },
+    "mutate": { "occ": true, "syntaxGuard": true, "multiFile": true, "preview": true, "ephemeralDispatch": true },
     "verify": { "multiMetric": true, "surfaceDiff": true, "build": true },
     "index": { "symbols": true },
     "observeQuery": { "readOnly": true }
@@ -231,7 +231,7 @@ Upon establishing a connection, the agent and runtime exchange capabilities:
   "capabilities": {
     "observe": { "levels": ["L0", "L1", "L2", "L3", "L4"], "formats": ["yaml", "json"] },
     "understand": { "causality": true, "signalsGraph": true },
-    "mutate": { "occ": true, "syntaxGuard": true, "multiFile": true, "preview": true },
+    "mutate": { "occ": true, "syntaxGuard": true, "multiFile": true, "preview": true, "ephemeralDispatch": true },
     "verify": { "multiMetric": true, "surfaceDiff": true, "build": true },
     "index": { "symbols": true },
     "observeQuery": { "readOnly": true },
@@ -483,7 +483,8 @@ Request: `{target, method?, action?, payload?, headers?, steps?, sandbox?}` →
   "dbDiff": { "rollback": true, "queries": 4, "driver": "sqlalchemy" } }
 ```
 `status` is `passed` iff the dispatched action satisfied the request (HTTP status < 400 for
-request targets). `surfaceDiff` is frontend-only. `rolledBack` MUST only be `true` when a
+request targets). `surfaceDiff` is emitted by frontend runtimes and by a backend runtime
+with a live browser attached (§7.4); it is never synthesized from static analysis. `rolledBack` MUST only be `true` when a
 rollback was observed; otherwise `rollbackStatus` says `unverified` or `not_applicable`.
 An adapter must not emit `rolledBack: false` to imply a rollback happened and was verified.
 
@@ -695,6 +696,49 @@ reflect them (the `note` then says why). L4 `traces` are recorded executions.
 | 2 | L2 contracts, L3 source+OCC, impact, OCC edits, surfaceDiff | L2 endpoint contract, L3 source+OCC, impact, OCC edits |
 | 3 | L4 events, signals graph, causality | L4 traces, causality from real traces |
 
+### 7.4 Browser bridge (revision v1.12)
+
+A runtime whose code runs on a server (Node/Next.js, and any backend profile) cannot see
+client components by itself. A **browser bridge** closes that gap: a dev-only, same-origin
+channel through which a live page registers with the runtime, publishes snapshots and
+traces, and accepts commands.
+
+The page registers for a **short-lived bridge session** — an identifier plus a token that
+is scoped to that page and expires on its own. The bridge token is never the runtime's
+transport token (§12), and the endpoint MUST answer `404` outside development. The
+transport direction is: page → runtime for snapshots, traces and results; runtime → page
+for `observe`/`verify` commands. Commands are addressed to one bridge session (per tab),
+never broadcast to every page that happens to be open.
+
+Two capabilities describe what a bridge unlocks. Both are **optional**, both are advertised
+only while the bridge is enabled, and a runtime that has no attached page keeps answering
+exactly as it did before:
+
+* `capabilities.mutate.ephemeralDispatch: true` — `oumv/verify` may dispatch an action into
+  the live page: a synthetic DOM event (`click`, `input`, `submit`, `focus`) or a
+  registered store/component action. *Ephemeral* is the contract: dispatching writes no
+  files, consumes no OCC token, and cannot be used as a mutation path — it is an execution
+  of the running UI, not an edit of its source.
+* `capabilities.verify.surfaceDiff: true` — a `verify` that ran against the page reports
+  `surfaceDiff` (§4.5), computed from the interactive surface before and after the action:
+  elements that appeared or disappeared, and label/`disabled` changes.
+
+**Normative rules.**
+
+1. A runtime MUST NOT advertise either capability without an enabled bridge. Advertising
+   them and then failing a browser target is over-claiming (§10.3).
+2. With the bridge enabled but no page attached, a browser-only target (a DOM selector, a
+   `component:<id>` reference, an element id) MUST answer `-32008 RUNTIME_UNAVAILABLE`; it
+   MUST NOT fall back to a static guess.
+3. L0/L1/L2/L4 responses MAY include page data (`browserConnected`, `route`, `elements`,
+   `mountedComponents`, `traces`) **only** when a page is attached, and that data MUST be
+   marked with `provenance: "runtime"` — page data is evidence, never inference.
+4. A bridge session is untrusted input: the runtime MUST validate its token on every
+   message, MUST cap stored traces per session, and MUST expire idle sessions.
+5. `ephemeralDispatch` never implies file mutation. A runtime that also serves `mutate`
+   still owes every §8 guardrail on the file path; a read-only deployment (§8.5) MAY
+   advertise `ephemeralDispatch` — reading and exercising the running UI is observation.
+
 ---
 
 ## 8. Mutation Policy
@@ -787,9 +831,9 @@ Conformance is **per adapter and per profile**, and it is a claim that MUST be b
 
 ### 10.2 Language-neutral fixtures
 
-Cases live in `fixtures/conformance-cases.json` (`fixtureVersion` 14). Every case declares the `level` it certifies and may declare `preconditions` such as `verify` (which establishes the runtime evidence that L4/causality cases assert on). Each runtime executes the same file with its native toolchain — no TypeScript required for Go or Python certification.
+Cases live in `fixtures/conformance-cases.json` (`fixtureVersion` 15). Every case declares the `level` it certifies and may declare `preconditions` such as `verify` (which establishes the runtime evidence that L4/causality cases assert on). Each runtime executes the same file with its native toolchain — no TypeScript required for Go or Python certification.
 
-Besides the ordered `cases`, the file carries four gated families: `pushCases` (run only by the SSE/WS certificate whose `transport` matches), `capabilityCases` (run only when the runtime's handshake advertises `requiresCapability`, and dropped from the report otherwise, so no claim is ever certified by a skipped case), `sessionCases` (handshake with `sessionTtlSeconds: ttlSeconds`, wait the granted lifetime, then assert `-32011` + `data.reason="session_expired"`) and `authCases` (spec §12: the same ordinary request with a deliberately defective credential — `auth: "missing" | "invalid" | "wrong-scheme"` — must be refused with the declared `expectHttpStatus` and `expectError.code` before dispatch; run only by an HTTP certifier whose target was started with auth enabled, since a stdio binding has no transport auth and a tokenless loopback target has nothing to refuse). A capability case may name `cleanup` paths removed before it runs and a `followUp` call whose expectations it also asserts — the second half of an atomicity proof. Any case may also declare `minWireVersion`: it is skipped, and dropped from the report, when the runtime negotiates an older wire version — that is how the §4.1 result-versioning cases stay Level-2 assertions for wire 1.6.0 runtimes without penalizing runtimes frozen on 1.5.0. `requiresCapability` is not limited to `capabilityCases`: any case may declare it, and a mutating or verifying case that declares it is dropped from the report of a runtime that does not advertise that capability. That is how a read-only deployment (§8.5) certifies the surface it actually serves instead of failing on methods it never registered — a dropped case is never a pass either.
+Besides the ordered `cases`, the file carries five gated families: `pushCases` (run only by the SSE/WS certificate whose `transport` matches), `capabilityCases` (run only when the runtime's handshake advertises `requiresCapability`, and dropped from the report otherwise, so no claim is ever certified by a skipped case), `sessionCases` (handshake with `sessionTtlSeconds: ttlSeconds`, wait the granted lifetime, then assert `-32011` + `data.reason="session_expired"`), `authCases` (spec §12: the same ordinary request with a deliberately defective credential — `auth: "missing" | "invalid" | "wrong-scheme"` — must be refused with the declared `expectHttpStatus` and `expectError.code` before dispatch; run only by an HTTP certifier whose target was started with auth enabled, since a stdio binding has no transport auth and a tokenless loopback target has nothing to refuse) and `browserCases` (spec §7.4: observe/verify calls the runtime can only answer while a live page is attached through its browser bridge — an L1 surface listing, a DOM dispatch with `surfaceDiff`, and L4 traces from the page. They drive `${BROWSER_TARGET}` with `${BROWSER_ACTION}` and run only with `oumv-certify --browser`, which records `environment.browser: "attached"`; a certificate produced without a page neither claims nor denies them). A capability case may name `cleanup` paths removed before it runs and a `followUp` call whose expectations it also asserts — the second half of an atomicity proof. Any case may also declare `minWireVersion`: it is skipped, and dropped from the report, when the runtime negotiates an older wire version — that is how the §4.1 result-versioning cases stay Level-2 assertions for wire 1.6.0 runtimes without penalizing runtimes frozen on 1.5.0. `requiresCapability` is not limited to `capabilityCases`: any case may declare it, and a mutating or verifying case that declares it is dropped from the report of a runtime that does not advertise that capability. That is how a read-only deployment (§8.5) certifies the surface it actually serves instead of failing on methods it never registered — a dropped case is never a pass either.
 
 A case declares its expectations declaratively: `expectResultFields`, `expectValues` (JSON-path equality on the result), `expectError.code` (with optional `expectError.data`), `expectLevelEquals`, `expectSha256Field`, `expectArrayField`, `expectEvidence`, `expectVersionMatchesContent`. A case may also declare `headers`, merged into that single request after the transport's own auth headers. The reference runners are the Go/Python packages in `tokensafe-backend` and `@oumv/conformance` (CLI `oumv-certify`); a certification claim is reproduced in CI by re-running one of them.
 
@@ -1012,6 +1056,8 @@ Request: `{ "command"?: string, "target"?: string, "timeoutMs"?: integer }` →
 ---
 
 ## Changelog
+
+- **Revision v1.12 (2026-11-28, wire 1.6.0 unchanged, `fixtureVersion` 15)**: the browser bridge becomes part of the protocol (new §7.4). A dev-only, same-origin channel lets a live page register with a server runtime, publish snapshots and traces, and accept `observe`/`verify` commands. Two optional capabilities describe it — `mutate.ephemeralDispatch` (verify may dispatch a synthetic DOM event or a registered action into the page; no file writes, no OCC token consumed) and `verify.surfaceDiff` (verify reports the interactive-surface diff) — and both are advertised only while the bridge is enabled; with the bridge on and no page attached, a browser-only target answers `-32008`. `surfaceDiff` stops being "frontend-only": a backend runtime with a page attached may return it, always as runtime evidence. Fixtures gain the `browserCases` family (`oumv-certify --browser`, `${BROWSER_TARGET}`/`${BROWSER_ACTION}`, `environment.browser: "attached"`). Additive: wire 1.6.0 adapters stay valid, and a runtime without a bridge is unaffected.
 
 - **Revision v1.11 (2026-11-28, wire 1.6.0 unchanged, `fixtureVersion` 14)**: a read-only deployment becomes method absence instead of a per-handler refusal (§3.1 rule 5, new §8.5). The registry is closed and built at boot from the advertised capabilities, so `oumv/mutate`/`oumv/applyEdit`, `oumv/previewEdit`, `oumv/verify`, `oumv/build`, `mutation.apply` and `mutation.simulate` are not reachable and answer `-32601` when their capability is off, while handshake, observe, understand, getSource, index, cancel, query, state, causality and verification.assert stay. Handshake gains `capabilities.readOnly: true`, which is authoritative for clients: a client MUST NOT perform the edit through its own tools, because that would restore the write path the deployment removed. `-32007` narrows to transport auth (§12) and to workspace policy on a registered method (`permissions.query: false`). Fixtures: any case may carry `requiresCapability`, so mutating cases are dropped from a read-only report without lowering the level it attains, and the new `read-only-*` capability cases assert `-32601`, the `readOnly` flag and that observe still works. Additive: wire 1.6.0 adapters stay valid, and a runtime that does not advertise `readOnly` keeps answering `-32007`.
 

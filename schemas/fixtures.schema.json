@@ -335,6 +335,10 @@
        "type": "string"
       }
      },
+     "expectArrayField": {
+      "type": "string",
+      "description": "Dotted path that must resolve to a non-empty array (e.g. data.elements)."
+     },
      "expectValues": {
       "type": "object"
      },
@@ -485,6 +489,13 @@
       }
      }
     }
+   }
+  },
+  "browserCases": {
+   "type": "array",
+   "description": "Cases that need a live page attached through the runtime's browser bridge (spec §10.2, revision v1.12). Run only with `oumv-certify --browser`; a certificate produced without a page neither claims nor denies them. Items have the same shape as capabilityCases.",
+   "items": {
+    "$ref": "#/properties/capabilityCases/items"
    }
   }
  }
