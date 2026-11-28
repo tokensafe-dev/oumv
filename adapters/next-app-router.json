@@ -1,0 +1,221 @@
+{
+  "identity": {
+    "id": "backend/next",
+    "name": "TokenSafe OUMV adapter for Next.js (App Router)",
+    "version": "0.9.0",
+    "description": "OUMV adapter for the Next.js App Router (Route Handler: HTTP + SSE; server profile)",
+    "repo": "https://github.com/tokensafe-dev/tokensafe-backend"
+  },
+  "technology": {
+    "language": "typescript",
+    "framework": "next (app router)",
+    "package": {
+      "manager": "npm",
+      "name": "tokensafe-backend-node",
+      "install": "npm install --save-dev tokensafe-backend-node"
+    }
+  },
+  "profiles": [
+    "backend"
+  ],
+  "capabilities": [
+    {
+      "name": "observe.pulse",
+      "constraints": {
+        "developmentOnly": true,
+        "resourceTypes": [
+          "route",
+          "file"
+        ]
+      },
+      "conformanceLevel": 1
+    },
+    {
+      "name": "observe.surface",
+      "constraints": {
+        "developmentOnly": true,
+        "resourceTypes": [
+          "route",
+          "file"
+        ],
+        "limitations": [
+          "route surface is read from app/**/route.{ts,tsx,js,jsx}"
+        ]
+      },
+      "conformanceLevel": 1
+    },
+    {
+      "name": "observe.contract",
+      "constraints": {
+        "developmentOnly": true,
+        "resourceTypes": [
+          "route",
+          "file"
+        ]
+      },
+      "conformanceLevel": 2
+    },
+    {
+      "name": "observe.source",
+      "constraints": {
+        "developmentOnly": true,
+        "resourceTypes": [
+          "route",
+          "file"
+        ]
+      },
+      "conformanceLevel": 2
+    },
+    {
+      "name": "observe.traces",
+      "constraints": {
+        "developmentOnly": true,
+        "resourceTypes": [
+          "route",
+          "file"
+        ],
+        "limitations": [
+          "requires the adopter to pass verifyFetch (a Web handler routing to its own Route Handler modules)"
+        ]
+      },
+      "conformanceLevel": 3
+    },
+    {
+      "name": "understand.impact",
+      "constraints": {
+        "developmentOnly": true,
+        "resourceTypes": [
+          "route",
+          "file"
+        ]
+      },
+      "conformanceLevel": 2
+    },
+    {
+      "name": "understand.causality",
+      "constraints": {
+        "developmentOnly": true,
+        "resourceTypes": [
+          "route",
+          "file"
+        ]
+      },
+      "conformanceLevel": 3
+    },
+    {
+      "name": "mutate.source",
+      "constraints": {
+        "developmentOnly": true,
+        "resourceTypes": [
+          "route",
+          "file"
+        ],
+        "limitations": [
+          "OCC expectedVersion is mandatory; stale tokens fail with -32001",
+          "a backup is written under .tokensafe/backups/ inside the workspace"
+        ]
+      },
+      "conformanceLevel": 2
+    },
+    {
+      "name": "verify.behavior",
+      "constraints": {
+        "developmentOnly": true,
+        "resourceTypes": [
+          "route",
+          "file"
+        ],
+        "limitations": [
+          "requires the adopter to pass verifyFetch (a Web handler routing to its own Route Handler modules)"
+        ]
+      },
+      "conformanceLevel": 2
+    },
+    {
+      "name": "mutate.multiFile",
+      "constraints": {
+        "developmentOnly": true,
+        "resourceTypes": [
+          "file"
+        ],
+        "limitations": [
+          "each item is validated and syntax-checked before the first write; a write failure restores what was written"
+        ]
+      },
+      "conformanceLevel": 3
+    },
+    {
+      "name": "sessions.ttlSeconds",
+      "constraints": {
+        "developmentOnly": false,
+        "limitations": [
+          "requested lifetime is clamped to 1..86400 and echoed as the granted ttlSeconds"
+        ]
+      },
+      "conformanceLevel": 3
+    },
+    {
+      "name": "mutate.preview",
+      "constraints": {
+        "developmentOnly": true,
+        "resourceTypes": [
+          "file"
+        ],
+        "limitations": [
+          "§4.4 dry-run: the full applyEdit guard order (boundary, existence, syntax pre-flight, expectedVersion, OCC) runs without any write"
+        ]
+      },
+      "conformanceLevel": 3
+    },
+    {
+      "name": "sessions.cancel",
+      "constraints": {
+        "developmentOnly": false,
+        "resourceTypes": [],
+        "limitations": [
+          "best-effort (§3): unknown request ids and finished requests answer as results, never errors"
+        ]
+      },
+      "conformanceLevel": 1
+    },
+    {
+      "name": "sessions.idempotency",
+      "constraints": {
+        "developmentOnly": false,
+        "resourceTypes": [],
+        "limitations": [
+          "per-session first-result-wins replay: a retried mutation returns the original result instead of re-applying"
+        ]
+      },
+      "conformanceLevel": 3
+    },
+    {
+      "name": "index.symbols",
+      "constraints": {
+        "developmentOnly": true,
+        "resourceTypes": [
+          "file",
+          "symbol"
+        ]
+      },
+      "conformanceLevel": 3
+    },
+    {
+      "name": "verify.build",
+      "constraints": {
+        "developmentOnly": true,
+        "resourceTypes": [
+          "file"
+        ],
+        "limitations": [
+          "honest skip: status=skipped with skipReason when no build command is wired"
+        ]
+      },
+      "conformanceLevel": 3
+    }
+  ],
+  "security": {
+    "productionFailClosed": true,
+    "workspaceBoundary": true
+  }
+}

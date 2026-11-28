@@ -3,6 +3,19 @@
 The wire contract is versioned by `protocolVersion` (currently **1.6.0**); this
 changelog tracks the OUMV specification and its reference tooling.
 
+## v1.5.5 — 2026-11-28 (wire 1.6.0, fixtures v13, revision v1.10)
+
+Adapter catalog sync after the backend v0.11.0 release; no protocol change.
+
+- **Twelve manifests.** `adapters/next-app-router.json` joins the catalog: the
+  Next.js App Router Route Handler is certified Level 3 (46/46, fixtures v13,
+  auth refusals included) as a server-profile adapter; the client-component DOM
+  bridge is explicitly not claimed.
+- **Pins.** Go manifests install `@v0.11.0` (the module tag that carries the DB
+  options and the transport authorizer), `tokensafe-backend-node` 0.9.0,
+  `tokensafe-ui` 0.1.33 (multi-file batches), `TokenSafe.Oumv.AspNetCore` 0.2.0.
+- `compatibility.json` gains the v1.5.5 row.
+
 ## v1.5.4 — 2026-11-28 (wire 1.6.0, fixtures v13, revision v1.10)
 
 Transport auth stops being folklore and becomes a certified contract; no wire

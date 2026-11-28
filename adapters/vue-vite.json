@@ -2,7 +2,7 @@
   "identity": {
     "id": "frontend/vue",
     "name": "tokensafe-ui OUMV adapter for Vue 3 + Vite",
-    "version": "0.1.31",
+    "version": "0.1.33",
     "description": "OUMV frontend adapter served by the Vite dev server (HTTP, SSE, WebSocket, batch)",
     "repo": "https://github.com/tokensafe-dev/agent-dom"
   },
