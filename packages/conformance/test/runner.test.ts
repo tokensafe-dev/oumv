@@ -48,11 +48,14 @@ describe('fixture-driven conformance runner', () => {
       negotiatedVersion: '1.6.0',
     });
 
-    expect(report.total).toBe(spec.cases.length);
+    // The suite handshakes when the caller passes no capabilities, so the report also
+    // carries the capability family the reference runtime advertises.
+    expect(report.total).toBe(report.cases.length);
+    expect(report.total).toBeGreaterThanOrEqual(spec.cases.length);
     expect(report.failed).toBe(0);
     expect(report.attainedLevel).toBe(3);
     expect(report.levels).toEqual({ 1: 'passed', 2: 'passed', 3: 'passed' });
-    expect(report.fixtureVersion).toBe(13);
+    expect(report.fixtureVersion).toBe(14);
     expect(report.specVersion).toBe(spec.protocolVersion);
     expect(validateReport(report), reportErrors().join('; ')).toBe(true);
   });

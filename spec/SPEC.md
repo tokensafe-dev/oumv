@@ -1,7 +1,7 @@
-# The OUMV Protocol Specification (v1.10-canonical)
+# The OUMV Protocol Specification (v1.11-canonical)
 **The Universal Agent-Runtime Protocol (UARP)**
 
-- **Date**: 2026-11-22 (v1.0 draft) · 2026-11-26 (v1.0.0 frozen; document revision v1.4-canonical) · 2026-11-26 (v1.1.0; revision v1.5-canonical, wire `protocolVersion` 1.2.0) · 2026-11-27 (v1.2.0; revision v1.6-canonical, wire `protocolVersion` 1.3.0) · 2026-11-27 (v1.3.0; revision v1.7-canonical, wire `protocolVersion` 1.4.0) · 2026-11-27 (v1.4.0; revision v1.8-canonical, wire `protocolVersion` 1.5.0) · 2026-11-27 (v1.5.0; revision v1.9-canonical, wire `protocolVersion` 1.6.0) · 2026-11-28 (revision v1.10-canonical: transport auth contract codified, wire `protocolVersion` 1.6.0 unchanged)  
+- **Date**: 2026-11-22 (v1.0 draft) · 2026-11-26 (v1.0.0 frozen; document revision v1.4-canonical) · 2026-11-26 (v1.1.0; revision v1.5-canonical, wire `protocolVersion` 1.2.0) · 2026-11-27 (v1.2.0; revision v1.6-canonical, wire `protocolVersion` 1.3.0) · 2026-11-27 (v1.3.0; revision v1.7-canonical, wire `protocolVersion` 1.4.0) · 2026-11-27 (v1.4.0; revision v1.8-canonical, wire `protocolVersion` 1.5.0) · 2026-11-27 (v1.5.0; revision v1.9-canonical, wire `protocolVersion` 1.6.0) · 2026-11-28 (revision v1.10-canonical: transport auth contract codified, wire `protocolVersion` 1.6.0 unchanged) · 2026-11-28 (revision v1.11-canonical: read-only deployments drop mutating methods from the registry instead of refusing them, wire `protocolVersion` 1.6.0 unchanged)  
 - **Status**: Stable — v1.5.0  
 - **Author**: Oleg Savelev  
 - **Repository**: [github.com/tokensafe-dev/oumv](https://github.com/tokensafe-dev/oumv)
@@ -248,6 +248,7 @@ Upon establishing a connection, the agent and runtime exchange capabilities:
 2. `profile` MUST be `"frontend"` or `"backend"` (spec §7). A runtime serving both reports the profile of the surface the agent is attached to.
 3. A runtime MUST either honour `requestedCapabilities` (returning only the requested capabilities it implements) or return the full implemented set and omit the rest. It MUST NOT advertise a level, method or capability it cannot serve: over-claiming is a conformance failure (§10).
 4. `requestedCapabilities` is advisory. Runtimes that cannot negotiate (older adapters) return their static capability set, and the agent MUST treat absent keys as unsupported.
+5. **A capability that is not advertised is not registered.** When a runtime runs without a capability (`capabilities.mutate`, `verify`, `observe` or `understand` absent or empty), the methods that capability covers MUST NOT be in its dispatch table, and a call to one of them MUST answer `-32601 METHOD_NOT_FOUND` like any unknown method. Refusing a registered method with `-32007` is reserved for transport auth (§12) and for workspace policy on a method the runtime does register (`permissions.query: false`, §14.2); gating absence behind `-32007` is a conformance failure. A read-only deployment (§8.5) MUST also advertise `capabilities.readOnly: true`, so a client never mistakes absence for an older adapter that merely lacks the method.
 
 ---
 
@@ -563,6 +564,12 @@ code that is absent from the registry.
 | **-32012** | `RATE_LIMITED` | Per-session request limit exhausted (`data.retryAfterMs` hints when to retry; HTTP 429 may precede dispatch). |
 | **-32603** | `INTERNAL_ERROR` | Unexpected adapter failure. |
 
+`-32601 METHOD_NOT_FOUND` is the answer for a method the runtime does not register,
+including a method whose capability is switched off (§3.1 rule 5). `-32007
+PERMISSION_DENIED` is reserved for transport auth (§12) and for a workspace policy
+that denies a method the runtime does register (`permissions.query: false`, §8.5,
+§14.2).
+
 `error.data.reason` values per code are enumerated in the registry; runtimes MAY
 add more but MUST keep the code's documented meaning.
 
@@ -703,10 +710,42 @@ OUMV follows an **enabled-by-default with mandatory guardrails** policy for deve
    - syntax pre-flight before persistence (`SYNTAX_ERROR` on failure; if a language cannot be checked, the result MUST state `syntaxCheck: "skipped"` rather than imply success);
    - automatic backup of previous file content before direct edits;
    - secret-leak redaction before any data reaches the agent-facing interface.
-3. **Production runtimes are fail-closed**: mutation and unrestricted observation MUST NOT be exposed in production unless explicitly enabled and authenticated (`PERMISSION_DENIED` by default).
-4. **Opt-out**: a workspace MAY set `permissions.mutate: false` in `.tokensafe/oumv.json` to force read-only mode.
+3. **Production runtimes are fail-closed**: mutation and unrestricted observation MUST NOT be exposed in production unless explicitly enabled and authenticated. A production runtime that was not given an explicit mutation switch runs read-only in the sense of §8.5: the mutating methods are absent, not merely refused.
+4. **Opt-out**: a workspace MAY set `permissions.mutate: false` in `.tokensafe/oumv.json` to force read-only mode, and an adapter MAY expose a read-only deployment switch. Both are implemented as method absence (§8.5), not as a per-handler refusal.
 
 Runtimes MUST NOT advertise mutation capabilities they cannot guard.
+
+### 8.5 Read-only deployments
+
+A read-only deployment is a **shape of the runtime, not a check inside it**. The
+registry is closed: the dispatch table is built once at boot from the advertised
+capability set, and a method that is not in the table cannot be reached, whatever a
+handler might decide later.
+
+In read-only mode these methods MUST NOT be registered and MUST answer `-32601`:
+
+| Absent method | Why it writes |
+| :--- | :--- |
+| `oumv/mutate`, `oumv/applyEdit` | writes source bytes |
+| `oumv/previewEdit` | carries the mutation surface (`mutate.preview`); kept absent so a client cannot mistake the profile for a writable one |
+| `oumv/verify` | executes the application, and the tests it runs may write to disk or the database outside any rollback sandbox |
+| `oumv/build` | executes a client-supplied command |
+| `mutation.apply`, `mutation.simulate` | TokenSafe extensions that dispatch live in-process requests |
+
+Everything that only reads stays registered: `oumv/handshake`, `oumv/disconnect`,
+`oumv/observe`, `oumv/understand`, `oumv/getSource`, `oumv/index`, `oumv/cancel`,
+`oumv/query` (subject to `permissions.query`, §14.2), `state.read`, `state.diff`,
+`causality.*` and `verification.assert`.
+
+A read-only runtime MUST advertise `capabilities.readOnly: true` and MUST NOT
+advertise `mutate` or `verify`. A client MUST treat `readOnly: true` as authoritative:
+it must not perform the edit through its own tools, because that would silently
+restore the write path the deployment removed. Logging the refusal is expected; the
+edit itself is out of scope for that workspace.
+
+The advertised capability set and the registered method set MUST be equal in both
+directions: nothing advertised may be unregistered, and nothing registered may be
+unadvertised. Conformance asserts this on the handshake answer.
 
 ---
 
@@ -748,9 +787,9 @@ Conformance is **per adapter and per profile**, and it is a claim that MUST be b
 
 ### 10.2 Language-neutral fixtures
 
-Cases live in `fixtures/conformance-cases.json` (`fixtureVersion` 13). Every case declares the `level` it certifies and may declare `preconditions` such as `verify` (which establishes the runtime evidence that L4/causality cases assert on). Each runtime executes the same file with its native toolchain — no TypeScript required for Go or Python certification.
+Cases live in `fixtures/conformance-cases.json` (`fixtureVersion` 14). Every case declares the `level` it certifies and may declare `preconditions` such as `verify` (which establishes the runtime evidence that L4/causality cases assert on). Each runtime executes the same file with its native toolchain — no TypeScript required for Go or Python certification.
 
-Besides the ordered `cases`, the file carries four gated families: `pushCases` (run only by the SSE/WS certificate whose `transport` matches), `capabilityCases` (run only when the runtime's handshake advertises `requiresCapability`, and dropped from the report otherwise, so no claim is ever certified by a skipped case), `sessionCases` (handshake with `sessionTtlSeconds: ttlSeconds`, wait the granted lifetime, then assert `-32011` + `data.reason="session_expired"`) and `authCases` (spec §12: the same ordinary request with a deliberately defective credential — `auth: "missing" | "invalid" | "wrong-scheme"` — must be refused with the declared `expectHttpStatus` and `expectError.code` before dispatch; run only by an HTTP certifier whose target was started with auth enabled, since a stdio binding has no transport auth and a tokenless loopback target has nothing to refuse). A capability case may name `cleanup` paths removed before it runs and a `followUp` call whose expectations it also asserts — the second half of an atomicity proof. Any case may also declare `minWireVersion`: it is skipped, and dropped from the report, when the runtime negotiates an older wire version — that is how the §4.1 result-versioning cases stay Level-2 assertions for wire 1.6.0 runtimes without penalizing runtimes frozen on 1.5.0.
+Besides the ordered `cases`, the file carries four gated families: `pushCases` (run only by the SSE/WS certificate whose `transport` matches), `capabilityCases` (run only when the runtime's handshake advertises `requiresCapability`, and dropped from the report otherwise, so no claim is ever certified by a skipped case), `sessionCases` (handshake with `sessionTtlSeconds: ttlSeconds`, wait the granted lifetime, then assert `-32011` + `data.reason="session_expired"`) and `authCases` (spec §12: the same ordinary request with a deliberately defective credential — `auth: "missing" | "invalid" | "wrong-scheme"` — must be refused with the declared `expectHttpStatus` and `expectError.code` before dispatch; run only by an HTTP certifier whose target was started with auth enabled, since a stdio binding has no transport auth and a tokenless loopback target has nothing to refuse). A capability case may name `cleanup` paths removed before it runs and a `followUp` call whose expectations it also asserts — the second half of an atomicity proof. Any case may also declare `minWireVersion`: it is skipped, and dropped from the report, when the runtime negotiates an older wire version — that is how the §4.1 result-versioning cases stay Level-2 assertions for wire 1.6.0 runtimes without penalizing runtimes frozen on 1.5.0. `requiresCapability` is not limited to `capabilityCases`: any case may declare it, and a mutating or verifying case that declares it is dropped from the report of a runtime that does not advertise that capability. That is how a read-only deployment (§8.5) certifies the surface it actually serves instead of failing on methods it never registered — a dropped case is never a pass either.
 
 A case declares its expectations declaratively: `expectResultFields`, `expectValues` (JSON-path equality on the result), `expectError.code` (with optional `expectError.data`), `expectLevelEquals`, `expectSha256Field`, `expectArrayField`, `expectEvidence`, `expectVersionMatchesContent`. A case may also declare `headers`, merged into that single request after the transport's own auth headers. The reference runners are the Go/Python packages in `tokensafe-backend` and `@oumv/conformance` (CLI `oumv-certify`); a certification claim is reproduced in CI by re-running one of them.
 
@@ -973,6 +1012,8 @@ Request: `{ "command"?: string, "target"?: string, "timeoutMs"?: integer }` →
 ---
 
 ## Changelog
+
+- **Revision v1.11 (2026-11-28, wire 1.6.0 unchanged, `fixtureVersion` 14)**: a read-only deployment becomes method absence instead of a per-handler refusal (§3.1 rule 5, new §8.5). The registry is closed and built at boot from the advertised capabilities, so `oumv/mutate`/`oumv/applyEdit`, `oumv/previewEdit`, `oumv/verify`, `oumv/build`, `mutation.apply` and `mutation.simulate` are not reachable and answer `-32601` when their capability is off, while handshake, observe, understand, getSource, index, cancel, query, state, causality and verification.assert stay. Handshake gains `capabilities.readOnly: true`, which is authoritative for clients: a client MUST NOT perform the edit through its own tools, because that would restore the write path the deployment removed. `-32007` narrows to transport auth (§12) and to workspace policy on a registered method (`permissions.query: false`). Fixtures: any case may carry `requiresCapability`, so mutating cases are dropped from a read-only report without lowering the level it attains, and the new `read-only-*` capability cases assert `-32601`, the `readOnly` flag and that observe still works. Additive: wire 1.6.0 adapters stay valid, and a runtime that does not advertise `readOnly` keeps answering `-32007`.
 
 - **Revision v1.10 (2026-11-28, wire 1.6.0 unchanged, `fixtureVersion` 13)**: the transport auth refusal is codified (§2.2, §12) — HTTP 401 before dispatch for a missing/invalid/wrong-scheme credential, HTTP 403 (`data.reason="token_required_non_loopback"`) for a non-loopback bind with no token, both carrying the §5.1 envelope with `-32007`; SSE/WS under an authenticated binding must refuse unauthenticated connections too. Fixtures gain the gated `authCases` family and per-case `headers`; `oumv-certify --auth` runs the family and records `environment.auth: "required"`. Additive documentation of behavior every shipped runtime already implemented — no field, method or wire version changes, so wire 1.6.0 adapters stay valid.
 

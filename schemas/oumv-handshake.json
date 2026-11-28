@@ -57,6 +57,10 @@
    "type": "object",
    "additionalProperties": false,
    "properties": {
+    "readOnly": {
+     "type": "boolean",
+     "description": "read-only deployment: the mutating methods are not registered at all (\u00a78.5, revision v1.11). Authoritative for clients \u2014 they MUST NOT perform the edit through their own tools."
+    },
     "transports": {
      "type": "array",
      "description": "bindings this runtime actually mounted (spec \u00a72.3/\u00a72.4 advertise what exists)",

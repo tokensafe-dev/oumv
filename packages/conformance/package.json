@@ -1,6 +1,6 @@
 {
   "name": "@oumv/conformance",
-  "version": "0.2.3",
+  "version": "0.3.0",
   "license": "Apache-2.0",
   "description": "OUMV conformance runner and CLIs: oumv-certify (HTTP/WS/stdio) and oumv-lint-adapter",
   "type": "module",

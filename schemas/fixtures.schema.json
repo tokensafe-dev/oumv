@@ -86,6 +86,10 @@
       "type": "string",
       "description": "Wire floor: the case is skipped (dropped from the report) when the runtime negotiates an older wire version."
      },
+     "requiresCapability": {
+      "type": "string",
+      "description": "Dotted capability path (e.g. `mutate`, `verify.build`). The case is dropped from the report when the handshake does not advertise it as literal true. Since revision v1.11 this applies to any case, not only to capabilityCases."
+     },
      "expectResultFields": {
       "type": "array",
       "items": {

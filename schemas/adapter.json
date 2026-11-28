@@ -86,6 +86,17 @@
       },
       "minItems": 1
     },
+    "modes": {
+      "type": "array",
+      "description": "Deployment shapes this adapter supports (revision v1.11, spec \u00a78.5). Default [\"read-write\"]; in `read-only` the adapter registers no mutating methods and advertises capabilities.readOnly.",
+      "items": {
+        "enum": [
+          "read-write",
+          "read-only"
+        ]
+      },
+      "minItems": 1
+    },
     "capabilities": {
       "type": "array",
       "items": {

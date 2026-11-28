@@ -89,7 +89,7 @@ export function referenceRuntime(request: JsonRpcRequest): JsonRpcResponse {
             observe: { levels: ['L0', 'L1', 'L2', 'L3', 'L4'] },
             understand: { impactAnalysis: true, causality: true },
             mutate: { occ: true, multiFile: true, preview: true },
-            verify: { build: true },
+            verify: { multiMetric: true, build: true },
             index: { symbols: true },
             observeQuery: { readOnly: true },
             events: { diagnostic: false },

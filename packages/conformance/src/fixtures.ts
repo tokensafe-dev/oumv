@@ -27,6 +27,13 @@ export interface ConformanceCase {
   preconditions?: string[];
   /** Wire floor: the case is skipped (dropped from the report) when the runtime negotiates an older wire version. */
   minWireVersion?: string;
+  /**
+   * Dotted handshake capability path (e.g. `mutate`, `verify`). The case is dropped
+   * from the report when the runtime does not advertise it as literal true — since
+   * revision v1.11 this applies to any case, not only to capabilityCases, which is
+   * how a read-only deployment (§8.5) certifies the surface it serves.
+   */
+  requiresCapability?: string;
   expectResultFields?: string[];
   expectValues?: Record<string, unknown>;
   expectError?: ConformanceCaseError;
@@ -597,6 +604,30 @@ export async function runFixtureSuite(
 ): Promise<FixtureReport> {
   const results: CaseResult[] = [];
 
+  // Capabilities drive the case gating: capabilityCases, and since revision v1.11 any
+  // case carrying `requiresCapability` (a read-only runtime has no mutating methods,
+  // §8.5). A caller that already handshook passes them in; when it did not and the
+  // spec actually has gated cases, ask the runtime once instead of silently dropping
+  // every one of them.
+  const gatedCases = [...spec.cases, ...(spec.capabilityCases ?? [])];
+  if (!options.capabilities && gatedCases.some((c) => c.requiresCapability)) {
+    const probe = await transport.request({
+      jsonrpc: '2.0',
+      id: 'fixtures-handshake',
+      method: 'oumv/handshake',
+      params: { protocolVersion: spec.protocolVersion },
+    });
+    const result = probe.result as Record<string, unknown> | undefined;
+    if (!probe.error && result) {
+      if (result.capabilities && typeof result.capabilities === 'object') {
+        options.capabilities = result.capabilities as Record<string, unknown>;
+      }
+      if (!options.negotiatedVersion && typeof result.protocolVersion === 'string') {
+        options.negotiatedVersion = result.protocolVersion;
+      }
+    }
+  }
+
   // §4.1 result versioning (wire 1.6.0): the ifVersion cases need the runtime's
   // CURRENT token, and earlier cases legitimately mutate the workspace, so it is
   // captured just in time (right before a case that references it) rather than
@@ -623,6 +654,9 @@ export async function runFixtureSuite(
 
   for (const testCase of spec.cases) {
     if (testCase.minWireVersion && !wireVersionAtLeast(options.negotiatedVersion, testCase.minWireVersion)) continue;
+    // A case that needs an unadvertised capability (a mutating or verifying case on a
+    // read-only runtime, §8.5) is not part of this runtime's report at all.
+    if (testCase.requiresCapability && !capabilityAdvertised(options.capabilities, testCase.requiresCapability)) continue;
     if (needsWorkspaceVersion(testCase.params)) await captureWorkspaceVersion();
     const result: CaseResult = { id: testCase.id, level: testCase.level, status: 'passed' };
     let failure = '';

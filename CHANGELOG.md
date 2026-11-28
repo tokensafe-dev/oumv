@@ -3,6 +3,28 @@
 The wire contract is versioned by `protocolVersion` (currently **1.6.0**); this
 changelog tracks the OUMV specification and its reference tooling.
 
+## v1.6.0 — 2026-11-28 (wire 1.6.0, fixtures v14, revision v1.11)
+
+Read-only deployments are a shape of the runtime, not a check inside it. A runtime
+whose `capabilities.mutate`/`verify` are off no longer registers those methods, so a
+read-only surface cannot be reached at all and answers `-32601` instead of `-32007`
+(§3.1 rule 5, new §8.5). The absent set is `oumv/mutate`, `oumv/applyEdit`,
+`oumv/previewEdit`, `oumv/verify`, `oumv/build`, `mutation.apply` and
+`mutation.simulate`; observe, understand, getSource, index, cancel, query, state,
+causality and verification.assert stay. The handshake advertises
+`capabilities.readOnly: true`, and clients must treat it as authoritative: doing the
+edit through their own tools would restore the write path the deployment removed.
+`-32007` narrows to transport auth (§12) and to workspace policy on a registered
+method (`permissions.query: false`).
+
+Fixtures v14 make that certifiable: any case may carry `requiresCapability`, so the
+mutating and verify cases are dropped from a read-only report without lowering the
+level it attains, and six `read-only-*` capability cases assert `-32601` for
+applyEdit/previewEdit/verify/build, the `readOnly` flag, and that observe still
+works. All three runners (TypeScript, Go, Python) gate ordered cases on the claim.
+Additive for wire 1.6.0 adapters: a runtime that does not advertise `readOnly` keeps
+answering `-32007`.
+
 ## v1.5.7 — 2026-11-28 (wire 1.6.0, fixtures v13, revision v1.10)
 
 Adapter catalog: `TokenSafe.Oumv.AspNetCore` reaches the full wire 1.6.0 surface.
